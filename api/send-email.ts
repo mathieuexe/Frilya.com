@@ -13,7 +13,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { to, subject, html, attachments } = req.body;
+    const { to, subject, html, attachments, scheduled_at } = req.body;
     
     if (!to || !subject || !html) {
       return res.status(400).json({ error: 'Missing required fields (to, subject, html).' });
@@ -33,6 +33,10 @@ export default async function handler(req: any, res: any) {
 
     if (attachments && attachments.length > 0) {
       emailPayload.attachments = attachments;
+    }
+
+    if (scheduled_at) {
+      emailPayload.scheduled_at = scheduled_at;
     }
 
     const response = await fetch('https://api.resend.com/emails', {

@@ -27,6 +27,7 @@ import BetaManagementView from './admin/views/BetaManagementView';
 import SupportInboxView from './admin/views/SupportInboxView';
 import UserDossier from './admin/views/UserDossier';
 import AnalyticsView from './admin/views/AnalyticsView';
+import MarketingView from './admin/views/MarketingView';
 import IbansView from './admin/views/IbansView';
 import LegalPagesView from './admin/views/LegalPagesView';
 import WithdrawalsView from './admin/views/WithdrawalsView';
@@ -470,6 +471,7 @@ function AdminShell({
             <Routes>
               <Route path="/" element={<DashboardView />} />
               <Route path="/stats" element={<AnalyticsView />} />
+              <Route path="/marketing" element={<MarketingView />} />
               <Route path="/buyers" element={<UsersView type="acheteur" />} />
               <Route path="/sellers" element={<UsersView type="vendeur" />} />
               <Route path="/admins" element={<UsersView type="admin" />} />
