@@ -6,6 +6,8 @@ import {
   ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor, Lock, Eye, X, Ticket, Activity
 } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
+import verifiedIcon from '../../../assets/verified.png';
+import secureIcon from '../../../assets/secure.png';
 import { generateInvoiceBase64, downloadInvoice } from '../../../lib/invoice';
 import type { InvoiceData } from '../../../lib/invoice';
 import { formatOrderId, formatInvoiceId } from '../../../lib/formatUtils';
@@ -547,8 +549,17 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
               </label>
             </div>
             {profile?.is_verified && (
-              <div className="absolute bottom-0 -right-2 bg-white rounded-full p-1 shadow-sm border border-slate-100">
-                <CheckCircle className="w-6 h-6 text-blue-500 fill-blue-500/20" />
+              <div className="absolute bottom-0 -right-2 bg-white rounded-full p-0.5 shadow-sm border border-slate-100 flex items-center justify-center">
+                <img src={verifiedIcon} alt="Vérifié" className="w-7 h-7" />
+              </div>
+            )}
+            {profile?.role === 'admin' && (
+              <div className="absolute bottom-0 right-6 bg-white rounded-full p-0.5 shadow-sm border border-slate-100 flex items-center justify-center group cursor-pointer z-10">
+                <img src={secureIcon} alt="Officiel" className="w-7 h-7" />
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                  Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                </div>
               </div>
             )}
           </div>

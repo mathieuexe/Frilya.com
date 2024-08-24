@@ -5,6 +5,7 @@ import { trackSellerProfileViewed } from '../lib/analytics';
 import { Loader2, Star, Calendar, Activity } from 'lucide-react';
 import catAvatar from '../assets/cat.png';
 import verifiedIcon from '../assets/verified.png';
+import secureIcon from '../assets/secure.png';
 import messengerIcon from '../assets/messenger.png';
 
 import { BetaBadge } from '../components/BetaBadge';
@@ -49,7 +50,7 @@ export default function Profile() {
             .eq('status', 'active'),
           supabase
             .from('reviews')
-            .select('*, buyer:profiles!reviews_buyer_id_fkey(full_name, avatar_url, is_verified, is_beta), service:services(title)')
+            .select('*, buyer:profiles!reviews_buyer_id_fkey(full_name, avatar_url, is_verified, role, is_beta), service:services(title)')
             .eq('seller_id', profileData.id)
             .order('created_at', { ascending: false })
         ]);
@@ -128,6 +129,15 @@ export default function Profile() {
                     <img src={verifiedIcon} alt="Vérifié" className="w-6 h-6" />
                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center">
                       Compte vérifié. Frilya certifie que ce compte est authentique.
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                    </div>
+                  </div>
+                )}
+                {profile.role === 'admin' && (
+                  <div className="relative group cursor-pointer flex items-center ml-1">
+                    <img src={secureIcon} alt="Officiel" className="w-6 h-6" />
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center">
+                      Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
                     </div>
                   </div>
@@ -250,7 +260,22 @@ export default function Profile() {
                           <div className="flex items-center gap-1 font-bold text-slate-900">
                             {review.buyer?.full_name || 'Utilisateur anonyme'}
                             {review.buyer?.is_verified && (
-                              <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 ml-1" />
+                              <div className="relative group cursor-pointer flex items-center ml-1">
+                                <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" />
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                                  Compte vérifié. Frilya certifie que ce compte est authentique.
+                                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                                </div>
+                              </div>
+                            )}
+                            {review.buyer?.role === 'admin' && (
+                              <div className="relative group cursor-pointer flex items-center ml-1">
+                                <img src={secureIcon} alt="Officiel" className="w-4 h-4" />
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                                  Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
+                                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                                </div>
+                              </div>
                             )}
                             {review.buyer?.is_beta && <div className="ml-1 scale-75 origin-left"><BetaBadge /></div>}
                           </div>

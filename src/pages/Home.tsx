@@ -19,6 +19,7 @@ import supabaseLogo from '../assets/8xHF2DW9QR2diK7qLaVS.svg';
 
 import creditCardIcon from '../assets/credit-card.png';
 import verifiedIcon from '../assets/verified.png';
+import secureIcon from '../assets/secure.png';
 import simplifyIcon from '../assets/simplify.png';
 
 import designIcon from '../assets/icons/design.svg';
@@ -57,7 +58,7 @@ export default function Home() {
           .from('services')
           .select(`
             *,
-            profiles!services_seller_id_fkey (full_name, avatar_url)
+            profiles!services_seller_id_fkey (full_name, avatar_url, is_verified, role)
           `)
           .eq('status', 'active')
           .order('created_at', { ascending: false })
@@ -270,7 +271,21 @@ export default function Home() {
                           </div>
                         )}
                       </div>
-                      <span className="font-medium text-slate-700 text-sm truncate">{service.profiles?.full_name || 'Utilisateur'}</span>
+                      <div className="flex items-center">
+                        <span className="font-medium text-slate-700 text-sm truncate">{service.profiles?.full_name || 'Utilisateur'}</span>
+                        {service.profiles?.is_verified && (
+                          <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 ml-1" />
+                        )}
+                        {service.profiles?.role === 'admin' && (
+                          <div className="relative group cursor-pointer flex items-center ml-1">
+                            <img src={secureIcon} alt="Officiel" className="w-4 h-4" />
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                              Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
+                              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <h3 className="font-bold text-lg text-slate-900 mb-4 line-clamp-2 group-hover:text-frilya-600 transition-colors">
                       {service.title}

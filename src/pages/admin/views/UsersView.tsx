@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { Loader2, Search, Trash2, CheckCircle, Eye, Plus, User, Mail, Lock, X } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import verifiedIcon from '../../../assets/verified.png';
+import secureIcon from '../../../assets/secure.png';
 import { createClient } from '@supabase/supabase-js';
 
 import { useNavigate } from 'react-router-dom';
@@ -187,7 +188,22 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' | 'ad
                       <div className="font-bold text-slate-900 flex items-center gap-1">
                         {user.full_name || 'Sans nom'}
                         {user.is_verified && (
-                          <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" title="Compte vérifié" />
+                          <div className="relative group cursor-pointer flex items-center">
+                            <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" />
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                              Compte vérifié. Frilya certifie que ce compte est authentique.
+                              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        )}
+                        {user.role === 'admin' && (
+                          <div className="relative group cursor-pointer flex items-center ml-1">
+                            <img src={secureIcon} alt="Officiel" className="w-4 h-4" />
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                              Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
+                              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>

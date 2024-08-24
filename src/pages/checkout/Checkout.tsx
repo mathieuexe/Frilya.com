@@ -7,6 +7,7 @@ import {
   RefreshCw, Star, AlertCircle, Check, Lock, FileText
 } from 'lucide-react';
 import verifiedIcon from '../../assets/verified.png';
+import secureIcon from '../../assets/secure.png';
 import catAvatar from '../../assets/cat.png';
 
 type PaymentMethod = 'balance' | 'card';
@@ -66,7 +67,7 @@ export default function Checkout() {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
       let query = supabase
         .from('services')
-        .select('*, profiles!services_seller_id_fkey(id, full_name, avatar_url, is_verified, slug, created_at)');
+        .select('*, profiles!services_seller_id_fkey(id, full_name, avatar_url, is_verified, role, slug, created_at)');
       query = isUuid ? query.eq('id', id) : query.eq('slug', id);
 
       const { data: serviceData, error: serviceError } = await query.single();
@@ -320,7 +321,24 @@ export default function Checkout() {
                             className="font-bold text-slate-900 hover:text-frilya-600 flex items-center gap-1.5"
                           >
                             {service.profiles?.full_name || 'Vendeur'}
-                            {service.profiles?.is_verified && <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" />}
+                            {service.profiles?.is_verified && (
+                              <div className="relative group cursor-pointer flex items-center">
+                                <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" />
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                                  Compte vérifié. Frilya certifie que ce compte est authentique.
+                                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                                </div>
+                              </div>
+                            )}
+                            {service.profiles?.role === 'admin' && (
+                              <div className="relative group cursor-pointer flex items-center ml-1">
+                                <img src={secureIcon} alt="Officiel" className="w-4 h-4" />
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                                  Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
+                                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                                </div>
+                              </div>
+                            )}
                           </Link>
                           <p className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1">
                             <span className="inline-flex items-center gap-1">
