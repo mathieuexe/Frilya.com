@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import {
   Loader2, Send, Search, Inbox, UserPlus, UserMinus, PauseCircle, CheckCircle2,
-  RotateCcw, Lock, AlertTriangle, MailOpen, Clock, ExternalLink, PlayCircle
+  RotateCcw, Lock, AlertTriangle, MailOpen, Clock, ExternalLink, PlayCircle, Smile
 } from 'lucide-react';
+import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import { SUPPORT_ACCOUNT_ID, SUPPORT_STATUS_LABELS, type SupportStatus } from '../../../lib/constants';
 import { useAdminNotifications } from '../AdminNotificationsContext';
 import catAvatar from '../../../assets/cat.png';
@@ -51,6 +52,23 @@ export default function SupportInboxView() {
 
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+  // Fermer le picker si on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleEmojiClick = (emojiData: any) => {
+    setReply((prev) => prev + emojiData.emoji);
+  };
   const [busyAction, setBusyAction] = useState(false);
   /** false = la migration admin_support_inbox.sql n'a pas encore été jouée */
   const [schemaReady, setSchemaReady] = useState(true);
@@ -658,9 +676,31 @@ export default function SupportInboxView() {
                       className="w-full min-h-[90px] p-4 text-sm outline-none resize-none"
                     />
                     <div className="bg-slate-50 px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-4">
-                      <p className="text-xs text-slate-500">
-                        Réponse envoyée en tant que <span className="font-bold">Support Frilya</span>
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="relative" ref={emojiPickerRef}>
+                          <button
+                            type="button"
+                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                            title="Ajouter un emoji"
+                          >
+                            <Smile className="w-5 h-5" />
+                          </button>
+                          {showEmojiPicker && (
+                            <div className="absolute bottom-full left-0 mb-2 z-50 shadow-2xl rounded-xl overflow-hidden">
+                              <EmojiPicker 
+                                onEmojiClick={handleEmojiClick}
+                                theme={Theme.LIGHT}
+                                emojiStyle={EmojiStyle.APPLE}
+                                lazyLoadEmojis={true}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 hidden sm:block">
+                          Réponse envoyée en tant que <span className="font-bold">Support Frilya</span>
+                        </p>
+                      </div>
                       <button
                         onClick={handleSendReply}
                         disabled={sending || !reply.trim()}

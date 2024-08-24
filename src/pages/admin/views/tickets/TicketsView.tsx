@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../../lib/supabase';
-import { Filter, AlertTriangle, CheckCircle, Clock, ExternalLink, Paperclip, Hourglass, Activity, Send, Search } from 'lucide-react';
+import { Filter, AlertTriangle, CheckCircle, Clock, ExternalLink, Paperclip, Hourglass, Activity, Send, Search, Smile } from 'lucide-react';
+import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import supportAvatar from '../../../../assets/support-avatar.png';
 
 export default function TicketsView() {
@@ -15,6 +16,24 @@ export default function TicketsView() {
   const [replyContent, setReplyContent] = useState('');
   const [sending, setSending] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  
+  // State pour le picker d'emojis
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleEmojiClick = (emojiData: any) => {
+    setReplyContent((prev) => prev + emojiData.emoji);
+  };
 
   useEffect(() => {
     fetchTickets();
@@ -545,7 +564,29 @@ export default function TicketsView() {
                       placeholder="Écrire une réponse à l'utilisateur..."
                       className="w-full min-h-[100px] p-4 resize-none outline-none text-sm"
                     />
-                    <div className="bg-slate-50 p-3 border-t border-slate-100 flex justify-end">
+                    <div className="bg-slate-50 p-3 border-t border-slate-100 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative" ref={emojiPickerRef}>
+                          <button
+                            type="button"
+                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                            title="Ajouter un emoji"
+                          >
+                            <Smile className="w-5 h-5" />
+                          </button>
+                          {showEmojiPicker && (
+                            <div className="absolute bottom-full left-0 mb-2 z-50 shadow-2xl rounded-xl overflow-hidden">
+                              <EmojiPicker 
+                                onEmojiClick={handleEmojiClick}
+                                theme={Theme.LIGHT}
+                                emojiStyle={EmojiStyle.APPLE}
+                                lazyLoadEmojis={true}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <button
                         onClick={handleSendMessage}
                         disabled={sending || !replyContent.trim()}
