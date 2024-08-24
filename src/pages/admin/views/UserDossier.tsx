@@ -3,7 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { 
   User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, 
   Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, 
-  ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor, Lock, Eye, X, Ticket
+  ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor, Lock, Eye, X, Ticket, Activity
 } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import { generateInvoiceBase64, downloadInvoice } from '../../../lib/invoice';
@@ -560,6 +560,14 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
                <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-slate-400" /> {profile?.email}</span>
                <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-slate-400" /> Inscrit en {stats.joinDate}</span>
+               {profile?.last_seen && (
+                 <span className="flex items-center gap-1.5" title="Dernière connexion">
+                   <Activity className="w-4 h-4 text-slate-400" />
+                   {new Date(profile.last_seen).toLocaleString('fr-FR', {
+                     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                   })}
+                 </span>
+               )}
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-3">
                {profile?.auth_provider === 'google' && (

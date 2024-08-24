@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { trackSellerProfileViewed } from '../lib/analytics';
-import { Loader2, Star, Calendar } from 'lucide-react';
+import { Loader2, Star, Calendar, Activity } from 'lucide-react';
 import catAvatar from '../assets/cat.png';
 import verifiedIcon from '../assets/verified.png';
 import messengerIcon from '../assets/messenger.png';
@@ -143,6 +143,14 @@ export default function Profile() {
                   <Calendar className="w-4 h-4" />
                   Membre depuis {joinDate}
                 </span>
+                {profile.last_seen && (
+                  <span className="flex items-center gap-1" title="Dernière connexion">
+                    <Activity className="w-4 h-4 text-slate-400" />
+                    {new Date(profile.last_seen).toLocaleString('fr-FR', {
+                      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })}
+                  </span>
+                )}
                 {profile.is_seller && reviews.length > 0 && (
                   <a href="#reviews-section" className="flex items-center gap-1 hover:bg-slate-50 px-2 py-1 -ml-2 rounded-lg transition-colors group/rating">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400 group-hover/rating:scale-110 transition-transform" />
