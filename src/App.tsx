@@ -14,6 +14,13 @@ import MaintenancePage from './pages/Maintenance';
 import AuthPage from './pages/Auth';
 import AdminPage from './pages/Admin';
 import BuyerDashboard from './pages/dashboard/BuyerDashboard';
+import SellerDashboard from './pages/dashboard/SellerDashboard';
+import OnboardingSeller from './pages/vendeur/Onboarding';
+import SearchPage from './pages/services/Search';
+import ServiceDetailPage from './pages/services/ServiceDetail';
+import CreateServicePage from './pages/dashboard/seller/CreateService';
+import CheckoutPage from './pages/checkout/Checkout';
+import MessagesPage from './pages/messages/Messages';
 
 // Clé publique Stripe
 const stripePromise = loadStripe('pk_live_51Sr1HLCs5mrUe8SK0iyQYCu3YnamJqg201mb2OHoNWbCp2FjBZr5THWSALzhj1RokspGYUl7IEMvr6K9M1KsCY7200VHU7oucA');
@@ -540,6 +547,10 @@ function AppRoutes() {
     <Routes>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/service/:id" element={<ServiceDetailPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+        
         {/* Dashboard Acheteur */}
         <Route path="/dashboard" element={<BuyerDashboard />}>
           <Route path="commandes" element={<div>Mes commandes</div>} />
@@ -547,12 +558,23 @@ function AppRoutes() {
           <Route path="litiges" element={<div>Mes litiges</div>} />
           <Route path="parametres" element={<div>Paramètres</div>} />
         </Route>
+
+        {/* Dashboard Vendeur */}
+        <Route path="/vendeur/onboarding" element={<OnboardingSeller />} />
+        <Route path="/dashboard/vendeur" element={<SellerDashboard />}>
+          <Route path="services" element={<div>Mes services</div>} />
+          <Route path="services/nouveau" element={<CreateServicePage />} />
+          <Route path="commandes" element={<div>Commandes reçues</div>} />
+          <Route path="litiges" element={<div>Mes litiges (Vendeur)</div>} />
+          <Route path="parametres" element={<div>Paramètres pro</div>} />
+        </Route>
       </Route>
       
       {/* Routes sans layout standard (plein écran) */}
       <Route path="/success" element={<Success />} />
       <Route path="/maintenance" element={<MaintenancePage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/checkout/:id" element={<CheckoutPage />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

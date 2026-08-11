@@ -1,0 +1,164 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { Star, Clock, CheckCircle, ShieldCheck, Heart, Share2, Loader2 } from 'lucide-react';
+
+export default function ServiceDetail() {
+  const { id } = useParams();
+  const [service, setService] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchService();
+  }, [id]);
+
+  const fetchService = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*, profiles(full_name, avatar_url, bio, created_at)')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setService(data);
+    } catch (error) {
+      console.error("Erreur", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-frilya-600" /></div>;
+  }
+
+  if (!service) {
+    return <div className="text-center py-20 font-bold text-xl">Service introuvable.</div>;
+  }
+
+  return (
+    <div className="bg-slate-50 min-h-screen pb-20">
+      {/* Header Service (Breadcrumb) */}
+      <div className="bg-white border-b border-slate-200 py-3">
+        <div className="container mx-auto px-4">
+          <div className="text-sm text-slate-500 flex items-center gap-2">
+            <Link to="/search" className="hover:text-frilya-600">Accueil</Link>
+            <span>/</span>
+            <Link to="/search" className="hover:text-frilya-600">Services</Link>
+            <span>/</span>
+            <span className="text-slate-900 truncate max-w-xs">{service.title}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="flex flex-col lg:flex-row gap-8">
+          
+          {/* Colonne Principale (Gauche) */}
+          <div className="flex-1 space-y-8">
+            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6 leading-tight">
+                {service.title}
+              </h1>
+              
+              <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-frilya-100 rounded-full flex items-center justify-center font-bold text-frilya-600">
+                    {service.profiles?.full_name?.charAt(0) || 'V'}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">{service.profiles?.full_name || 'Vendeur Mystère'}</p>
+                    <div className="flex items-center gap-1 text-sm text-slate-500">
+                      <Star className="w-4 h-4 text-amber-500 fill-current" />
+                      <span className="font-bold text-amber-500">5.0</span>
+                      <span>(0 avis)</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                    <Heart className="w-5 h-5" />
+                  </button>
+                  <button className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-frilya-50 rounded-full transition-colors">
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Image / Galerie (Placeholder) */}
+              <div className="aspect-video bg-slate-100 rounded-2xl mb-8 flex items-center justify-center text-slate-400">
+                [Image du service]
+              </div>
+
+              <h2 className="text-xl font-bold text-slate-900 mb-4">À propos de ce service</h2>
+              <div className="prose max-w-none text-slate-600 whitespace-pre-line">
+                {service.description}
+              </div>
+            </div>
+
+            {/* Section Vendeur */}
+            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">À propos du vendeur</h2>
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="w-24 h-24 bg-frilya-100 rounded-full flex items-center justify-center font-bold text-3xl text-frilya-600 shrink-0">
+                  {service.profiles?.full_name?.charAt(0) || 'V'}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-slate-900">{service.profiles?.full_name || 'Vendeur Mystère'}</h3>
+                  <p className="text-sm text-slate-500 mb-4">Membre depuis {new Date(service.profiles?.created_at).getFullYear()}</p>
+                  <p className="text-slate-600 mb-4">
+                    {service.profiles?.bio || "Ce vendeur n'a pas encore rédigé de description."}
+                  </p>
+                  <button className="px-6 py-2 border border-slate-300 rounded-xl text-slate-700 font-bold hover:bg-slate-50 transition-colors">
+                    Contacter
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Colonne Latérale (Droite) - Pricing & CTA */}
+          <div className="w-full lg:w-80 shrink-0">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 sticky top-24">
+              
+              <div className="flex justify-between items-start mb-6">
+                <h3 className="text-xl font-bold text-slate-900">Formule Basique</h3>
+                <span className="text-2xl font-bold text-frilya-600">{service.price_basic} €</span>
+              </div>
+
+              <p className="text-sm text-slate-600 mb-6 font-medium">
+                La prestation de base décrite dans l'annonce.
+              </p>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  Livraison en {service.delivery_time_days} jour(s)
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-700">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  Paiement sécurisé
+                </div>
+              </div>
+
+              <Link 
+                to={`/checkout/${service.id}`}
+                className="w-full flex justify-center items-center bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md"
+              >
+                Commander ({service.price_basic} €)
+              </Link>
+              
+              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium">
+                <ShieldCheck className="w-4 h-4 text-green-500" />
+                L'argent est bloqué jusqu'à livraison
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
