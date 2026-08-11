@@ -28,6 +28,7 @@ import simplifyIcon from '../assets/simplify.png';
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sellerCount, setSellerCount] = useState<number>(0);
+  const [recentServices, setRecentServices] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchSellerCount = async () => {
@@ -44,7 +45,43 @@ export default function Home() {
       }
     };
 
+    const fetchRecentServices = async () => {
+      try {
+        // Simple cache mechanism (24h)
+        const CACHE_KEY = 'frilya_recent_services';
+        const CACHE_TIME_KEY = 'frilya_recent_services_time';
+        const now = new Date().getTime();
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+
+        if (cachedData && cachedTime && now - parseInt(cachedTime) < 24 * 60 * 60 * 1000) {
+          setRecentServices(JSON.parse(cachedData));
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('services')
+          .select(`
+            *,
+            seller:profiles!services_seller_id_fkey(full_name, avatar_url)
+          `)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (error) throw error;
+        if (data) {
+          setRecentServices(data);
+          localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+          localStorage.setItem(CACHE_TIME_KEY, now.toString());
+        }
+      } catch (err) {
+        console.error("Erreur lors de la récupération des services récents", err);
+      }
+    };
+
     fetchSellerCount();
+    fetchRecentServices();
   }, []);
 
   const categories = [
@@ -206,6 +243,54 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* RECENT SERVICES SECTION */}
+      {recentServices.length > 0 && (
+        <section className="py-20 bg-slate-50 border-t border-slate-100">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-slate-900 mb-10 text-center">
+              Derniers services ajoutés
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {recentServices.map(service => (
+                <Link key={service.id} to={`/service/${service.id}`} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 group flex flex-col">
+                  <div className="aspect-video bg-slate-100 relative overflow-hidden">
+                    {service.cover_image_url ? (
+                      <img src={service.cover_image_url} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400">Pas d'image</div>
+                    )}
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-slate-900">
+                      Nouveau
+                    </div>
+                  </div>
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                        {service.seller?.avatar_url ? (
+                          <img src={service.seller.avatar_url} alt={service.seller.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-frilya-100 flex items-center justify-center text-frilya-700 font-bold text-xs">
+                            {service.seller?.full_name?.charAt(0) || 'U'}
+                          </div>
+                        )}
+                      </div>
+                      <span className="font-medium text-slate-700 text-sm truncate">{service.seller?.full_name || 'Utilisateur'}</span>
+                    </div>
+                    <h3 className="font-bold text-lg text-slate-900 mb-4 line-clamp-2 group-hover:text-frilya-600 transition-colors">
+                      {service.title}
+                    </h3>
+                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-xs text-slate-500">À partir de</span>
+                      <span className="font-bold text-xl text-slate-900">{service.price_basic} €</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* REASSURANCE SECTION */}
       <section className="py-20 bg-slate-50">

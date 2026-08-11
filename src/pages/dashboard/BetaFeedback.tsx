@@ -1,12 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Send, CheckCircle } from 'lucide-react';
+import { Loader2, Send, CheckCircle, MessageSquare, AlertCircle } from 'lucide-react';
 
 export default function BetaFeedback() {
   const [type, setType] = useState('suggestion');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [loadingFeedbacks, setLoadingFeedbacks] = useState(true);
+
+  useEffect(() => {
+    fetchMyFeedbacks();
+  }, []);
+
+  const fetchMyFeedbacks = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('beta_feedbacks')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setFeedbacks(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingFeedbacks(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +55,7 @@ export default function BetaFeedback() {
       
       setSuccess(true);
       setContent('');
+      fetchMyFeedbacks();
       setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
       console.error('Erreur feedback:', err);
@@ -102,6 +129,63 @@ export default function BetaFeedback() {
           </button>
         </form>
       )}
+
+      {/* Liste des feedbacks soumis */}
+      <div className="mt-12">
+        <h2 className="text-xl font-bold text-slate-900 mb-6">Vos soumissions précédentes</h2>
+        
+        {loadingFeedbacks ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-frilya-600" /></div>
+        ) : feedbacks.length === 0 ? (
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 text-center text-slate-500">
+            Vous n'avez pas encore envoyé de feedback.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {feedbacks.map(fb => (
+              <div key={fb.id} className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-bold capitalize">
+                      {fb.type}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {new Date(fb.created_at).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    fb.status === 'approved' ? 'bg-green-100 text-green-700' :
+                    fb.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                    'bg-amber-100 text-amber-700'
+                  }`}>
+                    {fb.status === 'approved' ? 'Approuvé' :
+                     fb.status === 'rejected' ? 'Rejeté' :
+                     'En attente d\'examen'}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-700 whitespace-pre-wrap mb-4">{fb.content}</p>
+                
+                {fb.status === 'rejected' && fb.rejection_reason && (
+                  <div className="bg-red-50 p-3 rounded-xl border border-red-100 mt-2">
+                    <div className="flex items-center gap-2 text-red-800 text-xs font-bold mb-1">
+                      <AlertCircle className="w-4 h-4" /> Motif du refus
+                    </div>
+                    <p className="text-xs text-red-700">{fb.rejection_reason}</p>
+                  </div>
+                )}
+                {fb.status === 'approved' && fb.admin_response && (
+                  <div className="bg-green-50 p-3 rounded-xl border border-green-100 mt-2">
+                    <div className="flex items-center gap-2 text-green-800 text-xs font-bold mb-1">
+                      <MessageSquare className="w-4 h-4" /> Réponse de l'équipe
+                    </div>
+                    <p className="text-xs text-green-700">{fb.admin_response}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

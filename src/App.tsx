@@ -16,6 +16,7 @@ import SellerDashboard from './pages/dashboard/SellerDashboard';
 import OnboardingSeller from './pages/vendeur/Onboarding';
 import SearchPage from './pages/services/Search';
 import ServiceDetailPage from './pages/services/ServiceDetail';
+import ServicesList from './pages/dashboard/seller/ServicesList';
 import CreateServicePage from './pages/dashboard/seller/CreateService';
 import CheckoutPage from './pages/checkout/Checkout';
 import MessagesPage from './pages/messages/Messages';
@@ -182,8 +183,9 @@ function AppRoutes() {
         {/* Dashboard Vendeur */}
         <Route path="/vendeur/onboarding" element={<OnboardingSeller />} />
         <Route path="/dashboard/vendeur" element={<SellerDashboard />}>
-          <Route path="services" element={<div>Mes services</div>} />
+          <Route path="services" element={<ServicesList />} />
           <Route path="services/nouveau" element={<CreateServicePage />} />
+          <Route path="services/edition/:id" element={<CreateServicePage />} />
           <Route path="commandes" element={<Orders />} />
           <Route path="messages" element={<MessagesPage inDashboard={true} />} />
           <Route path="litiges" element={<Disputes />} />

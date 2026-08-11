@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
-import { Mail, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import pciLogo from '../../assets/pci-dss-compliant-logo-vector.svg';
 
 export default function Footer() {
@@ -15,9 +15,6 @@ export default function Footer() {
             <p className="text-sm text-slate-500 mb-4">
               Les talents français pour tous vos projets. Une plateforme simple, rapide et sécurisée.
             </p>
-            <a href="mailto:contact@frilya.com" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-frilya-600">
-              <Mail className="w-4 h-4" /> contact@frilya.com
-            </a>
           </div>
           
           <div>

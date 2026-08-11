@@ -19,6 +19,11 @@ export default function BetaManagementView() {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState('');
+  
+  const [feedbackRejectModalOpen, setFeedbackRejectModalOpen] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
+  const [feedbackRejectReason, setFeedbackRejectReason] = useState('');
+
   const [betaEndDate, setBetaEndDate] = useState<string>('');
   const [isBetaActiveGlobal, setIsBetaActiveGlobal] = useState(false);
   const [toggleLoading, setToggleLoading] = useState(false);
@@ -179,6 +184,65 @@ export default function BetaManagementView() {
     alert("Note: La suppression des comptes 'auth' doit être faite depuis le panel Supabase ou une Edge Function (Admin API). Vous pouvez néanmoins désactiver le mode Bêta.");
   };
 
+  const handleApproveFeedback = async (feedback: any) => {
+    setActionLoading(feedback.id);
+    try {
+      const responseMsg = "Merci pour votre retour ! Nous l'avons bien pris en compte et il a été approuvé.";
+      
+      await supabase.from('beta_feedbacks').update({
+        status: 'approved',
+        admin_response: responseMsg
+      }).eq('id', feedback.id);
+
+      // Envoi du message système
+      const adminId = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
+      await supabase.rpc('send_system_message', {
+        p_sender_id: adminId,
+        p_receiver_id: feedback.user_id,
+        p_content: responseMsg
+      });
+
+      alert("Feedback approuvé et utilisateur notifié !");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'approbation du feedback.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectFeedback = async () => {
+    if (!selectedFeedback) return;
+    setActionLoading(selectedFeedback.id);
+    try {
+      await supabase.from('beta_feedbacks').update({
+        status: 'rejected',
+        rejection_reason: feedbackRejectReason
+      }).eq('id', selectedFeedback.id);
+
+      // Envoi du message système
+      const adminId = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
+      const msg = `Merci pour votre retour ! Cependant, nous n'avons pas pu l'approuver pour la raison suivante :\n\n${feedbackRejectReason}`;
+      
+      await supabase.rpc('send_system_message', {
+        p_sender_id: adminId,
+        p_receiver_id: selectedFeedback.user_id,
+        p_content: msg
+      });
+
+      alert("Feedback rejeté et utilisateur notifié !");
+      setFeedbackRejectModalOpen(false);
+      setFeedbackRejectReason('');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors du rejet du feedback.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Tabs */}
@@ -291,7 +355,14 @@ export default function BetaManagementView() {
                 <div className="col-span-full p-8 text-center text-slate-500 bg-white rounded-3xl border border-slate-200">Aucun feedback reçu.</div>
               ) : feedbacks.map(fb => (
                 <div key={fb.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative">
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute top-4 right-4 flex items-center gap-2">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                      fb.status === 'approved' ? 'bg-green-100 text-green-700' :
+                      fb.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                      'bg-amber-100 text-amber-700'
+                    }`}>
+                      {fb.status || 'pending'}
+                    </span>
                     <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${fb.type === 'bug' ? 'bg-red-100 text-red-700' : fb.type === 'suggestion' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>
                       {fb.type}
                     </span>
@@ -305,7 +376,18 @@ export default function BetaManagementView() {
                       <p className="text-xs text-slate-500">{new Date(fb.created_at).toLocaleDateString('fr-FR')}</p>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{fb.content}</p>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap mb-4">{fb.content}</p>
+                  
+                  {(!fb.status || fb.status === 'pending') && (
+                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-2">
+                      <button onClick={() => { setSelectedFeedback(fb); setFeedbackRejectModalOpen(true); }} className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1">
+                        <X className="w-3 h-3" /> Rejeter
+                      </button>
+                      <button onClick={() => handleApproveFeedback(fb)} disabled={actionLoading === fb.id} className="px-3 py-1.5 text-xs font-bold text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors flex items-center gap-1">
+                        {actionLoading === fb.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Approuver
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -383,6 +465,27 @@ export default function BetaManagementView() {
               <button onClick={() => setRejectModalOpen(false)} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Annuler</button>
               <button onClick={handleRejectRequest} disabled={actionLoading === selectedRequest?.id} className="px-4 py-2 text-sm font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center gap-2">
                 {actionLoading === selectedRequest?.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmer le refus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Reject Modal (Feedback) */}
+      {feedbackRejectModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Rejeter le feedback</h3>
+            <p className="text-sm text-slate-600 mb-4">Indiquez le motif du rejet (sera visible par l'utilisateur) :</p>
+            <textarea
+              value={feedbackRejectReason}
+              onChange={e => setFeedbackRejectReason(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-frilya-600 outline-none resize-none h-24 mb-4"
+              placeholder="Ex: Nous avons déjà connaissance de ce bug, merci..."
+            ></textarea>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setFeedbackRejectModalOpen(false)} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Annuler</button>
+              <button onClick={handleRejectFeedback} disabled={actionLoading === selectedFeedback?.id} className="px-4 py-2 text-sm font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center gap-2">
+                {actionLoading === selectedFeedback?.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmer le rejet'}
               </button>
             </div>
           </div>
