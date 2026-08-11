@@ -176,7 +176,7 @@ export default function Search() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {services.map((service) => (
-                  <Link key={service.id} to={`/service/${service.id}`} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow group flex flex-col">
+                  <Link key={service.id} to={`/service/${service.slug || service.id}`} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow group flex flex-col">
                     {/* Image placeholder ou vraie image */}
                     <div className="h-40 bg-slate-100 group-hover:bg-slate-200 transition-colors relative overflow-hidden">
                       {service.cover_image_url ? (

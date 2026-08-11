@@ -132,7 +132,7 @@ export default function ServicesList() {
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
                         {service.status === 'active' && (
-                          <Link to={`/service/${service.id}`} className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-frilya-50 rounded-lg transition-colors" title="Voir l'annonce">
+                          <Link to={`/service/${service.slug || service.id}`} className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-frilya-50 rounded-lg transition-colors" title="Voir l'annonce">
                             <Eye className="w-4 h-4" />
                           </Link>
                         )}

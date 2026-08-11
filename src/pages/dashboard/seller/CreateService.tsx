@@ -124,6 +124,12 @@ export default function CreateService() {
     }
   };
 
+  const generateSlug = (title: string) => {
+    let slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    if (!slug) slug = 'service-' + Date.now();
+    return slug;
+  };
+
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
@@ -134,7 +140,26 @@ export default function CreateService() {
       const basicPrice = packages.basic.price || 5;
       const basicDelivery = packages.basic.delivery_days || 1;
 
-      const serviceData = {
+      // Base slug calculation
+      const baseSlug = generateSlug(formData.title || 'brouillon');
+      let finalSlug = baseSlug;
+
+      // Ensure slug uniqueness if creating new
+      if (!serviceId) {
+        let slugExists = true;
+        let counter = 1;
+        while (slugExists) {
+          const { data } = await supabase.from('services').select('id').eq('slug', finalSlug).maybeSingle();
+          if (data) {
+            finalSlug = `${baseSlug}-${counter}`;
+            counter++;
+          } else {
+            slugExists = false;
+          }
+        }
+      }
+
+      const serviceData: any = {
         seller_id: session.user.id,
         title: formData.title || 'Brouillon sans titre',
         category_id: formData.category_id ? parseInt(formData.category_id) : null,
@@ -146,6 +171,10 @@ export default function CreateService() {
         status: 'draft',
         cover_image_url: media.length > 0 ? media[0].url : null
       };
+
+      if (!serviceId) {
+        serviceData.slug = finalSlug;
+      }
 
       let currentServiceId = serviceId;
 

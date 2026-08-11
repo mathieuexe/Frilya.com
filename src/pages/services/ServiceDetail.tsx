@@ -14,11 +14,20 @@ export default function ServiceDetail() {
 
   const fetchService = async () => {
     try {
-      const { data, error } = await supabase
+      // Check if id is a UUID
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
+
+      let query = supabase
         .from('services')
-        .select('*, profiles(full_name, avatar_url, bio, created_at)')
-        .eq('id', id)
-        .single();
+        .select('*, profiles(full_name, avatar_url, bio, created_at)');
+        
+      if (isUuid) {
+        query = query.eq('id', id);
+      } else {
+        query = query.eq('slug', id);
+      }
+
+      const { data, error } = await query.single();
 
       if (error) throw error;
       setService(data);

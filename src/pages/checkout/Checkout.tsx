@@ -28,11 +28,20 @@ export default function Checkout() {
       }
       setUser(session.user);
 
-      const { data, error } = await supabase
+      // Check if id is a UUID
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
+
+      let query = supabase
         .from('services')
-        .select('*, profiles(full_name)')
-        .eq('id', id)
-        .single();
+        .select('*, profiles(full_name)');
+        
+      if (isUuid) {
+        query = query.eq('id', id);
+      } else {
+        query = query.eq('slug', id);
+      }
+
+      const { data, error } = await query.single();
 
       if (error) throw error;
       setService(data);
@@ -95,7 +104,7 @@ export default function Checkout() {
           order_id: order.id,
           service_title: service.title,
           success_url: window.location.origin + `/success?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: window.location.origin + `/checkout/${service.id}`,
+          cancel_url: window.location.origin + `/checkout/${service.slug || service.id}`,
         }),
       });
 
@@ -128,7 +137,7 @@ export default function Checkout() {
   return (
     <div className="bg-slate-50 min-h-screen py-12">
       <div className="container mx-auto px-4 max-w-4xl">
-        <Link to={`/service/${service.id}`} className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-medium mb-8">
+        <Link to={`/service/${service.slug || service.id}`} className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-medium mb-8">
           <ArrowLeft className="w-4 h-4" /> Retour au service
         </Link>
 

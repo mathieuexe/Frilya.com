@@ -47,18 +47,6 @@ export default function Home() {
 
     const fetchRecentServices = async () => {
       try {
-        // Simple cache mechanism (24h)
-        const CACHE_KEY = 'frilya_recent_services';
-        const CACHE_TIME_KEY = 'frilya_recent_services_time';
-        const now = new Date().getTime();
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
-
-        if (cachedData && cachedTime && now - parseInt(cachedTime) < 24 * 60 * 60 * 1000) {
-          setRecentServices(JSON.parse(cachedData));
-          return;
-        }
-
         const { data, error } = await supabase
           .from('services')
           .select(`
@@ -72,8 +60,6 @@ export default function Home() {
         if (error) throw error;
         if (data) {
           setRecentServices(data);
-          localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-          localStorage.setItem(CACHE_TIME_KEY, now.toString());
         }
       } catch (err) {
         console.error("Erreur lors de la récupération des services récents", err);
@@ -253,7 +239,7 @@ export default function Home() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {recentServices.map(service => (
-                <Link key={service.id} to={`/service/${service.id}`} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 group flex flex-col">
+                <Link key={service.id} to={`/service/${service.slug || service.id}`} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 group flex flex-col">
                   <div className="aspect-video bg-slate-100 relative overflow-hidden">
                     {service.cover_image_url ? (
                       <img src={service.cover_image_url} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
