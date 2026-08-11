@@ -42,7 +42,10 @@ export default function Settings() {
   };
 
   const validateIban = async () => {
-    if (!iban || iban.length < 14) return;
+    // Supprimer tous les espaces et passer en majuscules avant vérification
+    const formattedIban = iban.replace(/\s+/g, '').toUpperCase();
+    if (!formattedIban || formattedIban.length < 14) return;
+    
     setValidatingIban(true);
     setError('');
     try {
@@ -51,13 +54,15 @@ export default function Settings() {
         throw new Error("Clé API ibanapi manquante (VITE_IBANAPI_KEY)");
       }
       
-      const response = await fetch(`https://api.ibanapi.com/v1/validate/${iban}?api_key=${apiKey}`);
+      const response = await fetch(`https://api.ibanapi.com/v1/validate/${formattedIban}?api_key=${apiKey}`);
       const data = await response.json();
       
-      if (data.result === 200 && data.validations.chars.is_valid && data.validations.checksum.is_valid) {
-        setBankName(data.bank_data.bank || '');
-        setBankAddress(`${data.bank_data.address || ''}, ${data.bank_data.city || ''}`.trim());
-        if (!bic) setBic(data.bank_data.bic || '');
+      if (data.result === 200 && data.validations.some((v: any) => v.message.includes('Valid IBAN Checksum'))) {
+        setBankName(data.data?.bank?.bank_name || '');
+        setBankAddress(`${data.data?.bank?.address || ''}, ${data.data?.bank?.city || ''}`.trim());
+        if (!bic) setBic(data.data?.bank?.bic || '');
+        // On met à jour le state de l'IBAN avec la version formatée (sans espaces)
+        setIban(formattedIban);
       } else {
         setError("L'IBAN saisi semble invalide.");
       }
