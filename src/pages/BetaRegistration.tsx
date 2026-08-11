@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { sendBetaConfirmationEmail } from '../lib/email';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
@@ -13,6 +13,23 @@ export default function BetaRegistration() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isBetaActive, setIsBetaActive] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkBetaStatus = async () => {
+      try {
+        const { data } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'beta_mode_active')
+          .single();
+        setIsBetaActive(data?.value === 'true' || data?.value === true);
+      } catch (err) {
+        setIsBetaActive(false); // Par défaut on désactive si erreur ou non trouvé
+      }
+    };
+    checkBetaStatus();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,8 +90,24 @@ export default function BetaRegistration() {
         </a>
       </div>
 
-      <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-100 max-w-xl w-full">
-        <div className="text-center mb-8">
+      {isBetaActive === null ? (
+        <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-frilya-600" /></div>
+      ) : !isBetaActive ? (
+        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-100 max-w-xl w-full text-center">
+          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Programme Bêta fermé</h1>
+          <p className="text-slate-600 mb-6">
+            Les inscriptions à notre programme Bêta sont actuellement fermées. Merci pour votre intérêt et restez à l'écoute pour le lancement officiel !
+          </p>
+          <a href="/" className="inline-block bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3 px-8 rounded-xl transition-colors">
+            Retour à l'accueil
+          </a>
+        </div>
+      ) : (
+        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-100 max-w-xl w-full">
+          <div className="text-center mb-8">
           <span className="inline-block px-3 py-1 bg-frilya-100 text-frilya-700 font-bold text-xs rounded-full uppercase tracking-wider mb-4">Programme Bêta</span>
           <h1 className="text-3xl font-bold text-slate-900 mb-3">Rejoignez la Bêta</h1>
           <p className="text-slate-600">
@@ -149,6 +182,7 @@ export default function BetaRegistration() {
           </p>
         </form>
       </div>
+      )}
     </div>
   );
 }

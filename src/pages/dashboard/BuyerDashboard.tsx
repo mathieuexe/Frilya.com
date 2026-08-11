@@ -54,7 +54,7 @@ export default function BuyerDashboard() {
             → Administration
           </Link>
         )}
-        {(profile?.role === 'vendeur' || profile?.role === 'admin') && (
+        {(profile?.role === 'vendeur' || profile?.role === 'admin' || profile?.role === 'beta') && (
           <Link to="/dashboard/vendeur" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
             → Espace Vendeur
           </Link>

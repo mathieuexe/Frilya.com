@@ -20,14 +20,62 @@ export default function BetaManagementView() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [betaEndDate, setBetaEndDate] = useState<string>('');
+  const [isBetaActiveGlobal, setIsBetaActiveGlobal] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
+    fetchBetaGlobalStatus();
     // Default beta end date (e.g., +30 days)
     const date = new Date();
     date.setDate(date.getDate() + 30);
     setBetaEndDate(date.toISOString().split('T')[0]);
   }, [activeTab]);
+
+  const fetchBetaGlobalStatus = async () => {
+    try {
+      const { data } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'beta_mode_active')
+        .single();
+      setIsBetaActiveGlobal(data?.value === 'true' || data?.value === true);
+    } catch (err) {
+      console.error('Erreur lecture statut global beta:', err);
+    }
+  };
+
+  const handleToggleGlobalBeta = async () => {
+    setToggleLoading(true);
+    try {
+      const newValue = !isBetaActiveGlobal;
+      
+      // On check si la clé existe déjà
+      const { data: existingKey } = await supabase
+        .from('settings')
+        .select('key')
+        .eq('key', 'beta_mode_active')
+        .single();
+
+      if (existingKey) {
+        await supabase
+          .from('settings')
+          .update({ value: newValue.toString() })
+          .eq('key', 'beta_mode_active');
+      } else {
+        await supabase
+          .from('settings')
+          .insert([{ key: 'beta_mode_active', value: newValue.toString() }]);
+      }
+      
+      setIsBetaActiveGlobal(newValue);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors du changement du statut.");
+    } finally {
+      setToggleLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -81,7 +129,8 @@ export default function BetaManagementView() {
         await supabase.from('profiles').update({
           is_beta: true,
           beta_end_date: new Date(betaEndDate).toISOString(),
-          full_name: request.pseudo
+          full_name: request.pseudo,
+          role: 'beta'
         }).eq('id', userId);
       }
 
@@ -264,10 +313,37 @@ export default function BetaManagementView() {
 
           {/* TAB: SETTINGS */}
           {activeTab === 'settings' && (
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 max-w-2xl">
-              <h2 className="text-xl font-bold text-slate-900 mb-6">Zone de danger</h2>
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 max-w-2xl space-y-8">
               
-              <div className="p-6 bg-red-50 border border-red-200 rounded-2xl">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 mb-6">État du mode Bêta</h2>
+                <div className="flex items-center justify-between p-6 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg">Activer le programme Bêta</h3>
+                    <p className="text-sm text-slate-600 mt-1">
+                      Si désactivé, plus aucune nouvelle demande ne pourra être soumise depuis la page /beta.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleToggleGlobalBeta}
+                    disabled={toggleLoading}
+                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-frilya-600 focus:ring-offset-2 ${
+                      isBetaActiveGlobal ? 'bg-frilya-900' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                        isBetaActiveGlobal ? 'translate-x-8' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 mb-6 text-red-600">Zone de danger</h2>
+                
+                <div className="p-6 bg-red-50 border border-red-200 rounded-2xl">
                 <div className="flex items-start gap-4 mb-4">
                   <ShieldAlert className="w-8 h-8 text-red-600 shrink-0" />
                   <div>
@@ -284,6 +360,7 @@ export default function BetaManagementView() {
                   <Trash2 className="w-4 h-4" />
                   Supprimer tous les comptes Bêta
                 </button>
+              </div>
               </div>
             </div>
           )}

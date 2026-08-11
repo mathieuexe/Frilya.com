@@ -54,6 +54,7 @@ export default function Header() {
     if (!userProfile) return '/auth';
     if (userProfile.role === 'admin') return '/admin';
     if (userProfile.role === 'vendeur') return '/dashboard/vendeur';
+    if (userProfile.role === 'beta') return '/dashboard'; // Ou /dashboard/vendeur, mais par défaut acheteur
     return '/dashboard';
   };
 
