@@ -49,16 +49,20 @@ export default function BuyerDashboard() {
       <div className="flex flex-col md:flex-row gap-8">
         
         {/* Sidebar */}
-        <aside className="w-full md:w-64 shrink-0">
+        <div className="w-full md:w-64 shrink-0">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 sticky top-24">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-slate-100">
-                <img src={profile?.avatar_url || catAvatar} alt="Avatar" className="w-full h-full object-cover" />
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-4 border-slate-50">
+                <img 
+                  src={profile?.avatar_url || catAvatar} 
+                  alt={profile?.full_name || 'Acheteur'}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="overflow-hidden">
-                <p className="font-bold text-slate-900 truncate" title={profile?.full_name || 'Utilisateur'}>{profile?.full_name || 'Utilisateur'}</p>
-                <p className="text-xs text-slate-500 truncate">Acheteur</p>
-              </div>
+              <h2 className="font-bold text-slate-900 text-center">{profile?.full_name || 'Acheteur'}</h2>
+              <span className="text-sm font-medium px-3 py-1 bg-slate-100 text-slate-700 rounded-full mt-2">
+                Espace Acheteur
+              </span>
             </div>
 
             <nav className="space-y-1">
@@ -93,7 +97,7 @@ export default function BuyerDashboard() {
               </button>
             </div>
           </div>
-        </aside>
+        </div>
 
         {/* Contenu principal */}
         <div className="flex-1">

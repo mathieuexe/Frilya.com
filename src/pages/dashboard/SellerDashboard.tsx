@@ -52,8 +52,16 @@ export default function SellerDashboard() {
   ];
 
   if (loading) {
-    return <div className="p-8 text-center">Chargement...</div>;
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-frilya-900"></div>
+      </div>
+    );
   }
+
+  if (!profile) return null;
+
+  const hasBankInfo = profile.rib_status !== 'none' && profile.rib_status !== null;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -69,14 +77,18 @@ export default function SellerDashboard() {
         {/* Sidebar */}
         <aside className="w-full md:w-64 shrink-0">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 sticky top-24">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-frilya-900">
-                <img src={profile?.avatar_url || catAvatar} alt="Avatar" className="w-full h-full object-cover" />
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-4 border-slate-50">
+                <img 
+                  src={profile?.avatar_url || catAvatar} 
+                  alt={profile?.full_name || 'Vendeur'}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="overflow-hidden">
-                <p className="font-bold text-slate-900 truncate" title={profile?.full_name || 'Vendeur'}>{profile?.full_name || 'Vendeur'}</p>
-                <p className="text-xs font-bold text-frilya-600 truncate">Espace Vendeur</p>
-              </div>
+              <h2 className="font-bold text-slate-900 text-center">{profile?.full_name || 'Vendeur'}</h2>
+              <span className="text-sm font-medium px-3 py-1 bg-frilya-100 text-frilya-700 rounded-full mt-2">
+                Espace Vendeur
+              </span>
             </div>
 
             <nav className="space-y-1">
@@ -116,25 +128,27 @@ export default function SellerDashboard() {
         </aside>
 
         {/* Contenu principal */}
-        <div className="flex-1">
-          {location.pathname === '/dashboard/vendeur' ? (
+      <div className="flex-1">
+        {!hasBankInfo && (
+          <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4">
+            <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-amber-800 mb-1">Informations bancaires manquantes</h3>
+              <p className="text-amber-700 text-sm mb-3">
+                Vous devez enregistrer vos informations bancaires et faire valider votre RIB pour pouvoir publier des services et recevoir vos paiements.
+              </p>
+              <Link to="/dashboard/vendeur/parametres" className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                Configurer mon compte
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {location.pathname === '/dashboard/vendeur' ? (
             <div className="space-y-6">
               <h1 className="text-2xl font-bold text-slate-900">Tableau de bord Vendeur</h1>
               
               {/* Alertes sur les coordonnées bancaires */}
-              {profile.rib_status === 'none' && (
-                <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-bold text-amber-800">Configuration des paiements requise</h3>
-                    <p className="text-sm text-amber-700 mt-1">Vous devez configurer vos coordonnées bancaires (RIB/IBAN) pour pouvoir recevoir vos paiements. Frilya encaisse les paiements et vous les reverse une fois la commande validée.</p>
-                    <Link to="/dashboard/vendeur/parametres" className="inline-block mt-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">
-                      Configurer mes paiements
-                    </Link>
-                  </div>
-                </div>
-              )}
-
               {profile.rib_status === 'pending' && (
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-start gap-3">
                   <div className="w-5 h-5 shrink-0 mt-0.5 text-blue-600">
@@ -182,15 +196,19 @@ export default function SellerDashboard() {
                     </div>
                   )}
                 </div>
-                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                  <img src={checkoutIcon} alt="" className="w-8 h-8 opacity-80 mb-4" />
-                  <h3 className="text-2xl font-bold text-slate-900">0</h3>
-                  <p className="text-slate-500 text-sm">Commandes à livrer</p>
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <img src={checkoutIcon} alt="" className="w-16 h-16 grayscale" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Commandes à livrer</h3>
+                  <p className="text-3xl font-bold text-slate-900">0</p>
                 </div>
-                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                  <img src={chatIcon} alt="" className="w-8 h-8 opacity-80 mb-4" />
-                  <h3 className="text-2xl font-bold text-slate-900">0</h3>
-                  <p className="text-slate-500 text-sm">Messages non lus</p>
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <img src={chatIcon} alt="" className="w-16 h-16 grayscale" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Messages non lus</h3>
+                  <p className="text-3xl font-bold text-slate-900">0</p>
                 </div>
               </div>
             </div>
