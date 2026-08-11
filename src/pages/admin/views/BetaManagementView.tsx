@@ -135,7 +135,7 @@ export default function BetaManagementView() {
       }
 
       // 4. Update request status
-      await supabase.from('beta_applications').update({ status: 'accepted' }).eq('id', request.id);
+      await supabase.from('beta_applications').update({ status: 'approved' }).eq('id', request.id);
 
       // 5. Send Email
       await sendBetaAcceptedEmail(request.email, request.pseudo, tempPassword, betaEndDate);
@@ -225,7 +225,7 @@ export default function BetaManagementView() {
                       <td className="p-4 text-sm text-slate-600 max-w-xs truncate" title={req.motivation}>{req.motivation}</td>
                       <td className="p-4 text-sm text-slate-500">{new Date(req.created_at).toLocaleDateString('fr-FR')}</td>
                       <td className="p-4">
-                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : req.status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : req.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                           {req.status}
                         </span>
                       </td>

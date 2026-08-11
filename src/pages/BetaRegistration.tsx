@@ -186,7 +186,7 @@ export default function BetaRegistration() {
           <div className="text-slate-600 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
             <p className="mb-4">
               Vous avez soumis une demande le <strong>{new Date(existingRequest.created_at).toLocaleDateString('fr-FR')}</strong>.
-              Elle est actuellement : <strong className="uppercase">{existingRequest.status === 'pending' ? 'En attente d\'examen' : existingRequest.status === 'accepted' ? 'Acceptée' : 'Refusée'}</strong>.
+              Elle est actuellement : <strong className="uppercase">{existingRequest.status === 'pending' ? 'En attente d\'examen' : existingRequest.status === 'approved' ? 'Approuvée' : 'Refusée'}</strong>.
             </p>
             <p className="mb-2">Vous recevrez une réponse par e-mail.</p>
             <p className="font-bold">Merci de votre patience !</p>

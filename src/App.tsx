@@ -89,7 +89,7 @@ function AppRoutes() {
         setIsAuthenticated(true);
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role, is_beta, beta_end_date')
+          .select('role, is_beta, beta_end_date, welcome_message_sent')
           .eq('id', session.user.id)
           .single();
           
@@ -102,6 +102,28 @@ function AppRoutes() {
         }
           
         setIsAdmin(profile?.role === 'admin');
+
+        // Check if welcome message was sent
+        if (profile && !profile.welcome_message_sent) {
+          const adminId = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
+          const isBetaUser = profile.role === 'beta' || profile.is_beta;
+          
+          const welcomeContent = isBetaUser 
+            ? "👋 Bienvenue sur la Bêta de Frilya !\n\nMerci de nous aider à tester la plateforme avant son lancement officiel. Votre compte a été configuré en mode lecture seule pour vous permettre de naviguer partout en toute sécurité.\n\nN'hésitez pas à nous faire part de vos impressions, bugs ou suggestions via l'onglet \"Feedback Bêta\" dans votre tableau de bord.\n\nBonne découverte !"
+            : "👋 Bienvenue sur Frilya !\n\nNous sommes ravis de vous compter parmi nous. N'hésitez pas à compléter votre profil et à explorer les services disponibles.";
+
+          // Send message
+          await supabase.from('messages').insert([{
+            sender_id: adminId,
+            receiver_id: session.user.id,
+            content: welcomeContent
+          }]);
+
+          // Update profile
+          await supabase.from('profiles')
+            .update({ welcome_message_sent: true })
+            .eq('id', session.user.id);
+        }
       } else {
         setIsAuthenticated(false);
         setIsAdmin(false);
