@@ -24,6 +24,9 @@ import Orders from './pages/dashboard/Orders';
 import Favorites from './pages/dashboard/Favorites';
 import Disputes from './pages/dashboard/Disputes';
 import Settings from './pages/dashboard/Settings';
+import BetaFeedback from './pages/dashboard/BetaFeedback';
+
+import BetaRegistrationPage from './pages/BetaRegistration';
 
 function AppRoutes() {
   const [loading, setLoading] = useState(true);
@@ -76,9 +79,17 @@ function AppRoutes() {
       if (session) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, is_beta, beta_end_date')
           .eq('id', session.user.id)
           .single();
+          
+        if (profile?.is_beta && profile.beta_end_date) {
+          if (new Date(profile.beta_end_date) < new Date()) {
+            await supabase.auth.signOut();
+            window.location.href = '/auth?error=beta_expired';
+            return;
+          }
+        }
           
         setIsAdmin(profile?.role === 'admin');
       } else {
@@ -102,7 +113,7 @@ function AppRoutes() {
   // Si on est en maintenance et pas admin, on redirige tout vers /maintenance
   // Sauf si on est déjà sur /maintenance ou /auth (pour pouvoir se connecter en tant qu'admin)
   if (maintenanceMode && !isAdmin) {
-    if (location.pathname !== '/maintenance' && location.pathname !== '/auth') {
+    if (location.pathname !== '/maintenance' && location.pathname !== '/auth' && location.pathname !== '/beta') {
       return <Navigate to="/maintenance" replace />;
     }
   } else if (!maintenanceMode && location.pathname === '/maintenance') {
@@ -125,6 +136,7 @@ function AppRoutes() {
           <Route path="favoris" element={<Favorites />} />
           <Route path="litiges" element={<Disputes />} />
           <Route path="parametres" element={<Settings />} />
+          <Route path="feedback" element={<BetaFeedback />} />
         </Route>
 
         {/* Dashboard Vendeur */}
@@ -136,11 +148,13 @@ function AppRoutes() {
           <Route path="messages" element={<MessagesPage inDashboard={true} />} />
           <Route path="litiges" element={<Disputes />} />
           <Route path="parametres" element={<Settings />} />
+          <Route path="feedback" element={<BetaFeedback />} />
         </Route>
       </Route>
       
       {/* Routes sans layout standard (plein écran) */}
       <Route path="/maintenance" element={<MaintenancePage />} />
+      <Route path="/beta" element={<BetaRegistrationPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/checkout/:id" element={<CheckoutPage />} />
       <Route path="/admin" element={<AdminPage />} />

@@ -45,11 +45,11 @@ export default function SellerDashboard() {
 
   const navItems = [
     { name: 'Vue d\'ensemble', path: '/dashboard/vendeur', icon: LayoutDashboard },
-    { name: 'Mes services', path: '/dashboard/vendeur/services', customIcon: repairToolIcon },
-    { name: 'Commandes reçues', path: '/dashboard/vendeur/commandes', customIcon: checkoutIcon },
+    { name: 'Mes services', path: '/dashboard/vendeur/services', customIcon: repairToolIcon, hideForBeta: true },
+    { name: 'Commandes reçues', path: '/dashboard/vendeur/commandes', customIcon: checkoutIcon, hideForBeta: true },
     { name: 'Messages', path: '/dashboard/vendeur/messages', customIcon: chatIcon },
-    { name: 'Litiges', path: '/dashboard/vendeur/litiges', icon: AlertTriangle },
-    { name: 'Paramètres pro', path: '/dashboard/vendeur/parametres', icon: Settings },
+    { name: 'Litiges', path: '/dashboard/vendeur/litiges', icon: AlertTriangle, hideForBeta: true },
+    { name: 'Paramètres pro', path: '/dashboard/vendeur/parametres', icon: Settings, hideForBeta: true },
   ];
 
   if (loading) {
@@ -109,7 +109,7 @@ export default function SellerDashboard() {
             </div>
 
             <nav className="space-y-1">
-              {navItems.map((item) => {
+              {navItems.filter(item => !(profile?.is_beta && item.hideForBeta)).map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
@@ -130,23 +130,48 @@ export default function SellerDashboard() {
                   </Link>
                 );
               })}
+              {profile?.is_beta && (
+                <Link
+                  to="/dashboard/feedback"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all mt-2 ${
+                    location.pathname === '/dashboard/feedback' 
+                      ? 'bg-amber-100 text-amber-700 font-bold' 
+                      : 'bg-amber-50 text-amber-600 hover:bg-amber-100 font-medium'
+                  }`}
+                >
+                  <AlertTriangle className="w-5 h-5" />
+                  Feedback Bêta
+                </Link>
+              )}
             </nav>
 
-            <div className="mt-8">
-              <Link 
-                to="/dashboard/vendeur/services/nouveau"
-                className="w-full flex items-center justify-center gap-2 bg-frilya-600 hover:bg-frilya-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Créer un service
-              </Link>
-            </div>
+            {!profile?.is_beta && (
+              <div className="mt-8">
+                <Link 
+                  to="/dashboard/vendeur/services/nouveau"
+                  className="w-full flex items-center justify-center gap-2 bg-frilya-600 hover:bg-frilya-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Créer un service
+                </Link>
+              </div>
+            )}
           </div>
         </aside>
 
         {/* Contenu principal */}
       <div className="flex-1">
-        {!hasBankInfo && location.pathname !== '/dashboard/vendeur' && (
+        {profile?.is_beta && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+            <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-amber-800">Mode Bêta (Lecture seule)</h3>
+              <p className="text-sm text-amber-700 mt-1">Vous testez actuellement la plateforme en mode Bêta. Certaines actions comme la création de services ou le retrait des gains sont désactivées. Vos accès expireront le {new Date(profile.beta_end_date).toLocaleDateString('fr-FR')}.</p>
+            </div>
+          </div>
+        )}
+
+        {!hasBankInfo && location.pathname !== '/dashboard/vendeur' && !profile?.is_beta && (
           <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4">
             <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
             <div>
@@ -201,13 +226,14 @@ export default function SellerDashboard() {
                   <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Solde disponible</h3>
                   <p className="text-3xl font-bold text-slate-900 mb-4">{profile.balance?.toFixed(2) || '0.00'} €</p>
                   
-                  {(profile.balance || 0) >= 50 && profile.rib_status === 'approved' ? (
+                  {(profile.balance || 0) >= 50 && profile.rib_status === 'approved' && !profile?.is_beta ? (
                     <button className="w-full bg-frilya-900 hover:bg-frilya-800 text-white text-sm font-bold py-2.5 px-4 rounded-xl transition-colors">
                       Demander un virement
                     </button>
                   ) : (
                     <div className="text-xs text-slate-500">
-                      {(profile.balance || 0) < 50 
+                      {profile?.is_beta ? "Les virements sont désactivés en mode Bêta." :
+                        (profile.balance || 0) < 50 
                         ? "Le montant minimum de retrait est de 50 €."
                         : "Votre RIB doit être approuvé pour retirer des fonds."}
                     </div>
@@ -229,7 +255,7 @@ export default function SellerDashboard() {
                 </div>
               </div>
 
-              {!hasBankInfo && (
+              {!hasBankInfo && !profile?.is_beta && (
                 <div className="mt-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center">
                   <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <AlertTriangle className="w-8 h-8" />

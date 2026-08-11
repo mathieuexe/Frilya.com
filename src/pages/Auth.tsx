@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, Loader2, ArrowRight, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -13,6 +13,14 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Check URL params for specific errors (e.g. beta_expired)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'beta_expired') {
+      setError("Votre accès Bêta a expiré. Merci pour votre participation !");
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

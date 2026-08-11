@@ -34,11 +34,11 @@ export default function BuyerDashboard() {
 
   const navItems = [
     { name: 'Vue d\'ensemble', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Mes commandes', path: '/dashboard/commandes', icon: Package },
+    { name: 'Mes commandes', path: '/dashboard/commandes', icon: Package, hideForBeta: true },
     { name: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
     { name: 'Favoris', path: '/dashboard/favoris', icon: Heart },
-    { name: 'Litiges', path: '/dashboard/litiges', icon: AlertTriangle },
-    { name: 'Paramètres', path: '/dashboard/parametres', icon: Settings },
+    { name: 'Litiges', path: '/dashboard/litiges', icon: AlertTriangle, hideForBeta: true },
+    { name: 'Paramètres', path: '/dashboard/parametres', icon: Settings, hideForBeta: true },
   ];
 
   if (loading) {
@@ -91,7 +91,7 @@ export default function BuyerDashboard() {
             </div>
 
             <nav className="space-y-1">
-              {navItems.map((item) => {
+              {navItems.filter(item => !(profile?.is_beta && item.hideForBeta)).map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
@@ -108,6 +108,19 @@ export default function BuyerDashboard() {
                   </Link>
                 );
               })}
+              {profile?.is_beta && (
+                <Link
+                  to="/dashboard/feedback"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all mt-2 ${
+                    location.pathname === '/dashboard/feedback' 
+                      ? 'bg-amber-100 text-amber-700 font-bold' 
+                      : 'bg-amber-50 text-amber-600 hover:bg-amber-100 font-medium'
+                  }`}
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  Feedback Bêta
+                </Link>
+              )}
             </nav>
 
             <div className="mt-8 pt-6 border-t border-slate-100">
@@ -126,6 +139,16 @@ export default function BuyerDashboard() {
 
         {/* Contenu principal */}
         <div className="flex-1">
+          {profile?.is_beta && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-amber-800">Mode Bêta (Lecture seule)</h3>
+                <p className="text-sm text-amber-700 mt-1">Vous testez actuellement la plateforme en mode Bêta. Certaines actions comme les commandes ou la modification de profil sont désactivées. Vos accès expireront le {new Date(profile.beta_end_date).toLocaleDateString('fr-FR')}.</p>
+              </div>
+            </div>
+          )}
+
           {location.pathname === '/dashboard' ? (
             <div className="space-y-6">
               <h1 className="text-2xl font-bold text-slate-900">Bienvenue sur votre espace</h1>

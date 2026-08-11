@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   LogOut, LayoutDashboard, Users, ShoppingBag, 
-  MessageSquare, AlertTriangle, Settings, ShieldAlert, Loader2, ArrowLeft, Store
+  MessageSquare, AlertTriangle, Settings, ShieldAlert, Loader2, ArrowLeft, Store, Beaker
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
@@ -14,8 +14,9 @@ import MessagesView from './admin/views/MessagesView';
 import OrdersView from './admin/views/OrdersView';
 import DisputesView from './admin/views/DisputesView';
 import SettingsView from './admin/views/SettingsView';
+import BetaManagementView from './admin/views/BetaManagementView';
 
-type Tab = 'dashboard' | 'buyers' | 'sellers' | 'messages' | 'orders' | 'disputes' | 'settings';
+type Tab = 'dashboard' | 'buyers' | 'sellers' | 'messages' | 'orders' | 'disputes' | 'settings' | 'beta';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -144,7 +145,8 @@ export default function Admin() {
     {
       title: 'Système',
       items: [
-        { id: 'settings', name: 'Paramètres', icon: Settings }
+        { id: 'settings', name: 'Paramètres', icon: Settings },
+        { id: 'beta', name: 'Gestion Bêta', icon: Beaker }
       ]
     }
   ];
@@ -241,6 +243,7 @@ export default function Admin() {
             {activeTab === 'orders' && <OrdersView />}
             {activeTab === 'disputes' && <DisputesView />}
             {activeTab === 'settings' && <SettingsView />}
+            {activeTab === 'beta' && <BetaManagementView />}
           </div>
         </main>
 
