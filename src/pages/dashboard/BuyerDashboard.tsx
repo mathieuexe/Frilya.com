@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Package, Heart, MessageSquare, AlertTriangle, Settings, LayoutDashboard } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import catAvatar from '../../assets/cat.png';
+import verifiedIcon from '../../assets/verified.png';
 
 export default function BuyerDashboard() {
   const location = useLocation();
@@ -46,6 +47,19 @@ export default function BuyerDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Bascule Vendeur/Admin */}
+      <div className="flex justify-end mb-4 gap-4">
+        {profile?.role === 'admin' && (
+          <Link to="/admin" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
+            → Administration
+          </Link>
+        )}
+        {(profile?.role === 'vendeur' || profile?.role === 'admin') && (
+          <Link to="/dashboard/vendeur" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
+            → Espace Vendeur
+          </Link>
+        )}
+      </div>
       <div className="flex flex-col md:flex-row gap-8">
         
         {/* Sidebar */}
@@ -59,7 +73,18 @@ export default function BuyerDashboard() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h2 className="font-bold text-slate-900 text-center">{profile?.full_name || 'Acheteur'}</h2>
+              <div className="flex items-center gap-2 justify-center">
+                <h2 className="font-bold text-slate-900">{profile?.full_name || 'Acheteur'}</h2>
+                {profile?.is_verified && (
+                  <div className="relative group cursor-pointer">
+                    <img src={verifiedIcon} alt="Vérifié" className="w-5 h-5" />
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center">
+                      Compte vérifié. Frilya certifie que ce compte est authentique.
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
               <span className="text-sm font-medium px-3 py-1 bg-slate-100 text-slate-700 rounded-full mt-2">
                 Espace Acheteur
               </span>

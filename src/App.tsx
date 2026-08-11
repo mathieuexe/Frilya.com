@@ -44,7 +44,30 @@ function AppRoutes() {
         .eq('key', 'maintenance_mode')
         .single();
         
-      const isMaintenance = settingsData?.value === true || settingsData?.value === 'true';
+      let isMaintenance = settingsData?.value === true || settingsData?.value === 'true';
+
+      // 1b. Vérifier si l'IP est autorisée (whitelist)
+      if (isMaintenance) {
+        const { data: ipData } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'maintenance_allowed_ips')
+          .single();
+          
+        if (ipData?.value) {
+          try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const { ip } = await res.json();
+            const allowedIps = typeof ipData.value === 'string' ? JSON.parse(ipData.value) : ipData.value;
+            if (Array.isArray(allowedIps) && allowedIps.includes(ip)) {
+              isMaintenance = false; // Bypass maintenance for this IP
+            }
+          } catch (e) {
+            console.error('Erreur lors de la vérification IP:', e);
+          }
+        }
+      }
+
       setMaintenanceMode(isMaintenance);
 
       // 2. Vérifier si l'utilisateur est admin

@@ -84,7 +84,7 @@ export default function Onboarding() {
             </li>
             <li className="flex items-start gap-3">
               <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
-              <span className="text-slate-700">Paiements sécurisés garantis par Stripe Connect</span>
+              <span className="text-slate-700">Paiements sécurisés</span>
             </li>
             <li className="flex items-start gap-3">
               <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />

@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 
 export default function SettingsView() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [allowedIps, setAllowedIps] = useState<string>('');
   const [platformFee, setPlatformFee] = useState<string>('20');
   const [actionLoading, setActionLoading] = useState(false);
   const [feeLoading, setFeeLoading] = useState(false);
@@ -67,6 +68,23 @@ export default function SettingsView() {
         setMaintenanceMode(maintenanceData.value === true || maintenanceData.value === 'true');
       }
 
+      const { data: ipData } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'maintenance_allowed_ips')
+        .single();
+        
+      if (ipData?.value) {
+        try {
+          const parsed = typeof ipData.value === 'string' ? JSON.parse(ipData.value) : ipData.value;
+          if (Array.isArray(parsed)) {
+            setAllowedIps(parsed.join(', '));
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       const { data: feeData, error: feeError } = await supabase
         .from('settings')
         .select('value')
@@ -99,6 +117,25 @@ export default function SettingsView() {
     } catch (err: any) {
       console.error("Erreur lors de la modification:", err);
       setError("Impossible de modifier le mode maintenance.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const saveAllowedIps = async () => {
+    setActionLoading(true);
+    setError(null);
+    try {
+      const ipsArray = allowedIps.split(',').map(ip => ip.trim()).filter(ip => ip.length > 0);
+      const { error: upsertError } = await supabase
+        .from('settings')
+        .upsert({ key: 'maintenance_allowed_ips', value: JSON.stringify(ipsArray) }, { onConflict: 'key' });
+
+      if (upsertError) throw upsertError;
+      alert("Adresses IP autorisées mises à jour.");
+    } catch (err: any) {
+      console.error("Erreur lors de la sauvegarde des IPs:", err);
+      setError("Impossible de sauvegarder les IPs.");
     } finally {
       setActionLoading(false);
     }
@@ -163,11 +200,31 @@ export default function SettingsView() {
                 {maintenanceMode ? 'Activé' : 'Désactivé'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-3">
+            <p className="text-xs text-slate-500 mt-3 mb-4">
               {maintenanceMode 
                 ? "Les visiteurs sont redirigés vers la page /maintenance." 
                 : "Le site est accessible normalement à tous les visiteurs."}
             </p>
+
+            <div className="border-t border-slate-200 pt-4">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Adresses IP autorisées (séparées par des virgules)
+              </label>
+              <input
+                type="text"
+                value={allowedIps}
+                onChange={(e) => setAllowedIps(e.target.value)}
+                placeholder="ex: 192.168.1.1, 10.0.0.1"
+                className="w-full pl-4 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600 transition-shadow bg-white text-sm mb-3"
+              />
+              <button
+                onClick={saveAllowedIps}
+                disabled={actionLoading}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                Sauvegarder les IPs
+              </button>
+            </div>
           </div>
 
           <button

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Loader2, Search, MoreVertical, ShieldAlert, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Search, MoreVertical, ShieldAlert, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
+import verifiedIcon from '../../../assets/verified.png';
 
 export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
   const [users, setUsers] = useState<any[]>([]);
@@ -29,6 +30,21 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
       console.error('Erreur:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleVerifyUser = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_verified: !currentStatus })
+        .eq('id', userId);
+        
+      if (error) throw error;
+      setUsers(users.map(u => u.id === userId ? { ...u, is_verified: !currentStatus } : u));
+    } catch (err) {
+      console.error("Erreur lors de la vérification:", err);
+      alert("Impossible de modifier le statut de vérification.");
     }
   };
 
@@ -85,7 +101,12 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <img src={user.avatar_url || catAvatar} alt="" className="w-10 h-10 rounded-full object-cover bg-slate-100" />
-                      <div className="font-bold text-slate-900">{user.full_name || 'Sans nom'}</div>
+                      <div className="font-bold text-slate-900 flex items-center gap-1">
+                        {user.full_name || 'Sans nom'}
+                        {user.is_verified && (
+                          <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" title="Compte vérifié" />
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="p-4 text-slate-600 text-sm">{user.email}</td>
@@ -99,6 +120,13 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex justify-end gap-2">
+                      <button 
+                        onClick={() => toggleVerifyUser(user.id, user.is_verified)}
+                        className={`p-2 rounded-lg transition-colors ${user.is_verified ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-slate-400 hover:text-green-600 hover:bg-green-50'}`} 
+                        title={user.is_verified ? "Retirer la certification" : "Certifier ce compte"}
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
                       <button className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-frilya-50 rounded-lg transition-colors" title="Éditer">
                         <Edit className="w-4 h-4" />
                       </button>

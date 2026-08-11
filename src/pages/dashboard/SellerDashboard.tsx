@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { AlertTriangle, Settings, LayoutDashboard, Plus } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import catAvatar from '../../assets/cat.png';
+import verifiedIcon from '../../assets/verified.png';
 
 // Import Custom Icons
 import repairToolIcon from '../../assets/repair-tool.png';
@@ -66,10 +67,15 @@ export default function SellerDashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       
-      {/* Bascule Acheteur/Vendeur */}
-      <div className="flex justify-end mb-4">
+      {/* Bascule Acheteur/Vendeur/Admin */}
+      <div className="flex justify-end mb-4 gap-4">
+        {profile?.role === 'admin' && (
+          <Link to="/admin" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
+            → Administration
+          </Link>
+        )}
         <Link to="/dashboard" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
-          → Basculer vers l'espace Acheteur
+          → Espace Acheteur
         </Link>
       </div>
 
@@ -85,7 +91,18 @@ export default function SellerDashboard() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h2 className="font-bold text-slate-900 text-center">{profile?.full_name || 'Vendeur'}</h2>
+              <div className="flex items-center gap-2 justify-center">
+                <h2 className="font-bold text-slate-900">{profile?.full_name || 'Vendeur'}</h2>
+                {profile?.is_verified && (
+                  <div className="relative group cursor-pointer">
+                    <img src={verifiedIcon} alt="Vérifié" className="w-5 h-5" />
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center">
+                      Compte vérifié. Frilya certifie que ce compte est authentique.
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
               <span className="text-sm font-medium px-3 py-1 bg-frilya-100 text-frilya-700 rounded-full mt-2">
                 Espace Vendeur
               </span>
