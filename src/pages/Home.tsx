@@ -1,17 +1,45 @@
 import { Link } from 'react-router-dom';
 import { Search, Star, ShieldCheck, Zap, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+
+// Icons imports
+import artIcon from '../assets/art.png';
+import videoIcon from '../assets/video.png';
+import scriptIcon from '../assets/script.png';
+import copyWritingIcon from '../assets/copy-writing.png';
+import seoIcon from '../assets/map-with-a-pin-small-symbol-inside-a-circle.png';
+import advertisingIcon from '../assets/advertising.png';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [sellerCount, setSellerCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchSellerCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_seller', true);
+        
+        if (error) throw error;
+        setSellerCount(count || 0);
+      } catch (err) {
+        console.error("Erreur lors de la récupération du nombre de vendeurs", err);
+      }
+    };
+
+    fetchSellerCount();
+  }, []);
 
   const categories = [
-    { name: 'Logo', icon: '🎨' },
-    { name: 'Montage vidéo', icon: '🎬' },
-    { name: 'Développement web', icon: '💻' },
-    { name: 'Rédaction', icon: '✍️' },
-    { name: 'SEO', icon: '🔍' },
-    { name: 'Community Management', icon: '📱' },
+    { name: 'Logo', icon: artIcon },
+    { name: 'Montage vidéo', icon: videoIcon },
+    { name: 'Développement web', icon: scriptIcon },
+    { name: 'Rédaction', icon: copyWritingIcon },
+    { name: 'SEO', icon: seoIcon },
+    { name: 'Community Management', icon: advertisingIcon },
   ];
 
   const featuredFreelances = [
@@ -57,7 +85,9 @@ export default function Home() {
                 <img src="https://i.pravatar.cc/100?img=2" className="w-8 h-8 rounded-full border-2 border-frilya-900" alt="Freelance" />
                 <img src="https://i.pravatar.cc/100?img=3" className="w-8 h-8 rounded-full border-2 border-frilya-900" alt="Freelance" />
               </div>
-              <span className="text-sm font-medium text-frilya-200">Plus de 10 000 freelances disponibles</span>
+              <span className="text-sm font-medium text-frilya-200">
+                {sellerCount > 0 ? `${sellerCount} freelances disponibles` : 'De nombreux freelances disponibles'}
+              </span>
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 tracking-tight">
@@ -153,7 +183,9 @@ export default function Home() {
                 to={`/search?category=${cat.name}`}
                 className="group flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl hover:bg-frilya-50 border border-transparent hover:border-frilya-100 transition-all cursor-pointer"
               >
-                <span className="text-4xl mb-4 group-hover:scale-110 transition-transform">{cat.icon}</span>
+                <div className="w-12 h-12 mb-4 group-hover:scale-110 transition-transform">
+                  <img src={cat.icon} alt={cat.name} className="w-full h-full object-contain" />
+                </div>
                 <span className="font-bold text-slate-700 text-center text-sm">{cat.name}</span>
               </Link>
             ))}
