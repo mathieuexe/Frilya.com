@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { sendBetaConfirmationEmail } from '../lib/email';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import logo from '../assets/logo.png';
+import bgImage from '../assets/pawel-czerwinski-YAtspJ-HV2E-unsplash.jpg';
 
 export default function BetaRegistration() {
   const [formData, setFormData] = useState({
@@ -62,8 +63,16 @@ export default function BetaRegistration() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-slate-100 max-w-lg w-full text-center">
+      <div 
+        className="min-h-screen flex flex-col items-center justify-center p-4 relative"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${bgImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        }}
+      >
+        <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl max-w-lg w-full text-center relative z-10">
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8" />
           </div>
@@ -83,17 +92,25 @@ export default function BetaRegistration() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 py-12">
-      <div className="mb-8">
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center p-4 py-12 relative"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      <div className="mb-8 relative z-10">
         <a href="/">
-          <img src={logo} alt="Frilya" className="h-10 w-auto mx-auto" />
+          <img src={logo} alt="Frilya" className="h-10 w-auto mx-auto brightness-0 invert" />
         </a>
       </div>
 
       {isBetaActive === null ? (
-        <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-frilya-600" /></div>
+        <div className="flex items-center justify-center h-64 relative z-10"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
       ) : !isBetaActive ? (
-        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-100 max-w-xl w-full text-center">
+        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl max-w-xl w-full text-center relative z-10">
           <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-8 h-8" />
           </div>
@@ -106,7 +123,7 @@ export default function BetaRegistration() {
           </a>
         </div>
       ) : (
-        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-slate-100 max-w-xl w-full">
+        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl max-w-xl w-full relative z-10">
           <div className="text-center mb-8">
           <span className="inline-block px-3 py-1 bg-frilya-100 text-frilya-700 font-bold text-xs rounded-full uppercase tracking-wider mb-4">Programme Bêta</span>
           <h1 className="text-3xl font-bold text-slate-900 mb-3">Rejoignez la Bêta</h1>

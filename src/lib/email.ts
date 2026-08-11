@@ -1,7 +1,5 @@
-const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-// Attention: L'utilisation directe de l'API key en front-end n'est pas recommandée pour la sécurité, 
-// l'idéal serait de passer par une Edge Function Supabase. 
-// Mais pour ce besoin, nous faisons l'appel direct avec une variable d'environnement.
+// L'API Key est maintenant utilisée côté backend dans api/send-email.ts
+// pour des raisons de sécurité et pour éviter les erreurs CORS.
 
 export const sendBetaConfirmationEmail = async (email: string, pseudo: string) => {
   const html = `
@@ -104,14 +102,13 @@ export const sendBetaRejectedEmail = async (email: string, pseudo: string, reaso
 
 const sendEmail = async (to: string, subject: string, html: string) => {
   try {
-    const response = await fetch('https://api.resend.com/emails', {
+    // Appel de notre API serverless pour éviter les problèmes de CORS avec Resend
+    const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
       },
       body: JSON.stringify({
-        from: 'Frilya <noreply@frilya.com>', // Attention: Sur Resend, si le domaine n'est pas vérifié, on ne peut envoyer qu'à l'adresse email du compte Resend.
         to: [to],
         subject: subject,
         html: html
@@ -120,13 +117,13 @@ const sendEmail = async (to: string, subject: string, html: string) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Erreur Resend:', errorData);
+      console.error('Erreur API send-email:', errorData);
       throw new Error('Erreur lors de l\'envoi de l\'email');
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Exception Resend:', error);
+    console.error('Exception lors de l\'appel API send-email:', error);
     throw error;
   }
 };
