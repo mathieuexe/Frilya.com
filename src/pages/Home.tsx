@@ -15,6 +15,12 @@ import sarahImg from '../assets/Sarah.png';
 import thomasImg from '../assets/Thomas.png';
 import leaImg from '../assets/Léa.png';
 
+import stripeLogo from '../assets/stripe.svg';
+import pciLogo from '../assets/pcisecuritystandards-ar21.svg';
+import socialTablesLogo from '../assets/socialtables-ar21.svg';
+import viteLogo from '../assets/vitejsdev-ar21.svg';
+import supabaseLogo from '../assets/8xHF2DW9QR2diK7qLaVS.svg';
+
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sellerCount, setSellerCount] = useState<number>(0);
@@ -160,15 +166,15 @@ export default function Home() {
       </section>
 
       {/* TRUST BANNER */}
-      <section className="bg-slate-900 py-6 border-b border-slate-800">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row justify-center items-center gap-6 md:gap-12 opacity-70 grayscale">
-          <span className="text-white font-bold tracking-widest uppercase text-sm">Ils nous font confiance</span>
-          {/* Placeholders for logos */}
-          <div className="flex flex-wrap justify-center gap-8 items-center">
-            <span className="text-white font-serif font-bold text-xl italic">PayPal</span>
-            <span className="text-white font-sans font-bold text-xl tracking-tighter">shopify</span>
-            <span className="text-white font-sans font-extrabold text-xl">swello</span>
-            <span className="text-white font-serif font-bold text-xl">Europe 1</span>
+      <section className="bg-white py-10 border-b border-slate-100">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16">
+          <span className="text-slate-400 font-bold tracking-widest uppercase text-sm whitespace-nowrap">Ils nous font confiance</span>
+          <div className="flex flex-wrap justify-center gap-10 md:gap-14 items-center">
+            <img src={stripeLogo} alt="Stripe" className="h-8 md:h-10 object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+            <img src={pciLogo} alt="PCI Security" className="h-8 md:h-10 object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+            <img src={socialTablesLogo} alt="Social Tables" className="h-7 md:h-9 object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+            <img src={viteLogo} alt="ViteJS" className="h-8 md:h-10 object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
+            <img src={supabaseLogo} alt="Supabase" className="h-7 md:h-9 object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300" />
           </div>
         </div>
       </section>
