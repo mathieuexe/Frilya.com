@@ -57,7 +57,7 @@ export default function Footer() {
               <ShieldCheck className="w-4 h-4 text-green-500" />
               Paiements 100% sécurisés
             </div>
-            <img src={pciLogo} alt="PCI DSS Compliant" className="h-10 opacity-70 grayscale" />
+            <img src={pciLogo} alt="PCI DSS Compliant" className="h-16 opacity-70 grayscale" />
           </div>
         </div>
       </div>
