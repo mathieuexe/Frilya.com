@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { sendBetaConfirmationEmail } from '../lib/email';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import logo from '../assets/logo.png';
-import bgImage from '../assets/pawel-czerwinski-YAtspJ-HV2E-unsplash.jpg';
+import bgVideo from '../assets/original-e6c90943d3d9da57b997c2898244009e.mp4';
 
 export default function BetaRegistration() {
   const [formData, setFormData] = useState({
@@ -11,6 +11,7 @@ export default function BetaRegistration() {
     email: '',
     motivation: ''
   });
+  const [honeypot, setHoneypot] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,13 +62,48 @@ export default function BetaRegistration() {
     setLoading(true);
     setError(null);
 
+    // 1. Anti-spam honeypot
+    if (honeypot) {
+      setError("Votre demande n'a pas pu être traitée. Requête suspecte.");
+      setLoading(false);
+      return;
+    }
+
+    // 2. Vérification des e-mails temporaires
+    const disposableDomains = [
+      'yopmail.com', 'yopmail.fr', 'tempmail.com', '10minutemail.com', 
+      'guerrillamail.com', 'mailinator.com', 'trashmail.com', 'jetable.org', 
+      'temp-mail.org', 'tempmail.net', 'throwawaymail.com', 'tempmail.ninja', 
+      'guerrillamail.net', 'guerrillamail.org'
+    ];
+    const emailDomain = formData.email.split('@')[1]?.toLowerCase();
+    
+    if (emailDomain && disposableDomains.includes(emailDomain)) {
+      setError("Les adresses e-mail temporaires ne sont pas autorisées.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 1. Sauvegarder en base de données
+      // 3. Vérification des doublons (e-mail déjà utilisé)
+      const { data: existingEmailApp } = await supabase
+        .from('beta_applications')
+        .select('id')
+        .eq('email', formData.email.trim())
+        .maybeSingle();
+
+      if (existingEmailApp) {
+        setError("Cette adresse e-mail a déjà été utilisée pour une demande.");
+        setLoading(false);
+        return;
+      }
+
+      // 4. Sauvegarder en base de données
       const { error: dbError } = await supabase
         .from('beta_applications')
         .insert([{
           pseudo: formData.pseudo,
-          email: formData.email,
+          email: formData.email.trim(),
           motivation: formData.motivation,
           ip_address: userIp
         }]);
@@ -88,15 +124,12 @@ export default function BetaRegistration() {
 
   if (success) {
     return (
-      <div 
-        className="min-h-screen flex flex-col items-center justify-center p-4 relative"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${bgImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed'
-        }}
-      >
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0">
+          <source src={bgVideo} type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-black/50 z-0"></div>
+        
         <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl max-w-lg w-full text-center relative z-10">
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8" />
@@ -117,15 +150,12 @@ export default function BetaRegistration() {
   }
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center p-4 py-12 relative"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${bgImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
-    >
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 py-12 relative overflow-hidden">
+      <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover z-0">
+        <source src={bgVideo} type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-black/50 z-0"></div>
+
       <div className="mb-8 relative z-10">
         <a href="/">
           <img src={logo} alt="Frilya" className="h-10 w-auto mx-auto brightness-0 invert" />
@@ -201,6 +231,19 @@ export default function BetaRegistration() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Champ Honeypot (invisible) */}
+          <div style={{ display: 'none' }} aria-hidden="true">
+            <label>Ne pas remplir ce champ si vous êtes humain</label>
+            <input 
+              type="text" 
+              name="website" 
+              tabIndex={-1} 
+              autoComplete="off" 
+              value={honeypot} 
+              onChange={(e) => setHoneypot(e.target.value)} 
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Pseudo</label>
             <input
