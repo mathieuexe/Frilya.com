@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { Loader2, ArrowLeft, CheckCircle2, X, Plus, Trash2, UploadCloud, Image as ImageIcon, Video } from 'lucide-react';
+import { CATEGORY_HIERARCHY } from '../../../lib/categories';
 
 type PackageType = {
   id?: string | null;
@@ -461,6 +462,9 @@ export default function CreateService() {
     return <div className="py-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-frilya-600" /></div>;
   }
 
+  const selectedCategoryName = categories.find(c => c.id.toString() === formData.category_id)?.name;
+  const availableSubCategories = selectedCategoryName ? CATEGORY_HIERARCHY[selectedCategoryName] || [] : [];
+
   return (
     <div className="max-w-5xl mx-auto pb-24">
       {/* En-tête */}
@@ -544,13 +548,17 @@ export default function CreateService() {
             </div>
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Sous-catégorie</label>
-              <input
-                type="text"
+              <select
                 value={formData.sub_category}
                 onChange={(e) => setFormData({...formData, sub_category: e.target.value})}
-                placeholder="Ex: Minimaliste, 3D, Vintage..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-frilya-600/20 focus:border-frilya-600 outline-none"
-              />
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:ring-2 focus:ring-frilya-600/20 focus:border-frilya-600 outline-none disabled:opacity-50"
+                disabled={!formData.category_id}
+              >
+                <option value="">Sélectionnez une sous-catégorie</option>
+                {availableSubCategories.map(sub => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
             </div>
           </div>
 

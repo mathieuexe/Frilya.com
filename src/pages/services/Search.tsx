@@ -30,10 +30,13 @@ export default function Search() {
           .eq('status', 'active');
 
         if (q) {
-          query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+          query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%,sub_category.ilike.%${q}%`);
         }
         if (cat) {
-          query = query.eq('category_id', cat); // or category name depending on DB
+          const { data: catData } = await supabase.from('categories').select('id').eq('slug', cat).maybeSingle();
+          if (catData) {
+            query = query.eq('category_id', catData.id);
+          }
         }
 
         const { data, error } = await query.order('created_at', { ascending: false });

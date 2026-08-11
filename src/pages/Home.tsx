@@ -1,16 +1,21 @@
 import { Link } from 'react-router-dom';
-import { Search, Star } from 'lucide-react';
+import { 
+  Search,
+  Palette, 
+  TrendingUp, 
+  Briefcase, 
+  Video as VideoIcon, 
+  Code, 
+  PenTool, 
+  Share2 as ShareIcon, 
+  GraduationCap, 
+  Coffee,
+  Star 
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Icons imports
-import artIcon from '../assets/art.png';
-import videoIcon from '../assets/video.png';
-import scriptIcon from '../assets/script.png';
-import copyWritingIcon from '../assets/copy-writing.png';
-import seoIcon from '../assets/map-with-a-pin-small-symbol-inside-a-circle.png';
-import advertisingIcon from '../assets/advertising.png';
-
+// Images (on garde que les illustrations nécessaires, on supprime les icones PNG inutilisées)
 import sarahImg from '../assets/Sarah.png';
 import thomasImg from '../assets/Thomas.png';
 import leaImg from '../assets/Léa.png';
@@ -70,13 +75,16 @@ export default function Home() {
     fetchRecentServices();
   }, []);
 
-  const categories = [
-    { name: 'Logo', icon: artIcon },
-    { name: 'Montage vidéo', icon: videoIcon },
-    { name: 'Développement web', icon: scriptIcon },
-    { name: 'Rédaction', icon: copyWritingIcon },
-    { name: 'SEO', icon: seoIcon },
-    { name: 'Community Management', icon: advertisingIcon },
+  const categoryCards = [
+    { name: 'Design & Graphisme', icon: Palette, slug: 'design-graphisme' },
+    { name: 'Marketing digital', icon: TrendingUp, slug: 'marketing-digital' },
+    { name: 'Business', icon: Briefcase, slug: 'business' },
+    { name: 'Audiovisuel', icon: VideoIcon, slug: 'audiovisuel' },
+    { name: 'Site & Développement', icon: Code, slug: 'site-developpement' },
+    { name: 'Rédaction', icon: PenTool, slug: 'redaction' },
+    { name: 'Réseaux sociaux', icon: ShareIcon, slug: 'reseaux-sociaux' },
+    { name: 'Formations & Coaching', icon: GraduationCap, slug: 'formations-coaching' },
+    { name: 'Vie quotidienne', icon: Coffee, slug: 'vie-quotidienne' },
   ];
 
   const featuredFreelances = [
@@ -156,13 +164,13 @@ export default function Home() {
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-frilya-200">
-              <span className="font-bold">Populaire :</span>
-              {categories.slice(0, 3).map(cat => (
-                <Link key={cat.name} to={`/search?q=${cat.name}`} className="hover:text-white hover:underline transition-all">
-                  {cat.name}
-                </Link>
-              ))}
-            </div>
+                <span className="font-bold">Populaire :</span>
+                {categoryCards.slice(0, 3).map(cat => (
+                  <Link key={cat.name} to={`/search?category=${cat.slug}`} className="hover:text-white hover:underline transition-all">
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
           </div>
 
           {/* Right Cards (Featured Freelances) */}
@@ -213,15 +221,15 @@ export default function Home() {
             Explorez par catégorie
           </h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((cat) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {categoryCards.map((cat) => (
               <Link 
                 key={cat.name} 
-                to={`/search?category=${cat.name}`}
+                to={`/search?category=${cat.slug}`}
                 className="group flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl hover:bg-frilya-50 border border-transparent hover:border-frilya-100 transition-all cursor-pointer"
               >
-                <div className="w-12 h-12 mb-4 group-hover:scale-110 transition-transform">
-                  <img src={cat.icon} alt={cat.name} className="w-full h-full object-contain" />
+                <div className="w-12 h-12 mb-4 group-hover:scale-110 transition-transform bg-white rounded-2xl shadow-sm flex items-center justify-center">
+                  <cat.icon className="w-6 h-6 text-frilya-600" />
                 </div>
                 <span className="font-bold text-slate-700 text-center text-sm">{cat.name}</span>
               </Link>
