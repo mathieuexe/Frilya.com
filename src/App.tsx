@@ -33,6 +33,7 @@ function AppRoutes() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [isBetaActiveGlobal, setIsBetaActiveGlobal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -85,6 +86,7 @@ function AppRoutes() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
+        setIsAuthenticated(true);
         const { data: profile } = await supabase
           .from('profiles')
           .select('role, is_beta, beta_end_date')
@@ -101,6 +103,7 @@ function AppRoutes() {
           
         setIsAdmin(profile?.role === 'admin');
       } else {
+        setIsAuthenticated(false);
         setIsAdmin(false);
       }
     } catch (err) {
@@ -131,7 +134,8 @@ function AppRoutes() {
 
   // Si le mode Beta est activé globalement et que l'utilisateur est sur l'accueil,
   // on le redirige vers /beta (Page par défaut de la plateforme en phase bêta)
-  if (isBetaActiveGlobal && location.pathname === '/') {
+  // SAUF s'il est déjà connecté avec un accès valide !
+  if (isBetaActiveGlobal && location.pathname === '/' && !isAuthenticated) {
     return <Navigate to="/beta" replace />;
   }
 
