@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import { Mail, ShieldCheck } from 'lucide-react';
-import stripeLogo from '../../assets/stripe.svg';
 import pciLogo from '../../assets/pci-dss-compliant-logo-vector.svg';
 import creditCardIcon from '../../assets/credit-card.png';
 
@@ -61,8 +60,7 @@ export default function Footer() {
                 Paiement chiffré de bout en bout par Stripe.
               </p>
               <div className="flex items-center gap-3">
-                <img src={stripeLogo} alt="Stripe" className="h-6 opacity-60 grayscale" />
-                <img src={pciLogo} alt="PCI DSS Compliant" className="h-6 opacity-60 grayscale" />
+                <img src={pciLogo} alt="PCI DSS Compliant" className="h-10 opacity-60 grayscale" />
               </div>
             </div>
           </div>
