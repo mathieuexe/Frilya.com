@@ -145,8 +145,20 @@ export default function SellerDashboard() {
               )}
             </nav>
 
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <button 
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  navigate('/');
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+              >
+                Se déconnecter
+              </button>
+            </div>
+
             {!profile?.is_beta && (
-              <div className="mt-8">
+              <div className="mt-4">
                 <Link 
                   to="/dashboard/vendeur/services/nouveau"
                   className="w-full flex items-center justify-center gap-2 bg-frilya-600 hover:bg-frilya-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm"

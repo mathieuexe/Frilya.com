@@ -19,10 +19,19 @@ export default function BetaRegistration() {
   const [existingRequest, setExistingRequest] = useState<any>(null);
   const [checkingIp, setCheckingIp] = useState(true);
   const [userIp, setUserIp] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     const checkStatus = async () => {
       try {
+        // 0. Check Auth
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsAuthenticated(true);
+          const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+          setUserProfile(profile);
+        }
         // 1. Check if Beta is active
         const { data: settingsData } = await supabase
           .from('settings')
@@ -195,9 +204,21 @@ export default function BetaRegistration() {
             <a href="/" className="inline-block bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-8 rounded-xl transition-colors">
               Retour
             </a>
-            <a href="/auth" className="inline-block bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3 px-8 rounded-xl transition-colors">
-              Se connecter
-            </a>
+            {!isAuthenticated ? (
+              <a href="/auth" className="inline-block bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3 px-8 rounded-xl transition-colors">
+                Se connecter
+              </a>
+            ) : (
+              <button 
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.reload();
+                }} 
+                className="inline-block bg-red-50 hover:bg-red-100 text-red-600 font-bold py-3 px-8 rounded-xl transition-colors border border-red-200"
+              >
+                Se déconnecter
+              </button>
+            )}
           </div>
         </div>
       ) : (
@@ -210,10 +231,34 @@ export default function BetaRegistration() {
             </p>
             
             <div className="pt-4 border-t border-slate-100">
-              <p className="text-sm text-slate-500 mb-3">Vous avez déjà un compte Bêta ?</p>
-              <a href="/auth" className="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto">
-                Se connecter à son compte Bêta
-              </a>
+              {isAuthenticated ? (
+                <>
+                  <p className="text-sm text-slate-500 mb-3">
+                    Connecté en tant que <strong>{userProfile?.full_name || 'Utilisateur'}</strong>
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a href="/dashboard" className="inline-flex items-center justify-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto">
+                      Accéder à mon espace
+                    </a>
+                    <button 
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        window.location.reload();
+                      }}
+                      className="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto"
+                    >
+                      Se déconnecter
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-500 mb-3">Vous avez déjà un compte Bêta ?</p>
+                  <a href="/auth" className="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto">
+                    Se connecter à son compte Bêta
+                  </a>
+                </>
+              )}
             </div>
           </div>
 

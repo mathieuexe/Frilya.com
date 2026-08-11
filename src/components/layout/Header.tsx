@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Search, Menu } from 'lucide-react';
+import { Search, Menu, LogOut, LayoutDashboard } from 'lucide-react';
 import logo from '../../assets/logo.png';
 import { useState, useEffect } from 'react';
 import chatIcon from '../../assets/chat.png';
@@ -13,6 +13,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -95,18 +96,59 @@ export default function Header() {
               <img src={notificationBellIcon} alt="Notifications" className="w-5 h-5 opacity-70" />
             </Link>
             <div className="flex items-center gap-2 p-1.5 pr-3 bg-slate-50 border border-slate-200 rounded-full ml-2 relative">
-              <Link to={getDashboardLink()} className="flex items-center gap-2 hover:bg-slate-100 rounded-full transition-all">
-                <div className="w-7 h-7 bg-frilya-100 rounded-full flex items-center justify-center overflow-hidden">
-                  {userProfile ? (
-                    <img src={userProfile.avatar_url || catAvatar} alt={userProfile.full_name} className="w-full h-full object-cover" />
-                  ) : (
-                    <img src={userIcon} alt="Mon compte" className="w-4 h-4 opacity-70" />
+              {userProfile ? (
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                    className="flex items-center gap-2 hover:bg-slate-100 rounded-full transition-all outline-none"
+                  >
+                    <div className="w-7 h-7 bg-frilya-100 rounded-full flex items-center justify-center overflow-hidden">
+                      <img src={userProfile.avatar_url || catAvatar} alt={userProfile.full_name} className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700 max-w-[100px] truncate">
+                      {userProfile.full_name}
+                    </span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isUserDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsUserDropdownOpen(false)}></div>
+                      <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <Link 
+                          to={getDashboardLink()} 
+                          onClick={() => setIsUserDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-frilya-600 transition-colors"
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          Mon tableau de bord
+                        </Link>
+                        <div className="h-px bg-slate-100 my-2"></div>
+                        <button 
+                          onClick={async () => {
+                            setIsUserDropdownOpen(false);
+                            await supabase.auth.signOut();
+                            window.location.reload();
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors text-left"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Se déconnecter
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
-                <span className="text-sm font-bold text-slate-700 max-w-[100px] truncate">
-                  {userProfile ? userProfile.full_name : 'Mon compte'}
-                </span>
-              </Link>
+              ) : (
+                <Link to="/auth" className="flex items-center gap-2 hover:bg-slate-100 rounded-full transition-all">
+                  <div className="w-7 h-7 bg-frilya-100 rounded-full flex items-center justify-center overflow-hidden">
+                    <img src={userIcon} alt="Mon compte" className="w-4 h-4 opacity-70" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-700 max-w-[100px] truncate">
+                    Se connecter
+                  </span>
+                </Link>
+              )}
               
               {userProfile?.is_verified && (
                 <button 
@@ -163,6 +205,19 @@ export default function Header() {
                 <img src={chatIcon} alt="Messages" className="w-4 h-4 opacity-70" /> Messages
               </Link>
             </div>
+            
+            {userProfile && (
+              <button 
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.reload();
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 font-bold py-2.5 rounded-xl text-sm border border-red-100"
+              >
+                <LogOut className="w-4 h-4" /> Se déconnecter
+              </button>
+            )}
+
             <Link to="/vendeur/onboarding" className="block text-center w-full bg-frilya-900 text-white font-bold py-2.5 rounded-xl text-sm">
               Devenir vendeur
             </Link>
