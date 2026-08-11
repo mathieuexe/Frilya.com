@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Briefcase, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowRight, Loader2, CheckCircle } from 'lucide-react';
 import equipeImg from '../../assets/equipe.png';
 
 export default function Onboarding() {

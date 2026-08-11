@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
-import { ShieldCheck, Heart, Mail } from 'lucide-react';
+import { Mail, ShieldCheck } from 'lucide-react';
 import stripeLogo from '../../assets/stripe.svg';
 import pciLogo from '../../assets/pci-dss-compliant-logo-vector.svg';
 import creditCardIcon from '../../assets/credit-card.png';

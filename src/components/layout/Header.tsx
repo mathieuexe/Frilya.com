@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Search, Menu, User, Bell, MessageSquare } from 'lucide-react';
+import { Search, Menu } from 'lucide-react';
 import logo from '../../assets/logo.png';
 import { useState } from 'react';
+import chatIcon from '../../assets/chat.png';
+import notificationBellIcon from '../../assets/notification-bell.png';
+import userIcon from '../../assets/user.png';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,16 +38,16 @@ export default function Header() {
           </Link>
           
           <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
-            <Link to="/messages" className="p-2 text-slate-500 hover:text-frilya-600 hover:bg-slate-50 rounded-full transition-all relative">
-              <MessageSquare className="w-5 h-5" />
+            <Link to="/messages" className="p-2 hover:bg-slate-50 rounded-full transition-all relative">
+              <img src={chatIcon} alt="Messages" className="w-5 h-5 opacity-70" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
             </Link>
-            <Link to="/notifications" className="p-2 text-slate-500 hover:text-frilya-600 hover:bg-slate-50 rounded-full transition-all">
-              <Bell className="w-5 h-5" />
+            <Link to="/notifications" className="p-2 hover:bg-slate-50 rounded-full transition-all">
+              <img src={notificationBellIcon} alt="Notifications" className="w-5 h-5 opacity-70" />
             </Link>
             <Link to="/dashboard" className="flex items-center gap-2 p-1.5 pr-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full transition-all ml-2">
-              <div className="w-7 h-7 bg-frilya-100 text-frilya-600 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4" />
+              <div className="w-7 h-7 bg-frilya-100 rounded-full flex items-center justify-center">
+                <img src={userIcon} alt="Mon compte" className="w-4 h-4 opacity-70" />
               </div>
               <span className="text-sm font-bold text-slate-700">Mon compte</span>
             </Link>
@@ -74,10 +77,10 @@ export default function Header() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Link to="/dashboard" className="flex items-center justify-center gap-2 bg-slate-50 py-2.5 rounded-xl text-sm font-bold text-slate-700 border border-slate-100">
-                <User className="w-4 h-4" /> Compte
+                <img src={userIcon} alt="Compte" className="w-4 h-4 opacity-70" /> Compte
               </Link>
               <Link to="/messages" className="flex items-center justify-center gap-2 bg-slate-50 py-2.5 rounded-xl text-sm font-bold text-slate-700 border border-slate-100">
-                <MessageSquare className="w-4 h-4" /> Messages
+                <img src={chatIcon} alt="Messages" className="w-4 h-4 opacity-70" /> Messages
               </Link>
             </div>
             <Link to="/vendeur/onboarding" className="block text-center w-full bg-frilya-900 text-white font-bold py-2.5 rounded-xl text-sm">

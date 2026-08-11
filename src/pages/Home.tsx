@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Search, Star, ShieldCheck, Zap, Users } from 'lucide-react';
+import { Search, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
