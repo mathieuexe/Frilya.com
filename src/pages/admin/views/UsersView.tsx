@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Loader2, Search, MoreVertical, ShieldAlert, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Search, Edit, Trash2, CheckCircle } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import verifiedIcon from '../../../assets/verified.png';
 

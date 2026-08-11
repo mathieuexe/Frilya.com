@@ -1,4 +1,4 @@
-import { Users, ShoppingBag, DollarSign, AlertCircle } from 'lucide-react';
+import { Users, ShoppingBag, AlertCircle } from 'lucide-react';
 
 export default function DashboardView({ stats }: { stats: any }) {
   return (
