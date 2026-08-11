@@ -31,6 +31,7 @@ import BetaRegistrationPage from './pages/BetaRegistration';
 function AppRoutes() {
   const [loading, setLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [isBetaActiveGlobal, setIsBetaActiveGlobal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
 
@@ -40,14 +41,21 @@ function AppRoutes() {
 
   const checkStatus = async () => {
     try {
-      // 1. Vérifier si on est en maintenance
+      // 1. Vérifier si on est en maintenance & si beta est active
       const { data: settingsData } = await supabase
         .from('settings')
-        .select('value')
-        .eq('key', 'maintenance_mode')
-        .single();
+        .select('key, value')
+        .in('key', ['maintenance_mode', 'beta_mode_active']);
         
-      let isMaintenance = settingsData?.value === true || settingsData?.value === 'true';
+      let isMaintenance = false;
+      let isBeta = false;
+
+      settingsData?.forEach(setting => {
+        if (setting.key === 'maintenance_mode') isMaintenance = setting.value === true || setting.value === 'true';
+        if (setting.key === 'beta_mode_active') isBeta = setting.value === true || setting.value === 'true';
+      });
+
+      setIsBetaActiveGlobal(isBeta);
 
       // 1b. Vérifier si l'IP est autorisée (whitelist)
       if (isMaintenance) {
@@ -119,6 +127,12 @@ function AppRoutes() {
   } else if (!maintenanceMode && location.pathname === '/maintenance') {
     // Si la maintenance est désactivée et qu'on est sur /maintenance, on retourne à l'accueil
     return <Navigate to="/" replace />;
+  }
+
+  // Si le mode Beta est activé globalement et que l'utilisateur est sur l'accueil,
+  // on le redirige vers /beta (Page par défaut de la plateforme en phase bêta)
+  if (isBetaActiveGlobal && location.pathname === '/') {
+    return <Navigate to="/beta" replace />;
   }
 
   return (
