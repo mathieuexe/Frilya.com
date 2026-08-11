@@ -6,10 +6,14 @@ import jsPDF from 'jspdf';
 import { supabase } from './lib/supabase';
 import logo from './assets/logo.png';
 
+// Layouts
+import MainLayout from './components/layout/MainLayout';
+
 // Pages
 import MaintenancePage from './pages/Maintenance';
 import AuthPage from './pages/Auth';
 import AdminPage from './pages/Admin';
+import BuyerDashboard from './pages/dashboard/BuyerDashboard';
 
 // Clé publique Stripe
 const stripePromise = loadStripe('pk_live_51Sr1HLCs5mrUe8SK0iyQYCu3YnamJqg201mb2OHoNWbCp2FjBZr5THWSALzhj1RokspGYUl7IEMvr6K9M1KsCY7200VHU7oucA');
@@ -76,24 +80,6 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-frilya-100 selection:text-frilya-900 pb-32">
-      {/* Header Corporate */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          <div className="flex items-center">
-            <img src={logo} alt="Frilya" className="h-10 w-auto" />
-          </div>
-          <a 
-            href="https://discord.gg/3nmBgXX5Ef" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="hidden md:flex items-center gap-2 text-sm font-bold text-frilya-900 hover:text-[#5865F2] transition-colors bg-slate-50 hover:bg-indigo-50 px-4 py-2.5 rounded-full border border-slate-200 hover:border-[#5865F2]/30"
-          >
-            <DiscordIcon className="w-5 h-5 text-[#5865F2]" />
-            Rejoindre Discord
-          </a>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12 max-w-3xl">
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
@@ -187,14 +173,6 @@ function Home() {
           </div>
         </div>
       </main>
-
-      {/* Footer Lexique */}
-      <footer className="container mx-auto px-4 text-center pb-8">
-        <p className="text-sm text-slate-400 italic flex items-center justify-center gap-2">
-          <ShieldCheck className="w-4 h-4" />
-          *plateforme = Notre site internet (frilya.com)
-        </p>
-      </footer>
 
       {/* Widget Donation (Fixed Bottom Right) */}
       <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex flex-col items-end">
@@ -560,7 +538,18 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<Home />} />
+        {/* Dashboard Acheteur */}
+        <Route path="/dashboard" element={<BuyerDashboard />}>
+          <Route path="commandes" element={<div>Mes commandes</div>} />
+          <Route path="favoris" element={<div>Mes favoris</div>} />
+          <Route path="litiges" element={<div>Mes litiges</div>} />
+          <Route path="parametres" element={<div>Paramètres</div>} />
+        </Route>
+      </Route>
+      
+      {/* Routes sans layout standard (plein écran) */}
       <Route path="/success" element={<Success />} />
       <Route path="/maintenance" element={<MaintenancePage />} />
       <Route path="/auth" element={<AuthPage />} />

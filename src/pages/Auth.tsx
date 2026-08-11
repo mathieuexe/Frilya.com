@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Loader2, ArrowRight } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Lock, Mail, Loader2, ArrowRight, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
 
@@ -9,6 +9,7 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -26,14 +27,25 @@ export default function Auth() {
           password,
         });
         if (signInError) throw signInError;
-        navigate('/'); // Redirection après connexion
+        navigate('/dashboard'); // Redirection après connexion vers le dashboard
       } else {
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              full_name: fullName,
+            }
+          }
         });
         if (signUpError) throw signUpError;
-        setMessage('Inscription réussie ! Vérifiez votre email pour confirmer votre compte (si activé), ou connectez-vous directement.');
+        
+        // Note: The handle_new_user trigger in schema.sql will create the profile
+        // but we might need to update it with the full_name here if auto-login happens
+        // or wait for the user to verify their email.
+        // For simplicity, we just show a message.
+        
+        setMessage('Inscription réussie ! Vous pouvez maintenant vous connecter (ou vérifier votre email si requis).');
         setIsLogin(true);
       }
     } catch (err: any) {
@@ -47,9 +59,9 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 selection:bg-frilya-100">
       <div className="mb-8">
-        <a href="/">
+        <Link to="/">
           <img src={logo} alt="Frilya" className="h-12 w-auto" />
-        </a>
+        </Link>
       </div>
 
       <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-md w-full">
@@ -75,6 +87,25 @@ export default function Auth() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Nom complet</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-frilya-600/20 focus:border-frilya-600 transition-all outline-none"
+                  placeholder="Jean Dupont"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Adresse Email</label>
             <div className="relative">
