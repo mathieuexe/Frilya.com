@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Send, Loader2, User } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Messages() {
