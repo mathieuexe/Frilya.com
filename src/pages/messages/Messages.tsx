@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Send, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Messages() {
+export default function Messages({ inDashboard = false }: { inDashboard?: boolean }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<any[]>([]);
@@ -83,7 +83,7 @@ export default function Messages() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 h-[calc(100vh-140px)] flex gap-6">
+    <div className={inDashboard ? "h-[calc(100vh-200px)] flex gap-6" : "container mx-auto px-4 py-8 h-[calc(100vh-140px)] flex gap-6"}>
       
       {/* Liste des conversations (Sidebar) */}
       <div className="w-1/3 bg-white rounded-3xl border border-slate-200 shadow-sm hidden md:flex flex-col overflow-hidden">

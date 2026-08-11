@@ -34,8 +34,8 @@ export default function BuyerDashboard() {
   const navItems = [
     { name: 'Vue d\'ensemble', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Mes commandes', path: '/dashboard/commandes', icon: Package },
+    { name: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
     { name: 'Favoris', path: '/dashboard/favoris', icon: Heart },
-    { name: 'Messages', path: '/messages', icon: MessageSquare },
     { name: 'Litiges', path: '/dashboard/litiges', icon: AlertTriangle },
     { name: 'Paramètres', path: '/dashboard/parametres', icon: Settings },
   ];

@@ -98,6 +98,7 @@ function AppRoutes() {
         {/* Dashboard Acheteur */}
         <Route path="/dashboard" element={<BuyerDashboard />}>
           <Route path="commandes" element={<Orders />} />
+          <Route path="messages" element={<MessagesPage inDashboard={true} />} />
           <Route path="favoris" element={<Favorites />} />
           <Route path="litiges" element={<Disputes />} />
           <Route path="parametres" element={<Settings />} />
@@ -109,6 +110,7 @@ function AppRoutes() {
           <Route path="services" element={<div>Mes services</div>} />
           <Route path="services/nouveau" element={<CreateServicePage />} />
           <Route path="commandes" element={<Orders />} />
+          <Route path="messages" element={<MessagesPage inDashboard={true} />} />
           <Route path="litiges" element={<Disputes />} />
           <Route path="parametres" element={<Settings />} />
         </Route>

@@ -46,7 +46,7 @@ export default function SellerDashboard() {
     { name: 'Vue d\'ensemble', path: '/dashboard/vendeur', icon: LayoutDashboard },
     { name: 'Mes services', path: '/dashboard/vendeur/services', customIcon: repairToolIcon },
     { name: 'Commandes reçues', path: '/dashboard/vendeur/commandes', customIcon: checkoutIcon },
-    { name: 'Messages', path: '/messages', customIcon: chatIcon },
+    { name: 'Messages', path: '/dashboard/vendeur/messages', customIcon: chatIcon },
     { name: 'Litiges', path: '/dashboard/vendeur/litiges', icon: AlertTriangle },
     { name: 'Paramètres pro', path: '/dashboard/vendeur/parametres', icon: Settings },
   ];
