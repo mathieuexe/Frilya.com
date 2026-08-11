@@ -1,32 +1,20 @@
-# React + TypeScript + Vite
+# Frilya - Les talents français pour tous vos projets
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frilya est une plateforme web de type marketplace de freelances (sur le modèle de Fiverr / ComeUP.com), destinée au marché français.
+Le principe directeur est la **simplicité maximale d'utilisation**.
 
-Currently, two official plugins are available:
+Pour consulter le cahier des charges complet du projet, veuillez vous référer au fichier [PRD.md](./docs/PRD.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack Technique
 
-## React Compiler
+- **Frontend:** React, Vite, TailwindCSS
+- **Backend/Database:** Supabase (PostgreSQL, Auth, Storage)
+- **Paiements:** Stripe Connect
+- **Routage:** React Router DOM
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Scripts disponibles
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- `npm run dev` : Lance le serveur de développement
+- `npm run build` : Compile le projet pour la production
+- `npm run lint` : Vérifie le code avec oxlint
+- `npm run preview` : Prévisualise le build de production
