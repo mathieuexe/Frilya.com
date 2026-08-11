@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useSearchParams } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
-import { Heart, Download, CheckCircle, X, Server, Code, Crown, Star, Zap, Info, ShieldCheck, Lock } from 'lucide-react';
+import { Heart, Download, CheckCircle, X, Server, Code, Crown, Star, Zap, ShieldCheck, Lock } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { supabase } from './lib/supabase';
 import logo from './assets/logo.png';
@@ -92,70 +92,92 @@ function Home() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12 max-w-3xl">
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="bg-frilya-900 px-8 py-14 text-center relative overflow-hidden">
-            {/* Abstract Background element */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-2xl opacity-20 pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-r from-frilya-600 to-frilya-500 blur-3xl rounded-full mix-blend-screen"></div>
-            </div>
+          
+          {/* Header Article */}
+          <div className="px-8 md:px-12 pt-12 pb-8 border-b border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-frilya-900 via-frilya-600 to-frilya-500"></div>
             
-            <div className="relative z-10">
-              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">
-                Mise à jour du projet
-              </h1>
-              <p className="text-blue-100 text-lg md:text-xl font-medium max-w-xl mx-auto">
-                Une nouvelle direction pour une plateforme indépendante et pérenne.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-8 md:p-12 space-y-6 text-slate-600 text-lg leading-relaxed">
-            <p className="font-bold text-slate-900 text-xl">Bonjour @everyone,</p>
-            <p>
-              Je viens vous tenir au courant concernant Frilya, et j'ai pris une décision radicale : <strong className="text-frilya-900">on efface tout et on recommence.</strong> 😅
-            </p>
-            
-            <h2 className="text-2xl font-bold text-frilya-900 mt-12 mb-6 flex items-center gap-3">
-              <div className="bg-frilya-50 p-2 rounded-lg border border-frilya-100">
-                <Info className="w-6 h-6 text-frilya-600" />
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-frilya-50 p-2 rounded-xl border border-frilya-100 flex items-center justify-center">
+                <img src={logo} alt="Frilya" className="h-6 w-auto object-contain" />
               </div>
-              Quoi, pourquoi ?
-            </h2>
+              <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Note du fondateur</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+              <span className="text-xs font-bold tracking-widest text-frilya-600 uppercase">Août 2026</span>
+            </div>
             
-            <p>
-              Au départ, j'avais codé le site via un outil de « no code » qui s'appelle Zite. Ça m'a fait gagner du temps, ça ne m'a pas coûté grand-chose et le site était là, prêt ou presque. Mais voilà :
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-4">
+              Refonte de l'infrastructure
+            </h1>
+            <p className="text-lg text-slate-500 font-medium">
+              Pourquoi nous faisons le choix de l'indépendance technologique pour l'avenir de la plateforme.
             </p>
-            <p>
-              Zite, c'est du « vibe coding », jusqu'ici, pourquoi pas. Mais c'est surtout être dépendant de leur système. Par exemple, le système de connexion est propre à Zite et je ne peux pas le modifier. Un peu relou... 😅
+          </div>
+
+          {/* Body Article */}
+          <div className="px-8 md:px-12 py-10 space-y-8 text-slate-600 text-lg leading-relaxed">
+            <p className="text-xl text-slate-800 font-medium leading-snug">
+              Bonjour à tous. Je viens vous tenir informés concernant l'évolution de Frilya. J'ai pris une décision radicale : <strong className="text-frilya-900">nous effaçons tout et nous recommençons.</strong>
             </p>
-            
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 my-8 shadow-inner">
-              <p className="text-slate-700 font-medium">
-                J'ai donc pris la décision de <strong className="text-frilya-600">le faire moi-même</strong>. Ça va prendre plus de temps et ça va également me demander plus d'argent, mais Frilya verra le jour ! 💪
-              </p>
+
+            <div className="flex items-center gap-4 py-2">
+              <div className="h-px bg-slate-100 flex-1"></div>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Le Constat</h2>
+              <div className="h-px bg-slate-100 flex-1"></div>
             </div>
 
             <p>
-              Quand ? Je ne sais pas encore. Je suis actuellement pris dans un grand déménagement de dernière minute : je déménage à plus de 1000 km et ce n'était absolument pas prévu...
+              Au départ, j'avais développé le site via un outil « no-code » (Zite). Cela m'a fait gagner un temps précieux et la plateforme était presque prête. Mais une réalité technique s'est imposée : le « vibe coding » a ses limites.
+            </p>
+            <p>
+              Nous étions totalement dépendants de leur écosystème. Par exemple, le système de connexion leur était propre et impossible à modifier. Une contrainte inacceptable pour garantir votre sécurité et la pérennité du projet.
+            </p>
+
+            <div className="my-10 bg-frilya-50/50 border border-frilya-100 rounded-2xl p-8 relative overflow-hidden shadow-inner">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-frilya-600"></div>
+              <h3 className="text-lg font-bold text-frilya-900 mb-3 flex items-center gap-2">
+                <Code className="w-5 h-5 text-frilya-600" />
+                La Décision
+              </h3>
+              <p className="text-slate-700 font-medium m-0">
+                J'ai donc décidé de <strong className="text-frilya-600">développer la plateforme moi-même</strong>, avec des outils professionnels. Cela demandera plus de temps et d'investissement financier, mais c'est la seule voie pour que Frilya voit le jour de manière solide et sur-mesure.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 py-2">
+              <div className="h-px bg-slate-100 flex-1"></div>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">La Suite</h2>
+              <div className="h-px bg-slate-100 flex-1"></div>
+            </div>
+
+            <p>
+              <strong>Quand ?</strong> La date de sortie reste à définir. Je suis actuellement pris dans un grand déménagement imprévu à plus de 1000 km, ce qui retarde logiquement le calendrier.
             </p>
             
-            <div className="mt-10 flex items-start gap-4 bg-frilya-50/50 p-6 rounded-2xl border border-frilya-100">
-              <Heart className="w-8 h-8 text-red-500 fill-current shrink-0 mt-1" />
-              <p className="text-slate-800 font-medium text-lg">
-                Alors merci pour votre patience et votre temps. Et promis, je n'abandonne pas le projet, loin de là !
+            <div className="mt-8 flex items-start gap-4">
+              <div className="bg-slate-50 border border-slate-100 p-3 rounded-full shrink-0">
+                <Heart className="w-5 h-5 text-slate-400" />
+              </div>
+              <p className="text-slate-500 italic text-base m-0 pt-2">
+                Merci infiniment pour votre patience et votre soutien. Je n'abandonne pas le projet, bien au contraire.
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-50 p-8 border-t border-slate-100 flex flex-col items-center justify-center text-center">
-            <h3 className="text-slate-900 font-bold mb-4">Restez informé de l'avancée du projet</h3>
+          {/* Footer Article */}
+          <div className="bg-slate-50 p-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-slate-900 font-bold mb-1">Restez informé</h3>
+              <p className="text-sm text-slate-500">Rejoignez la communauté pour suivre l'avancée.</p>
+            </div>
             <a 
               href="https://discord.gg/3nmBgXX5Ef" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-4 px-8 rounded-xl transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-[#5865F2]/25"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white hover:bg-[#5865F2] text-slate-700 hover:text-white font-bold py-3 px-6 rounded-xl transition-all border border-slate-200 hover:border-[#5865F2] shadow-sm hover:shadow-[#5865F2]/25 group"
             >
-              <DiscordIcon className="w-6 h-6 text-white" />
-              Rejoindre notre Discord
+              <DiscordIcon className="w-5 h-5 text-[#5865F2] group-hover:text-white transition-colors" />
+              Rejoindre Discord
             </a>
           </div>
         </div>
