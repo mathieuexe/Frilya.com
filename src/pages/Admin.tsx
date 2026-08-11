@@ -1,22 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Power, Loader2, ArrowLeft, LogOut, Percent, FileCheck, Check, X } from 'lucide-react';
+import { 
+  LogOut, LayoutDashboard, Users, ShoppingBag, 
+  MessageSquare, AlertTriangle, Settings, ShieldAlert, Loader2, ArrowLeft, Store
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
+
+// Import Views
+import DashboardView from './admin/views/DashboardView';
+import UsersView from './admin/views/UsersView';
+import MessagesView from './admin/views/MessagesView';
+import OrdersView from './admin/views/OrdersView';
+import DisputesView from './admin/views/DisputesView';
+import SettingsView from './admin/views/SettingsView';
+
+type Tab = 'dashboard' | 'buyers' | 'sellers' | 'messages' | 'orders' | 'disputes' | 'settings';
 
 export default function Admin() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [platformFee, setPlatformFee] = useState<string>('20');
-  const [actionLoading, setActionLoading] = useState(false);
-  const [feeLoading, setFeeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // RIB Verification State
-  const [pendingRibs, setPendingRibs] = useState<any[]>([]);
-  const [ribLoading, setRibLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [adminProfile, setAdminProfile] = useState<any>(null);
+
+  // Stats pour le dashboard
+  const [stats, setStats] = useState({
+    buyers: 0,
+    sellers: 0,
+    orders: 0,
+    disputes: 0
+  });
 
   useEffect(() => {
     checkAdminAccess();
@@ -24,7 +39,6 @@ export default function Admin() {
 
   const checkAdminAccess = async () => {
     try {
-      // Vérifier la session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       
@@ -33,10 +47,9 @@ export default function Admin() {
         return;
       }
 
-      // Vérifier le rôle
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('*')
         .eq('id', session.user.id)
         .single();
 
@@ -49,8 +62,8 @@ export default function Admin() {
       }
 
       setIsAdmin(true);
-      fetchSettings();
-      fetchPendingRibs();
+      setAdminProfile(profile);
+      fetchStats();
     } catch (err: any) {
       console.error("Erreur d'accès admin:", err);
       setError("Impossible de vérifier vos droits d'accès.");
@@ -58,116 +71,23 @@ export default function Admin() {
     }
   };
 
-  const fetchPendingRibs = async () => {
+  const fetchStats = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('rib_status', 'pending');
-        
-      if (error) throw error;
-      setPendingRibs(data || []);
+      const [buyersRes, sellersRes] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact' }).eq('role', 'acheteur').eq('is_seller', false),
+        supabase.from('profiles').select('id', { count: 'exact' }).eq('is_seller', true)
+      ]);
+
+      setStats({
+        buyers: buyersRes.count || 0,
+        sellers: sellersRes.count || 0,
+        orders: 0, // A implémenter quand la table sera prête
+        disputes: 0 // A implémenter quand la table sera prête
+      });
     } catch (err) {
-      console.error("Erreur lors de la récupération des RIB:", err);
-    }
-  };
-
-  const handleRibAction = async (userId: string, status: 'approved' | 'rejected') => {
-    setRibLoading(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ rib_status: status })
-        .eq('id', userId);
-        
-      if (error) throw error;
-      
-      // Update local state
-      setPendingRibs(prev => prev.filter(rib => rib.id !== userId));
-      alert(`RIB ${status === 'approved' ? 'approuvé' : 'refusé'} avec succès.`);
-    } catch (err) {
-      console.error("Erreur lors du traitement du RIB:", err);
-      alert("Une erreur est survenue lors du traitement.");
-    } finally {
-      setRibLoading(false);
-    }
-  };
-
-  const fetchSettings = async () => {
-    try {
-      const { data: maintenanceData, error: maintenanceError } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'maintenance_mode')
-        .single();
-
-      if (maintenanceError && maintenanceError.code !== 'PGRST116') throw maintenanceError;
-      
-      if (maintenanceData) {
-        setMaintenanceMode(maintenanceData.value === true || maintenanceData.value === 'true');
-      }
-
-      const { data: feeData, error: feeError } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'platform_fee_percentage')
-        .single();
-
-      if (feeError && feeError.code !== 'PGRST116') throw feeError;
-      
-      if (feeData) {
-        setPlatformFee(feeData.value.toString());
-      }
-    } catch (err: any) {
-      console.error("Erreur lors de la récupération des paramètres:", err);
-      // On continue sans bloquer, le paramètre sera peut-être créé au prochain clic
+      console.error("Erreur stats:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const toggleMaintenance = async () => {
-    setActionLoading(true);
-    setError(null);
-    try {
-      const newValue = !maintenanceMode;
-      
-      // Essayer de mettre à jour ou insérer
-      const { error: upsertError } = await supabase
-        .from('settings')
-        .upsert({ key: 'maintenance_mode', value: newValue }, { onConflict: 'key' });
-
-      if (upsertError) throw upsertError;
-      
-      setMaintenanceMode(newValue);
-    } catch (err: any) {
-      console.error("Erreur lors de la modification:", err);
-      setError("Impossible de modifier le mode maintenance. Vérifiez que la table 'settings' existe et que vous avez les droits RLS.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const savePlatformFee = async () => {
-    setFeeLoading(true);
-    setError(null);
-    try {
-      const feeNumber = parseFloat(platformFee);
-      if (isNaN(feeNumber) || feeNumber < 0 || feeNumber > 100) {
-        throw new Error("Le pourcentage de frais doit être un nombre entre 0 et 100.");
-      }
-
-      const { error: upsertError } = await supabase
-        .from('settings')
-        .upsert({ key: 'platform_fee_percentage', value: feeNumber.toString() }, { onConflict: 'key' });
-
-      if (upsertError) throw upsertError;
-      alert("Frais d'utilisation mis à jour avec succès.");
-    } catch (err: any) {
-      console.error("Erreur lors de la modification des frais:", err);
-      setError(err.message || "Impossible de modifier les frais d'utilisation.");
-    } finally {
-      setFeeLoading(false);
     }
   };
 
@@ -199,188 +119,126 @@ export default function Admin() {
     );
   }
 
+  const navCategories = [
+    {
+      title: 'Principal',
+      items: [
+        { id: 'dashboard', name: 'Tableau de bord', icon: LayoutDashboard }
+      ]
+    },
+    {
+      title: 'Utilisateurs',
+      items: [
+        { id: 'buyers', name: 'Acheteurs', icon: Users },
+        { id: 'sellers', name: 'Vendeurs', icon: Store }
+      ]
+    },
+    {
+      title: 'Activité',
+      items: [
+        { id: 'messages', name: 'Messages', icon: MessageSquare },
+        { id: 'orders', name: 'Commandes', icon: ShoppingBag },
+        { id: 'disputes', name: 'Litiges', icon: AlertTriangle }
+      ]
+    },
+    {
+      title: 'Système',
+      items: [
+        { id: 'settings', name: 'Paramètres', icon: Settings }
+      ]
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header Admin */}
-      <header className="bg-frilya-900 text-white shadow-md">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="Frilya" className="h-8 w-auto brightness-0 invert" />
-            <span className="font-bold border-l border-white/20 pl-3">Administration</span>
+    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row">
+      
+      {/* Sidebar Navigation */}
+      <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 min-h-screen md:sticky md:top-0">
+        <div className="h-16 flex items-center px-6 bg-slate-950/50 border-b border-white/5">
+          <img src={logo} alt="Frilya" className="h-6 w-auto brightness-0 invert" />
+          <span className="ml-3 font-bold text-white tracking-wide uppercase text-sm">Admin</span>
+        </div>
+
+        <div className="p-6 border-b border-white/5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center">
+            {adminProfile?.avatar_url ? (
+              <img src={adminProfile.avatar_url} alt="Admin" className="w-full h-full object-cover" />
+            ) : (
+              <ShieldAlert className="w-5 h-5 text-slate-400" />
+            )}
           </div>
+          <div>
+            <div className="text-sm font-bold text-white">{adminProfile?.full_name || 'Administrateur'}</div>
+            <div className="text-xs text-slate-500">Super Admin</div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-4">
+          {navCategories.map((cat, idx) => (
+            <div key={idx} className="mb-6">
+              <div className="px-6 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                {cat.title}
+              </div>
+              <nav className="space-y-1 px-3">
+                {cat.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id as Tab)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === item.id 
+                        ? 'bg-frilya-600 text-white' 
+                        : 'hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-white' : 'text-slate-400'}`} />
+                    {item.name}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-white/5">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4" />
+            Déconnexion
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
+          <h1 className="text-xl font-bold text-slate-900 capitalize">
+            {navCategories.flatMap(c => c.items).find(i => i.id === activeTab)?.name}
+          </h1>
           <div className="flex items-center gap-4">
-            <a href="/" className="text-white/80 hover:text-white text-sm font-medium transition-colors">
-              Voir le site
+            <a href="/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-500 hover:text-frilya-600 transition-colors">
+              Voir le site ↗
             </a>
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-sm transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Déconnexion
-            </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-12 max-w-4xl">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">Tableau de bord</h1>
-
-        {error && (
-          <div className="mb-8 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
-            <p className="text-sm font-medium">{error}</p>
+        {/* Dynamic View */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          <div className="max-w-7xl mx-auto">
+            {activeTab === 'dashboard' && <DashboardView stats={stats} />}
+            {activeTab === 'buyers' && <UsersView type="acheteur" />}
+            {activeTab === 'sellers' && <UsersView type="vendeur" />}
+            {activeTab === 'messages' && <MessagesView />}
+            {activeTab === 'orders' && <OrdersView />}
+            {activeTab === 'disputes' && <DisputesView />}
+            {activeTab === 'settings' && <SettingsView />}
           </div>
-        )}
+        </main>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Carte Maintenance */}
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Mode Maintenance</h2>
-                <p className="text-slate-500 text-sm mt-1">Activer ou désactiver l'accès au site</p>
-              </div>
-              <div className={`p-3 rounded-2xl ${maintenanceMode ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>
-                <Power className="w-6 h-6" />
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-slate-700">Statut actuel :</span>
-                <span className={`font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider ${maintenanceMode ? 'bg-amber-500 text-white' : 'bg-green-500 text-white'}`}>
-                  {maintenanceMode ? 'Activé' : 'Désactivé'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-3">
-                {maintenanceMode 
-                  ? "Les visiteurs sont redirigés vers la page /maintenance." 
-                  : "Le site est accessible normalement à tous les visiteurs."}
-              </p>
-            </div>
-
-            <button
-              onClick={toggleMaintenance}
-              disabled={actionLoading}
-              className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm ${
-                maintenanceMode 
-                  ? 'bg-slate-900 hover:bg-slate-800 text-white' 
-                  : 'bg-amber-500 hover:bg-amber-600 text-white'
-              } disabled:opacity-50`}
-            >
-              {actionLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Power className="w-5 h-5" />
-                  {maintenanceMode ? 'Désactiver la maintenance' : 'Activer la maintenance'}
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Carte Frais */}
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Frais d'utilisation Frilya</h2>
-                <p className="text-slate-500 text-sm mt-1">Commission prélevée sur chaque commande (en %)</p>
-              </div>
-              <div className="p-3 rounded-2xl bg-blue-100 text-blue-600">
-                <Percent className="w-6 h-6" />
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Pourcentage appliqué</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={platformFee}
-                  onChange={(e) => setPlatformFee(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600 transition-shadow bg-white font-bold text-lg"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
-                  %
-                </div>
-              </div>
-              <p className="text-xs text-slate-500 mt-3">
-                Ces frais seront ajoutés au montant HT du service lors de la commande de l'acheteur.
-              </p>
-            </div>
-
-            <button
-              onClick={savePlatformFee}
-              disabled={feeLoading}
-              className="w-full flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm bg-frilya-900 hover:bg-frilya-800 text-white disabled:opacity-50"
-            >
-              {feeLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                'Enregistrer les frais'
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Carte Vérification RIB */}
-        <div className="mt-8 bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Vérification des RIB</h2>
-              <p className="text-slate-500 text-sm mt-1">Valider ou refuser les coordonnées bancaires des vendeurs</p>
-            </div>
-            <div className="p-3 rounded-2xl bg-indigo-100 text-indigo-600">
-              <FileCheck className="w-6 h-6" />
-            </div>
-          </div>
-
-          {pendingRibs.length === 0 ? (
-            <div className="bg-slate-50 border border-slate-100 p-6 rounded-2xl text-center">
-              <p className="text-slate-500">Aucun document en attente de vérification.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pendingRibs.map((rib) => (
-                <div key={rib.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                  <div>
-                    <h3 className="font-bold text-slate-900">{rib.beneficiary_name} <span className="text-sm font-normal text-slate-500">({rib.email})</span></h3>
-                    <p className="text-sm text-slate-600 mt-1">IBAN: <span className="font-mono">{rib.iban}</span></p>
-                    <p className="text-xs text-slate-500 mt-1">Banque: {rib.bank_name}</p>
-                    {rib.rib_file_url && (
-                      <a href={rib.rib_file_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-sm text-frilya-600 font-bold hover:underline">
-                        Voir le document PDF/Image
-                      </a>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2 w-full md:w-auto">
-                    <button
-                      onClick={() => handleRibAction(rib.id, 'rejected')}
-                      disabled={ribLoading}
-                      className="flex-1 md:flex-none flex items-center justify-center gap-1 bg-red-100 hover:bg-red-200 text-red-700 py-2 px-4 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
-                    >
-                      <X className="w-4 h-4" /> Refuser
-                    </button>
-                    <button
-                      onClick={() => handleRibAction(rib.id, 'approved')}
-                      disabled={ribLoading}
-                      className="flex-1 md:flex-none flex items-center justify-center gap-1 bg-green-100 hover:bg-green-200 text-green-700 py-2 px-4 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
-                    >
-                      <Check className="w-4 h-4" /> Approuver
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
