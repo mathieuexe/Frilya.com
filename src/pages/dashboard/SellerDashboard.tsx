@@ -129,7 +129,7 @@ export default function SellerDashboard() {
 
         {/* Contenu principal */}
       <div className="flex-1">
-        {!hasBankInfo && (
+        {!hasBankInfo && location.pathname !== '/dashboard/vendeur' && (
           <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4">
             <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
             <div>
@@ -211,6 +211,24 @@ export default function SellerDashboard() {
                   <p className="text-3xl font-bold text-slate-900">0</p>
                 </div>
               </div>
+
+              {!hasBankInfo && (
+                <div className="mt-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center">
+                  <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle className="w-8 h-8" />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900 mb-3">Configuration des paiements requise</h2>
+                  <p className="text-slate-600 max-w-xl mx-auto mb-6">
+                    Pour pouvoir publier des annonces et recevoir l'argent de vos ventes, vous devez configurer votre compte bancaire. Frilya sécurise les paiements et vous les reverse une fois la commande terminée.
+                  </p>
+                  <Link 
+                    to="/dashboard/vendeur/parametres" 
+                    className="inline-block bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm"
+                  >
+                    Enregistrer mes informations bancaires
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <Outlet />
