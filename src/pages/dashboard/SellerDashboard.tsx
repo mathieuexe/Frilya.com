@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Briefcase, DollarSign, MessageSquare, AlertTriangle, Settings, LayoutDashboard, Plus } from 'lucide-react';
+import { AlertTriangle, Settings, LayoutDashboard, Plus } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import catAvatar from '../../assets/cat.png';
+
+// Import Custom Icons
+import repairToolIcon from '../../assets/repair-tool.png';
+import checkoutIcon from '../../assets/checkout.png';
+import chatIcon from '../../assets/chat.png';
+import moneyIcon from '../../assets/money.png';
 
 export default function SellerDashboard() {
   const location = useLocation();
@@ -38,9 +44,9 @@ export default function SellerDashboard() {
 
   const navItems = [
     { name: 'Vue d\'ensemble', path: '/dashboard/vendeur', icon: LayoutDashboard },
-    { name: 'Mes services', path: '/dashboard/vendeur/services', icon: Briefcase },
-    { name: 'Commandes reçues', path: '/dashboard/vendeur/commandes', icon: DollarSign },
-    { name: 'Messages', path: '/messages', icon: MessageSquare },
+    { name: 'Mes services', path: '/dashboard/vendeur/services', customIcon: repairToolIcon },
+    { name: 'Commandes reçues', path: '/dashboard/vendeur/commandes', customIcon: checkoutIcon },
+    { name: 'Messages', path: '/messages', customIcon: chatIcon },
     { name: 'Litiges', path: '/dashboard/vendeur/litiges', icon: AlertTriangle },
     { name: 'Paramètres pro', path: '/dashboard/vendeur/parametres', icon: Settings },
   ];
@@ -86,7 +92,11 @@ export default function SellerDashboard() {
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
                     }`}
                   >
-                    <item.icon className="w-5 h-5" />
+                    {item.customIcon ? (
+                      <img src={item.customIcon} alt={item.name} className={`w-5 h-5 ${isActive ? 'invert brightness-0' : 'opacity-70'}`} />
+                    ) : item.icon ? (
+                      <item.icon className="w-5 h-5" />
+                    ) : null}
                     {item.name}
                   </Link>
                 );
@@ -155,7 +165,7 @@ export default function SellerDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <DollarSign className="w-16 h-16" />
+                    <img src={moneyIcon} alt="" className="w-16 h-16 grayscale" />
                   </div>
                   <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Solde disponible</h3>
                   <p className="text-3xl font-bold text-slate-900 mb-4">{profile.balance?.toFixed(2) || '0.00'} €</p>
@@ -173,12 +183,12 @@ export default function SellerDashboard() {
                   )}
                 </div>
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                  <Briefcase className="w-8 h-8 text-frilya-600 mb-4" />
+                  <img src={checkoutIcon} alt="" className="w-8 h-8 opacity-80 mb-4" />
                   <h3 className="text-2xl font-bold text-slate-900">0</h3>
                   <p className="text-slate-500 text-sm">Commandes à livrer</p>
                 </div>
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                  <MessageSquare className="w-8 h-8 text-blue-500 mb-4" />
+                  <img src={chatIcon} alt="" className="w-8 h-8 opacity-80 mb-4" />
                   <h3 className="text-2xl font-bold text-slate-900">0</h3>
                   <p className="text-slate-500 text-sm">Messages non lus</p>
                 </div>
