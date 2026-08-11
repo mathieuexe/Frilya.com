@@ -112,12 +112,12 @@ function AppRoutes() {
             ? "👋 Bienvenue sur la Bêta de Frilya !\n\nMerci de nous aider à tester la plateforme avant son lancement officiel. Votre compte a été configuré en mode lecture seule pour vous permettre de naviguer partout en toute sécurité.\n\nN'hésitez pas à nous faire part de vos impressions, bugs ou suggestions via l'onglet \"Feedback Bêta\" dans votre tableau de bord.\n\nBonne découverte !"
             : "👋 Bienvenue sur Frilya !\n\nNous sommes ravis de vous compter parmi nous. N'hésitez pas à compléter votre profil et à explorer les services disponibles.";
 
-          // Send message
-          await supabase.from('messages').insert([{
-            sender_id: adminId,
-            receiver_id: session.user.id,
-            content: welcomeContent
-          }]);
+          // Send message using RPC to bypass RLS (since we are inserting on behalf of Admin)
+          await supabase.rpc('send_system_message', {
+            p_sender_id: adminId,
+            p_receiver_id: session.user.id,
+            p_content: welcomeContent
+          });
 
           // Update profile
           await supabase.from('profiles')
