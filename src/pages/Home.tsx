@@ -21,6 +21,10 @@ import socialTablesLogo from '../assets/socialtables-ar21.svg';
 import viteLogo from '../assets/vitejsdev-ar21.svg';
 import supabaseLogo from '../assets/8xHF2DW9QR2diK7qLaVS.svg';
 
+import creditCardIcon from '../assets/credit-card.png';
+import verifiedIcon from '../assets/verified.png';
+import simplifyIcon from '../assets/simplify.png';
+
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sellerCount, setSellerCount] = useState<number>(0);
@@ -215,35 +219,27 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-frilya-100 text-frilya-600 rounded-xl flex items-center justify-center mb-6">
-                <ShieldCheck className="w-6 h-6" />
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="text-center p-6">
+              <div className="bg-frilya-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img src={creditCardIcon} alt="Paiement sécurisé" className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Paiement Sécurisé</h3>
-              <p className="text-slate-600">
-                Votre argent est bloqué sur un compte séquestre. Le freelance n'est payé que lorsque vous validez le travail.
-              </p>
+              <h3 className="font-bold text-lg mb-2">Paiement 100% sécurisé</h3>
+              <p className="text-slate-600 text-sm">Vos fonds sont conservés en sécurité jusqu'à la validation de votre commande.</p>
             </div>
-            
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-frilya-100 text-frilya-600 rounded-xl flex items-center justify-center mb-6">
-                <Users className="w-6 h-6" />
+            <div className="text-center p-6">
+              <div className="bg-frilya-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img src={verifiedIcon} alt="Freelance vérifié" className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Talents Vérifiés</h3>
-              <p className="text-slate-600">
-                Nous vérifions l'identité de chaque vendeur français pour vous garantir un travail de qualité.
-              </p>
+              <h3 className="font-bold text-lg mb-2">Freelance vérifié</h3>
+              <p className="text-slate-600 text-sm">Chaque profil est contrôlé manuellement par notre équipe française.</p>
             </div>
-            
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-frilya-100 text-frilya-600 rounded-xl flex items-center justify-center mb-6">
-                <Zap className="w-6 h-6" />
+            <div className="text-center p-6">
+              <div className="bg-frilya-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img src={simplifyIcon} alt="Simplicité absolue" className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Simplicité Absolue</h3>
-              <p className="text-slate-600">
-                Trouvez, commandez et recevez votre projet sans friction. Une interface pensée pour aller à l'essentiel.
-              </p>
+              <h3 className="font-bold text-lg mb-2">Simplicité absolue</h3>
+              <p className="text-slate-600 text-sm">Trouvez, commandez et échangez sans jargon technique ni processus complexe.</p>
             </div>
           </div>
         </div>

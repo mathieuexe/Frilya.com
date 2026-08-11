@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
-import { ShieldCheck, Mail } from 'lucide-react';
+import { ShieldCheck, Heart, Mail } from 'lucide-react';
+import stripeLogo from '../../assets/stripe.svg';
+import pciLogo from '../../assets/pci-dss-compliant-logo-vector.svg';
+import creditCardIcon from '../../assets/credit-card.png';
 
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-slate-200 pt-12 pb-8 mt-auto">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-8">
           <div className="md:col-span-1">
             <Link to="/">
               <img src={logo} alt="Frilya" className="h-8 w-auto mb-4 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all" />
@@ -44,6 +47,24 @@ export default function Footer() {
               <li><Link to="/cgv" className="hover:text-frilya-600 transition-colors">Conditions Générales de Vente</Link></li>
               <li><Link to="/confidentialite" className="hover:text-frilya-600 transition-colors">Politique de confidentialité</Link></li>
             </ul>
+          </div>
+
+          {/* Security */}
+          <div className="md:col-span-1">
+            <h3 className="font-bold text-slate-900 mb-4 uppercase text-sm tracking-wider">Sécurité</h3>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="flex items-center gap-3 mb-3">
+                <img src={creditCardIcon} alt="Paiement sécurisé" className="w-6 h-6 opacity-70" />
+                <span className="font-bold text-slate-700 text-sm">Paiements 100% sécurisés</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">
+                Paiement chiffré de bout en bout par Stripe.
+              </p>
+              <div className="flex items-center gap-3">
+                <img src={stripeLogo} alt="Stripe" className="h-6 opacity-60 grayscale" />
+                <img src={pciLogo} alt="PCI DSS Compliant" className="h-6 opacity-60 grayscale" />
+              </div>
+            </div>
           </div>
         </div>
         
