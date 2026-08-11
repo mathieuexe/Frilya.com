@@ -5,8 +5,8 @@ export const sendBetaConfirmationEmail = async (email: string, pseudo: string) =
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #0f172a; margin: 0;">Frilya</h1>
-        <p style="color: #64748b; font-size: 14px; margin-top: 5px;">La marketplace des freelances</p>
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+        <p style="color: #64748b; font-size: 14px; margin-top: 5px;">La plateforme freelance française pour réaliser tous vos projets</p>
       </div>
       
       <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
@@ -33,7 +33,8 @@ export const sendBetaAcceptedEmail = async (email: string, pseudo: string, passw
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #0f172a; margin: 0;">Frilya</h1>
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+        <p style="color: #64748b; font-size: 14px; margin-top: 5px;">La plateforme freelance française pour réaliser tous vos projets</p>
       </div>
       
       <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
@@ -75,7 +76,8 @@ export const sendBetaRejectedEmail = async (email: string, pseudo: string, reaso
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #0f172a; margin: 0;">Frilya</h1>
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+        <p style="color: #64748b; font-size: 14px; margin-top: 5px;">La plateforme freelance française pour réaliser tous vos projets</p>
       </div>
       
       <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">

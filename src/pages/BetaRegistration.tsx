@@ -15,21 +15,45 @@ export default function BetaRegistration() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isBetaActive, setIsBetaActive] = useState<boolean | null>(null);
+  const [existingRequest, setExistingRequest] = useState<any>(null);
+  const [checkingIp, setCheckingIp] = useState(true);
+  const [userIp, setUserIp] = useState('');
 
   useEffect(() => {
-    const checkBetaStatus = async () => {
+    const checkStatus = async () => {
       try {
-        const { data } = await supabase
+        // 1. Check if Beta is active
+        const { data: settingsData } = await supabase
           .from('settings')
           .select('value')
           .eq('key', 'beta_mode_active')
           .single();
-        setIsBetaActive(data?.value === 'true' || data?.value === true);
+        setIsBetaActive(settingsData?.value === 'true' || settingsData?.value === true);
+
+        // 2. Check if IP already submitted
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        const ip = ipData.ip;
+        setUserIp(ip);
+
+        const { data: appData } = await supabase
+          .from('beta_applications')
+          .select('created_at, status')
+          .eq('ip_address', ip)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (appData) {
+          setExistingRequest(appData);
+        }
       } catch (err) {
-        setIsBetaActive(false); // Par défaut on désactive si erreur ou non trouvé
+        if (isBetaActive === null) setIsBetaActive(false);
+      } finally {
+        setCheckingIp(false);
       }
     };
-    checkBetaStatus();
+    checkStatus();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +68,8 @@ export default function BetaRegistration() {
         .insert([{
           pseudo: formData.pseudo,
           email: formData.email,
-          motivation: formData.motivation
+          motivation: formData.motivation,
+          ip_address: userIp
         }]);
 
       if (dbError) throw dbError;
@@ -107,7 +132,7 @@ export default function BetaRegistration() {
         </a>
       </div>
 
-      {isBetaActive === null ? (
+      {checkingIp || isBetaActive === null ? (
         <div className="flex items-center justify-center h-64 relative z-10"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
       ) : !isBetaActive ? (
         <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl max-w-xl w-full text-center relative z-10">
@@ -122,15 +147,51 @@ export default function BetaRegistration() {
             Retour à l'accueil
           </a>
         </div>
+      ) : existingRequest ? (
+        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl max-w-xl w-full text-center relative z-10">
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">Demande en cours</h1>
+          <div className="text-slate-600 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <p className="mb-4">
+              Vous avez soumis une demande le <strong>{new Date(existingRequest.created_at).toLocaleDateString('fr-FR')}</strong>.
+              Elle est actuellement : <strong className="uppercase">{existingRequest.status === 'pending' ? 'En attente d\'examen' : existingRequest.status === 'accepted' ? 'Acceptée' : 'Refusée'}</strong>.
+            </p>
+            <p className="mb-2">Vous recevrez une réponse par e-mail.</p>
+            <p className="font-bold">Merci de votre patience !</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/" className="inline-block bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-8 rounded-xl transition-colors">
+              Retour
+            </a>
+            <a href="/auth" className="inline-block bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3 px-8 rounded-xl transition-colors">
+              Se connecter
+            </a>
+          </div>
+        </div>
       ) : (
         <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl max-w-xl w-full relative z-10">
           <div className="text-center mb-8">
-          <span className="inline-block px-3 py-1 bg-frilya-100 text-frilya-700 font-bold text-xs rounded-full uppercase tracking-wider mb-4">Programme Bêta</span>
-          <h1 className="text-3xl font-bold text-slate-900 mb-3">Rejoignez la Bêta</h1>
-          <p className="text-slate-600">
-            Aidez-nous à construire la meilleure plateforme pour les freelances. Testez le site en avant-première et partagez vos retours.
-          </p>
-        </div>
+            <span className="inline-block px-3 py-1 bg-frilya-100 text-frilya-700 font-bold text-xs rounded-full uppercase tracking-wider mb-4">Programme Bêta</span>
+            <h1 className="text-3xl font-bold text-slate-900 mb-3">Rejoignez la Bêta</h1>
+            <p className="text-slate-600 mb-6">
+              Aidez-nous à construire la meilleure plateforme pour les freelances. Testez le site en avant-première et partagez vos retours.
+            </p>
+            
+            <div className="pt-4 border-t border-slate-100">
+              <p className="text-sm text-slate-500 mb-3">Vous avez déjà un compte Bêta ?</p>
+              <a href="/auth" className="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto">
+                Se connecter à son compte Bêta
+              </a>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-px bg-slate-200 flex-1"></div>
+            <span className="text-sm font-medium text-slate-400">Ou inscrivez-vous</span>
+            <div className="h-px bg-slate-200 flex-1"></div>
+          </div>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 flex items-start gap-3">

@@ -91,8 +91,8 @@ function AppRoutes() {
           .eq('id', session.user.id)
           .single();
           
-        if (profile?.is_beta && profile.beta_end_date) {
-          if (new Date(profile.beta_end_date) < new Date()) {
+        if (profile?.role === 'beta' || profile?.is_beta) {
+          if (profile.beta_end_date && new Date(profile.beta_end_date) < new Date()) {
             await supabase.auth.signOut();
             window.location.href = '/auth?error=beta_expired';
             return;
