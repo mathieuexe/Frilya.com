@@ -13,6 +13,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [feePercentage, setFeePercentage] = useState<number>(20);
 
   useEffect(() => {
     fetchData();
@@ -35,6 +36,17 @@ export default function Checkout() {
 
       if (error) throw error;
       setService(data);
+
+      // Récupérer les frais de plateforme
+      const { data: feeData, error: feeError } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'platform_fee_percentage')
+        .single();
+      
+      if (!feeError && feeData) {
+        setFeePercentage(parseFloat(feeData.value));
+      }
     } catch (error) {
       console.error("Erreur", error);
     } finally {
@@ -43,9 +55,8 @@ export default function Checkout() {
   };
 
   const calculateTotal = (net: number) => {
-    // Frais Stripe 1.5% + 0.25€ + commission plateforme (ex: 5%)
-    // Pour simplifier, disons que la plateforme prend 10% de frais à l'acheteur.
-    const platformFee = net * 0.10;
+    // Calcul des frais de la plateforme selon le paramètre dynamique
+    const platformFee = net * (feePercentage / 100);
     const total = net + platformFee;
     return { net, platformFee, total: Math.ceil(total * 100) / 100 };
   };
@@ -158,7 +169,7 @@ export default function Checkout() {
                   <span className="font-medium text-slate-900">{prices.net.toFixed(2)} €</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Frais de service (10%)</span>
+                  <span>Frais d'utilisation Frilya ({feePercentage}%)</span>
                   <span className="font-medium text-slate-900">{prices.platformFee.toFixed(2)} €</span>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Power, Loader2, ArrowLeft, LogOut } from 'lucide-react';
+import { ShieldAlert, Power, Loader2, ArrowLeft, LogOut, Percent } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
 
@@ -9,7 +9,9 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [platformFee, setPlatformFee] = useState<string>('20');
   const [actionLoading, setActionLoading] = useState(false);
+  const [feeLoading, setFeeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,16 +55,28 @@ export default function Admin() {
 
   const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: maintenanceData, error: maintenanceError } = await supabase
         .from('settings')
         .select('value')
         .eq('key', 'maintenance_mode')
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (maintenanceError && maintenanceError.code !== 'PGRST116') throw maintenanceError;
       
-      if (data) {
-        setMaintenanceMode(data.value === true || data.value === 'true');
+      if (maintenanceData) {
+        setMaintenanceMode(maintenanceData.value === true || maintenanceData.value === 'true');
+      }
+
+      const { data: feeData, error: feeError } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'platform_fee_percentage')
+        .single();
+
+      if (feeError && feeError.code !== 'PGRST116') throw feeError;
+      
+      if (feeData) {
+        setPlatformFee(feeData.value.toString());
       }
     } catch (err: any) {
       console.error("Erreur lors de la récupération des paramètres:", err);
@@ -91,6 +105,29 @@ export default function Admin() {
       setError("Impossible de modifier le mode maintenance. Vérifiez que la table 'settings' existe et que vous avez les droits RLS.");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const savePlatformFee = async () => {
+    setFeeLoading(true);
+    setError(null);
+    try {
+      const feeNumber = parseFloat(platformFee);
+      if (isNaN(feeNumber) || feeNumber < 0 || feeNumber > 100) {
+        throw new Error("Le pourcentage de frais doit être un nombre entre 0 et 100.");
+      }
+
+      const { error: upsertError } = await supabase
+        .from('settings')
+        .upsert({ key: 'platform_fee_percentage', value: feeNumber.toString() }, { onConflict: 'key' });
+
+      if (upsertError) throw upsertError;
+      alert("Frais d'utilisation mis à jour avec succès.");
+    } catch (err: any) {
+      console.error("Erreur lors de la modification des frais:", err);
+      setError(err.message || "Impossible de modifier les frais d'utilisation.");
+    } finally {
+      setFeeLoading(false);
     }
   };
 
@@ -200,6 +237,52 @@ export default function Admin() {
                   <Power className="w-5 h-5" />
                   {maintenanceMode ? 'Désactiver la maintenance' : 'Activer la maintenance'}
                 </>
+              )}
+            </button>
+          </div>
+
+          {/* Carte Frais */}
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Frais d'utilisation Frilya</h2>
+                <p className="text-slate-500 text-sm mt-1">Commission prélevée sur chaque commande (en %)</p>
+              </div>
+              <div className="p-3 rounded-2xl bg-blue-100 text-blue-600">
+                <Percent className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Pourcentage appliqué</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={platformFee}
+                  onChange={(e) => setPlatformFee(e.target.value)}
+                  className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600 transition-shadow bg-white font-bold text-lg"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                  %
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mt-3">
+                Ces frais seront ajoutés au montant HT du service lors de la commande de l'acheteur.
+              </p>
+            </div>
+
+            <button
+              onClick={savePlatformFee}
+              disabled={feeLoading}
+              className="w-full flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm bg-frilya-900 hover:bg-frilya-800 text-white disabled:opacity-50"
+            >
+              {feeLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                'Enregistrer les frais'
               )}
             </button>
           </div>

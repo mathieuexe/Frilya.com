@@ -116,6 +116,11 @@ INSERT INTO settings (key, value)
 VALUES ('maintenance_mode', 'false'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
+-- Insérer la configuration par défaut pour les frais de plateforme
+INSERT INTO settings (key, value)
+VALUES ('platform_fee_percentage', '20'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
 -- --- TABLES DE LA MARKETPLACE ---
 
 -- 1. Catégories

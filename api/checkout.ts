@@ -19,10 +19,10 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { amount, success_url, cancel_url, email } = req.body;
+    const { amount, order_id, service_title, success_url, cancel_url, email } = req.body;
     
-    if (!amount || amount < 5) {
-      return res.status(400).json({ error: 'Invalid amount. Minimum is 5.' });
+    if (!amount || amount < 1) {
+      return res.status(400).json({ error: 'Invalid amount.' });
     }
 
     const amountInCents = Math.round(amount * 100);
@@ -34,8 +34,8 @@ export default async function handler(req: any, res: any) {
           price_data: {
             currency: 'eur',
             product_data: {
-              name: 'Donation Frilya',
-              description: 'Soutien pour le projet Frilya',
+              name: service_title || 'Commande Frilya',
+              description: `Commande #${order_id || 'N/A'}`,
             },
             unit_amount: amountInCents,
           },

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Briefcase, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import equipeImg from '../../assets/equipe.png';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -62,8 +63,8 @@ export default function Onboarding() {
     <div className="container mx-auto px-4 py-16 max-w-2xl">
       <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-slate-100 text-center">
         <div className="flex justify-center mb-6">
-          <div className="bg-frilya-50 p-4 rounded-full">
-            <Briefcase className="w-12 h-12 text-frilya-600" />
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-lg border-4 border-frilya-50">
+            <img src={equipeImg} alt="Équipe Frilya" className="w-full h-auto object-cover" />
           </div>
         </div>
         
