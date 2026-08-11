@@ -2,6 +2,13 @@
 
 @theme {
   --font-sans: 'Marianne', 'Arial', sans-serif;
+  --color-frilya-900: #011142;
+  --color-frilya-800: #011C6B;
+  --color-frilya-700: #01258F;
+  --color-frilya-600: #0231BD;
+  --color-frilya-500: #023BE6;
+  --color-frilya-100: #e5edff;
+  --color-frilya-50: #f0f5ff;
 }
 
 @font-face {
