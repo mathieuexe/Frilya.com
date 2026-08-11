@@ -91,15 +91,8 @@ export default function Messages() {
           Conversations
         </div>
         <div className="flex-1 overflow-y-auto p-2">
-          {/* Placeholder conversation */}
-          <div className="flex items-center gap-3 p-3 bg-frilya-50 rounded-2xl cursor-pointer">
-            <div className="w-10 h-10 bg-frilya-200 text-frilya-700 rounded-full flex items-center justify-center font-bold">
-              <User className="w-5 h-5" />
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <h4 className="font-bold text-slate-900 truncate">Contact Test</h4>
-              <p className="text-xs text-slate-500 truncate">Dernier message ici...</p>
-            </div>
+          <div className="text-center text-sm text-slate-500 mt-10">
+            Aucune conversation
           </div>
         </div>
       </div>
@@ -107,10 +100,7 @@ export default function Messages() {
       {/* Zone de chat */}
       <div className="flex-1 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="p-4 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-slate-400" />
-          </div>
-          Contact Test
+          Sélectionnez une conversation
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">

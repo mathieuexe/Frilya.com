@@ -1,13 +1,52 @@
 import { Link } from 'react-router-dom';
 import { Search, Menu } from 'lucide-react';
 import logo from '../../assets/logo.png';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import chatIcon from '../../assets/chat.png';
 import notificationBellIcon from '../../assets/notification-bell.png';
 import userIcon from '../../assets/user.png';
+import { supabase } from '../../lib/supabase';
+import catAvatar from '../../assets/cat.png';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', session.user.id)
+          .single();
+        if (profile) {
+          setUserProfile(profile);
+        }
+      }
+    };
+    
+    fetchUser();
+
+    // S'abonner aux changements d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', session.user.id)
+          .single();
+        setUserProfile(profile || null);
+      } else {
+        setUserProfile(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
@@ -46,10 +85,16 @@ export default function Header() {
               <img src={notificationBellIcon} alt="Notifications" className="w-5 h-5 opacity-70" />
             </Link>
             <Link to="/dashboard" className="flex items-center gap-2 p-1.5 pr-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-full transition-all ml-2">
-              <div className="w-7 h-7 bg-frilya-100 rounded-full flex items-center justify-center">
-                <img src={userIcon} alt="Mon compte" className="w-4 h-4 opacity-70" />
+              <div className="w-7 h-7 bg-frilya-100 rounded-full flex items-center justify-center overflow-hidden">
+                {userProfile ? (
+                  <img src={userProfile.avatar_url || catAvatar} alt={userProfile.full_name} className="w-full h-full object-cover" />
+                ) : (
+                  <img src={userIcon} alt="Mon compte" className="w-4 h-4 opacity-70" />
+                )}
               </div>
-              <span className="text-sm font-bold text-slate-700">Mon compte</span>
+              <span className="text-sm font-bold text-slate-700 max-w-[100px] truncate">
+                {userProfile ? userProfile.full_name : 'Mon compte'}
+              </span>
             </Link>
           </div>
         </div>
@@ -77,7 +122,12 @@ export default function Header() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Link to="/dashboard" className="flex items-center justify-center gap-2 bg-slate-50 py-2.5 rounded-xl text-sm font-bold text-slate-700 border border-slate-100">
-                <img src={userIcon} alt="Compte" className="w-4 h-4 opacity-70" /> Compte
+                {userProfile ? (
+                  <img src={userProfile.avatar_url || catAvatar} alt="Compte" className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <img src={userIcon} alt="Compte" className="w-4 h-4 opacity-70" /> 
+                )}
+                <span className="truncate max-w-[100px]">{userProfile ? userProfile.full_name : 'Compte'}</span>
               </Link>
               <Link to="/messages" className="flex items-center justify-center gap-2 bg-slate-50 py-2.5 rounded-xl text-sm font-bold text-slate-700 border border-slate-100">
                 <img src={chatIcon} alt="Messages" className="w-4 h-4 opacity-70" /> Messages

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Package, Heart, MessageSquare, AlertTriangle, Settings, LayoutDashboard } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import catAvatar from '../../assets/cat.png';
 
 export default function BuyerDashboard() {
   const location = useLocation();
@@ -51,12 +52,12 @@ export default function BuyerDashboard() {
         <aside className="w-full md:w-64 shrink-0">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 sticky top-24">
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-frilya-100 text-frilya-600 rounded-full flex items-center justify-center font-bold text-xl">
-                {profile?.email?.charAt(0).toUpperCase()}
+              <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-slate-100">
+                <img src={profile?.avatar_url || catAvatar} alt="Avatar" className="w-full h-full object-cover" />
               </div>
-              <div>
-                <p className="font-bold text-slate-900 truncate max-w-[150px]">{profile?.full_name || 'Utilisateur'}</p>
-                <p className="text-xs text-slate-500">Acheteur</p>
+              <div className="overflow-hidden">
+                <p className="font-bold text-slate-900 truncate" title={profile?.full_name || 'Utilisateur'}>{profile?.full_name || 'Utilisateur'}</p>
+                <p className="text-xs text-slate-500 truncate">Acheteur</p>
               </div>
             </div>
 

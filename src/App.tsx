@@ -20,6 +20,11 @@ import CreateServicePage from './pages/dashboard/seller/CreateService';
 import CheckoutPage from './pages/checkout/Checkout';
 import MessagesPage from './pages/messages/Messages';
 
+import Orders from './pages/dashboard/Orders';
+import Favorites from './pages/dashboard/Favorites';
+import Disputes from './pages/dashboard/Disputes';
+import Settings from './pages/dashboard/Settings';
+
 function AppRoutes() {
   const [loading, setLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -92,10 +97,10 @@ function AppRoutes() {
         
         {/* Dashboard Acheteur */}
         <Route path="/dashboard" element={<BuyerDashboard />}>
-          <Route path="commandes" element={<div>Mes commandes</div>} />
-          <Route path="favoris" element={<div>Mes favoris</div>} />
-          <Route path="litiges" element={<div>Mes litiges</div>} />
-          <Route path="parametres" element={<div>Paramètres</div>} />
+          <Route path="commandes" element={<Orders />} />
+          <Route path="favoris" element={<Favorites />} />
+          <Route path="litiges" element={<Disputes />} />
+          <Route path="parametres" element={<Settings />} />
         </Route>
 
         {/* Dashboard Vendeur */}
@@ -103,9 +108,9 @@ function AppRoutes() {
         <Route path="/dashboard/vendeur" element={<SellerDashboard />}>
           <Route path="services" element={<div>Mes services</div>} />
           <Route path="services/nouveau" element={<CreateServicePage />} />
-          <Route path="commandes" element={<div>Commandes reçues</div>} />
-          <Route path="litiges" element={<div>Mes litiges (Vendeur)</div>} />
-          <Route path="parametres" element={<div>Paramètres pro</div>} />
+          <Route path="commandes" element={<Orders />} />
+          <Route path="litiges" element={<Disputes />} />
+          <Route path="parametres" element={<Settings />} />
         </Route>
       </Route>
       

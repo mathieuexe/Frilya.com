@@ -61,13 +61,27 @@ USING ( auth.uid() = id );
 
 -- Créer un trigger pour insérer un profil automatiquement à l'inscription
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, role, full_name)
-  VALUES (new.id, new.email, 'utilisateur', new.raw_user_meta_data->>'full_name');
-  RETURN new;
+  VALUES (
+    NEW.id, 
+    NEW.email, 
+    'utilisateur', 
+    NEW.raw_user_meta_data->>'full_name'
+  );
+  RETURN NEW;
+EXCEPTION
+  WHEN others THEN
+    -- En cas d'erreur, on permet quand même la création de l'utilisateur (auth.users)
+    -- Le profil devra être créé manuellement ou via une autre logique si besoin.
+    RAISE LOG 'Erreur dans handle_new_user: %', SQLERRM;
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Drop trigger s'il existe déjà pour éviter les erreurs
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;

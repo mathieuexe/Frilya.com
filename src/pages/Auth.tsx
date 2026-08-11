@@ -29,7 +29,7 @@ export default function Auth() {
         if (signInError) throw signInError;
         navigate('/dashboard'); // Redirection après connexion vers le dashboard
       } else {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -40,10 +40,23 @@ export default function Auth() {
         });
         if (signUpError) throw signUpError;
         
-        // Note: The handle_new_user trigger in schema.sql will create the profile
-        // but we might need to update it with the full_name here if auto-login happens
-        // or wait for the user to verify their email.
-        // For simplicity, we just show a message.
+        // Note: The handle_new_user trigger in schema.sql should create the profile.
+        // As a fallback, we explicitly try to insert the profile if it doesn't exist
+        // to guarantee the user appears in the 'profiles' table.
+        if (signUpData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: signUpData.user.id,
+              email: email,
+              role: 'utilisateur',
+              full_name: fullName
+            }, { onConflict: 'id' });
+            
+          if (profileError) {
+            console.error("Erreur lors de la création du profil (fallback):", profileError);
+          }
+        }
         
         setMessage('Inscription réussie ! Vous pouvez maintenant vous connecter (ou vérifier votre email si requis).');
         setIsLogin(true);
