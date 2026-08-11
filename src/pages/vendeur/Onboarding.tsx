@@ -39,9 +39,11 @@ export default function Onboarding() {
   const handleBecomeSeller = async () => {
     setSaving(true);
     try {
+      const newRole = profile.role === 'admin' ? 'admin' : 'vendeur';
+      
       const { error } = await supabase
         .from('profiles')
-        .update({ is_seller: true })
+        .update({ is_seller: true, role: newRole })
         .eq('id', profile.id);
 
       if (error) throw error;
