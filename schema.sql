@@ -31,7 +31,7 @@ USING (true);
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
     email TEXT,
-    role TEXT DEFAULT 'utilisateur',
+    role TEXT DEFAULT 'acheteur',
     full_name TEXT,
     avatar_url TEXT,
     bio TEXT,
@@ -66,12 +66,13 @@ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, role, full_name)
+  INSERT INTO public.profiles (id, email, role, full_name, avatar_url)
   VALUES (
     NEW.id, 
     NEW.email, 
-    'utilisateur', 
-    NEW.raw_user_meta_data->>'full_name'
+    'acheteur', 
+    COALESCE(NEW.raw_user_meta_data->>'full_name', 'Utilisateur'),
+    NULL
   );
   RETURN NEW;
 EXCEPTION

@@ -49,7 +49,7 @@ export default function Auth() {
             .upsert({
               id: signUpData.user.id,
               email: email,
-              role: 'utilisateur',
+              role: 'acheteur',
               full_name: fullName
             }, { onConflict: 'id' });
             
