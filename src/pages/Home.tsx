@@ -11,6 +11,10 @@ import copyWritingIcon from '../assets/copy-writing.png';
 import seoIcon from '../assets/map-with-a-pin-small-symbol-inside-a-circle.png';
 import advertisingIcon from '../assets/advertising.png';
 
+import sarahImg from '../assets/Sarah.png';
+import thomasImg from '../assets/Thomas.png';
+import leaImg from '../assets/Léa.png';
+
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sellerCount, setSellerCount] = useState<number>(0);
@@ -48,21 +52,21 @@ export default function Home() {
       role: 'Graphiste & DA',
       sales: 450,
       rating: 5.0,
-      image: 'https://i.pravatar.cc/150?u=sarah',
+      image: sarahImg,
     },
     {
       name: 'Thomas D.',
       role: 'Développeur React',
       sales: 239,
       rating: 4.9,
-      image: 'https://i.pravatar.cc/150?u=thomas',
+      image: thomasImg,
     },
     {
       name: 'Léa C.',
       role: 'Monteuse Vidéo',
       sales: 1200,
       rating: 5.0,
-      image: 'https://i.pravatar.cc/150?u=lea',
+      image: leaImg,
     },
   ];
 
@@ -81,9 +85,9 @@ export default function Home() {
           <div className="flex-1 w-full max-w-2xl">
             <div className="flex items-center gap-2 mb-6">
               <div className="flex -space-x-2">
-                <img src="https://i.pravatar.cc/100?img=1" className="w-8 h-8 rounded-full border-2 border-frilya-900" alt="Freelance" />
-                <img src="https://i.pravatar.cc/100?img=2" className="w-8 h-8 rounded-full border-2 border-frilya-900" alt="Freelance" />
-                <img src="https://i.pravatar.cc/100?img=3" className="w-8 h-8 rounded-full border-2 border-frilya-900" alt="Freelance" />
+                <img src={sarahImg} className="w-8 h-8 rounded-full border-2 border-frilya-900 object-cover object-top" alt="Freelance" />
+                <img src={thomasImg} className="w-8 h-8 rounded-full border-2 border-frilya-900 object-cover object-top" alt="Freelance" />
+                <img src={leaImg} className="w-8 h-8 rounded-full border-2 border-frilya-900 object-cover object-top" alt="Freelance" />
               </div>
               <span className="text-sm font-medium text-frilya-200">
                 {sellerCount > 0 ? `${sellerCount} freelances disponibles` : 'De nombreux freelances disponibles'}
@@ -140,7 +144,7 @@ export default function Home() {
                 `}
               >
                 <div className="aspect-square rounded-2xl overflow-hidden mb-4 bg-slate-100">
-                  <img src={freelance.image} alt={freelance.name} className="w-full h-full object-cover" />
+                  <img src={freelance.image} alt={freelance.name} className="w-full h-full object-cover object-top" />
                 </div>
                 <h3 className="font-bold text-lg leading-tight">{freelance.name}</h3>
                 <p className="text-sm text-slate-500 mb-2 truncate">{freelance.role}</p>
