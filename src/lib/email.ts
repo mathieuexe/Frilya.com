@@ -111,7 +111,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`
       },
       body: JSON.stringify({
-        from: 'Frilya Bêta <onboarding@resend.dev>', // Attention: Sur Resend, si le domaine n'est pas vérifié, on ne peut envoyer qu'à l'adresse email du compte Resend.
+        from: 'Frilya <onboarding@resend.dev>', // Attention: Sur Resend, si le domaine n'est pas vérifié, on ne peut envoyer qu'à l'adresse email du compte Resend.
         to: [to],
         subject: subject,
         html: html
