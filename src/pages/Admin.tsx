@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Power, Loader2, ArrowLeft, LogOut, Percent } from 'lucide-react';
+import { ShieldAlert, Power, Loader2, ArrowLeft, LogOut, Percent, FileCheck, Check, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
 
@@ -13,6 +13,10 @@ export default function Admin() {
   const [actionLoading, setActionLoading] = useState(false);
   const [feeLoading, setFeeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // RIB Verification State
+  const [pendingRibs, setPendingRibs] = useState<any[]>([]);
+  const [ribLoading, setRibLoading] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -46,10 +50,46 @@ export default function Admin() {
 
       setIsAdmin(true);
       fetchSettings();
+      fetchPendingRibs();
     } catch (err: any) {
       console.error("Erreur d'accès admin:", err);
       setError("Impossible de vérifier vos droits d'accès.");
       setLoading(false);
+    }
+  };
+
+  const fetchPendingRibs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('rib_status', 'pending');
+        
+      if (error) throw error;
+      setPendingRibs(data || []);
+    } catch (err) {
+      console.error("Erreur lors de la récupération des RIB:", err);
+    }
+  };
+
+  const handleRibAction = async (userId: string, status: 'approved' | 'rejected') => {
+    setRibLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ rib_status: status })
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setPendingRibs(prev => prev.filter(rib => rib.id !== userId));
+      alert(`RIB ${status === 'approved' ? 'approuvé' : 'refusé'} avec succès.`);
+    } catch (err) {
+      console.error("Erreur lors du traitement du RIB:", err);
+      alert("Une erreur est survenue lors du traitement.");
+    } finally {
+      setRibLoading(false);
     }
   };
 
@@ -286,6 +326,59 @@ export default function Admin() {
               )}
             </button>
           </div>
+        </div>
+
+        {/* Carte Vérification RIB */}
+        <div className="mt-8 bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Vérification des RIB</h2>
+              <p className="text-slate-500 text-sm mt-1">Valider ou refuser les coordonnées bancaires des vendeurs</p>
+            </div>
+            <div className="p-3 rounded-2xl bg-indigo-100 text-indigo-600">
+              <FileCheck className="w-6 h-6" />
+            </div>
+          </div>
+
+          {pendingRibs.length === 0 ? (
+            <div className="bg-slate-50 border border-slate-100 p-6 rounded-2xl text-center">
+              <p className="text-slate-500">Aucun document en attente de vérification.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingRibs.map((rib) => (
+                <div key={rib.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                  <div>
+                    <h3 className="font-bold text-slate-900">{rib.beneficiary_name} <span className="text-sm font-normal text-slate-500">({rib.email})</span></h3>
+                    <p className="text-sm text-slate-600 mt-1">IBAN: <span className="font-mono">{rib.iban}</span></p>
+                    <p className="text-xs text-slate-500 mt-1">Banque: {rib.bank_name}</p>
+                    {rib.rib_file_url && (
+                      <a href={rib.rib_file_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-2 text-sm text-frilya-600 font-bold hover:underline">
+                        Voir le document PDF/Image
+                      </a>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2 w-full md:w-auto">
+                    <button
+                      onClick={() => handleRibAction(rib.id, 'rejected')}
+                      disabled={ribLoading}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-1 bg-red-100 hover:bg-red-200 text-red-700 py-2 px-4 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                    >
+                      <X className="w-4 h-4" /> Refuser
+                    </button>
+                    <button
+                      onClick={() => handleRibAction(rib.id, 'approved')}
+                      disabled={ribLoading}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-1 bg-green-100 hover:bg-green-200 text-green-700 py-2 px-4 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+                    >
+                      <Check className="w-4 h-4" /> Approuver
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

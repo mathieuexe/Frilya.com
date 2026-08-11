@@ -38,6 +38,14 @@ CREATE TABLE IF NOT EXISTS profiles (
     is_seller BOOLEAN DEFAULT false,
     stripe_account_id TEXT,
     stripe_onboarding_complete BOOLEAN DEFAULT false,
+    balance NUMERIC DEFAULT 0,
+    beneficiary_name TEXT,
+    iban TEXT,
+    bic TEXT,
+    bank_name TEXT,
+    bank_address TEXT,
+    rib_file_url TEXT,
+    rib_status TEXT DEFAULT 'none',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -257,3 +265,33 @@ CREATE POLICY "Users can view their own tickets" ON tickets FOR SELECT USING (au
 
 DROP POLICY IF EXISTS "Users can insert their own tickets" ON tickets;
 CREATE POLICY "Users can insert their own tickets" ON tickets FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- 7. Retraits (Withdrawals)
+CREATE TABLE IF NOT EXISTS withdrawals (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    seller_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    amount NUMERIC NOT NULL,
+    status TEXT DEFAULT 'pending', -- pending, processing, completed, rejected
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE withdrawals ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Sellers can view their own withdrawals" ON withdrawals;
+CREATE POLICY "Sellers can view their own withdrawals" ON withdrawals FOR SELECT USING (auth.uid() = seller_id);
+
+DROP POLICY IF EXISTS "Sellers can insert their own withdrawals" ON withdrawals;
+CREATE POLICY "Sellers can insert their own withdrawals" ON withdrawals FOR INSERT WITH CHECK (auth.uid() = seller_id);
+
+-- 8. Storage (Bucket pour les RIB et documents)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('documents', 'documents', true) 
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Documents are publicly accessible" ON storage.objects;
+CREATE POLICY "Documents are publicly accessible" ON storage.objects FOR SELECT USING (bucket_id = 'documents');
+
+DROP POLICY IF EXISTS "Users can upload documents" ON storage.objects;
+CREATE POLICY "Users can upload documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'documents' AND auth.uid() IS NOT NULL);
+
