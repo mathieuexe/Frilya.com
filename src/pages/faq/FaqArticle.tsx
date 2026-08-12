@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Loader2, ChevronRight, Home, ThumbsUp, ThumbsDown, MessageSquare, Send } from 'lucide-react';
+import { Loader2, ChevronRight, Home, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 
 interface FaqArticle {
   id: string;
@@ -13,19 +13,13 @@ interface FaqArticle {
 
 export default function FaqArticle() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [article, setArticle] = useState<FaqArticle | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [feedback, setFeedback] = useState<'yes' | 'no' | null>(null);
-  const [showChat, setShowChat] = useState(false);
-
-  // Chat State
-  const [chatForm, setChatForm] = useState({ fullName: '', email: '' });
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [isStartingChat, setIsStartingChat] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     if (slug) {
@@ -34,37 +28,10 @@ export default function FaqArticle() {
     checkUser();
   }, [slug]);
 
-  useEffect(() => {
-    if (conversationId) {
-      const msgSub = supabase.channel(`faq_msgs_client_${conversationId}`)
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'faq_messages',
-          filter: `conversation_id=eq.${conversationId}`
-        }, (payload) => {
-          setMessages(prev => [...prev, payload.new]);
-          scrollToBottom();
-        })
-        .subscribe();
-        
-      return () => {
-        supabase.removeChannel(msgSub);
-      };
-    }
-  }, [conversationId]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (data) {
-        setChatForm({ fullName: data.full_name || '', email: user.email || '' });
-      }
+      setUser(user);
     }
   };
 
@@ -113,66 +80,32 @@ export default function FaqArticle() {
     }
   };
 
-  const startChat = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatForm.fullName || !chatForm.email || !article) return;
+  const startChat = async () => {
+    if (!user) {
+      // Rediriger vers la connexion si non connecté
+      navigate('/connexion');
+      return;
+    }
     
     setIsStartingChat(true);
     try {
-      // 1. Create conversation
-      const { data: conv, error: convError } = await supabase.from('faq_conversations').insert([{
-        article_id: article.id,
-        full_name: chatForm.fullName,
-        email: chatForm.email,
-        status: 'nouvelle'
-      }]).select().single();
+      // Send a contextual message from the Support account to the user to initiate the chat
+      // This ensures the user is not blocked by the "Support Frilya" restrictions
+      const ADMIN_ID = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
+      const welcomeContent = `Bonjour,\n\nVous avez indiqué avoir besoin d'aide suite à la lecture de l'article FAQ : "${article?.title}".\n\nComment pouvons-nous vous aider ?`;
+      
+      await supabase.rpc('send_support_message', {
+        p_receiver_id: user.id,
+        p_content: welcomeContent
+      });
 
-      if (convError) throw convError;
-      setConversationId(conv.id);
-
-      // 2. Initial system message
-      const { data: msg, error: msgError } = await supabase.from('faq_messages').insert([{
-        conversation_id: conv.id,
-        sender_type: 'systeme',
-        sender_name: 'Système',
-        content: 'Merci de nous avoir contactés. Notre équipe vous répondra sous 24 à 48h.'
-      }]).select().single();
-
-      if (msgError) throw msgError;
-      setMessages([msg]);
+      // Redirect to the private messages with Support Frilya
+      navigate(`/tableau-de-bord/messages?contact=${ADMIN_ID}`);
 
     } catch (err) {
       console.error('Error starting chat:', err);
       alert('Une erreur est survenue lors de l\'ouverture de la discussion.');
-    } finally {
       setIsStartingChat(false);
-    }
-  };
-
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !conversationId) return;
-
-    const content = newMessage.trim();
-    setNewMessage('');
-
-    try {
-      const { error } = await supabase.from('faq_messages').insert([{
-        conversation_id: conversationId,
-        sender_type: 'utilisateur',
-        sender_name: chatForm.fullName,
-        content: content
-      }]);
-
-      if (error) throw error;
-      
-      // Update conversation timestamp
-      await supabase.from('faq_conversations')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', conversationId);
-
-    } catch (err) {
-      console.error('Error sending message:', err);
     }
   };
 
@@ -252,105 +185,14 @@ export default function FaqArticle() {
           ) : (
             <div>
               <p className="text-slate-600 mb-6">Désolé que cet article n'ait pas répondu à votre question.</p>
-              {!showChat ? (
-                <button
-                  onClick={() => setShowChat(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-frilya-600 hover:bg-frilya-700 text-white rounded-xl font-medium transition-colors"
-                >
-                  <MessageSquare className="w-5 h-5" /> Discuter avec le support
-                </button>
-              ) : (
-                <div className="mt-8 text-left border border-slate-200 rounded-2xl overflow-hidden max-w-2xl mx-auto">
-                  {/* Chat Header */}
-                  <div className="bg-slate-900 text-white p-4">
-                    <h4 className="font-bold">Support Frilya</h4>
-                    <p className="text-xs text-slate-300 mt-1">À propos de : {article.title}</p>
-                  </div>
-
-                  {!conversationId ? (
-                    /* Chat Registration Form */
-                    <form onSubmit={startChat} className="p-6 bg-white">
-                      <p className="text-sm text-slate-600 mb-4">Veuillez renseigner vos coordonnées pour commencer la discussion.</p>
-                      <div className="space-y-4 mb-6">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Nom / Prénom</label>
-                          <input
-                            type="text"
-                            required
-                            value={chatForm.fullName}
-                            onChange={e => setChatForm({...chatForm, fullName: e.target.value})}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-frilya-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                          <input
-                            type="email"
-                            required
-                            value={chatForm.email}
-                            onChange={e => setChatForm({...chatForm, email: e.target.value})}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-frilya-500"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={isStartingChat}
-                        className="w-full py-3 bg-frilya-600 text-white rounded-xl font-medium hover:bg-frilya-700 transition-colors disabled:opacity-50 flex items-center justify-center"
-                      >
-                        {isStartingChat ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Démarrer la discussion'}
-                      </button>
-                    </form>
-                  ) : (
-                    /* Chat Messages Area */
-                    <div className="flex flex-col h-[400px] bg-slate-50">
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {messages.map((msg) => {
-                          const isMe = msg.sender_type === 'utilisateur';
-                          const isSystem = msg.sender_type === 'systeme';
-                          
-                          if (isSystem) {
-                            return (
-                              <div key={msg.id} className="flex justify-center">
-                                <div className="bg-slate-200 text-slate-600 text-xs px-3 py-1 rounded-full text-center">
-                                  {msg.content}
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[80%] rounded-2xl p-3 text-sm ${
-                                isMe ? 'bg-frilya-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-900 rounded-bl-none'
-                              }`}>
-                                <div className="whitespace-pre-wrap break-words">{msg.content}</div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        <div ref={messagesEndRef} />
-                      </div>
-                      <form onSubmit={sendMessage} className="p-3 bg-white border-t border-slate-200 flex gap-2">
-                        <input
-                          type="text"
-                          value={newMessage}
-                          onChange={e => setNewMessage(e.target.value)}
-                          placeholder="Votre message..."
-                          className="flex-1 px-4 py-2 bg-slate-100 border-none rounded-full focus:ring-2 focus:ring-frilya-500 text-sm"
-                        />
-                        <button
-                          type="submit"
-                          disabled={!newMessage.trim()}
-                          className="p-2 bg-frilya-600 text-white rounded-full hover:bg-frilya-700 disabled:opacity-50"
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
-                      </form>
-                    </div>
-                  )}
-                </div>
-              )}
+              <button
+                onClick={startChat}
+                disabled={isStartingChat}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-frilya-600 hover:bg-frilya-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+              >
+                {isStartingChat ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageSquare className="w-5 h-5" />}
+                Discuter avec le support
+              </button>
             </div>
           )}
         </div>

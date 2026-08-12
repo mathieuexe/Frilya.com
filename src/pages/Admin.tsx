@@ -18,9 +18,8 @@ import BetaManagementView from './admin/views/BetaManagementView';
 import ServicesView from './admin/views/ServicesView';
 import FaqCategoriesView from './admin/views/faq/FaqCategoriesView';
 import FaqArticlesView from './admin/views/faq/FaqArticlesView';
-import FaqSupportView from './admin/views/faq/FaqSupportView';
 
-type Tab = 'dashboard' | 'buyers' | 'sellers' | 'services' | 'messages' | 'orders' | 'disputes' | 'settings' | 'beta' | 'faq_categories' | 'faq_articles' | 'faq_support';
+type Tab = 'dashboard' | 'buyers' | 'sellers' | 'services' | 'messages' | 'orders' | 'disputes' | 'settings' | 'beta' | 'faq_categories' | 'faq_articles';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -158,8 +157,7 @@ export default function Admin() {
       title: 'FAQ & Support',
       items: [
         { id: 'faq_categories', name: 'Catégories FAQ', icon: LayoutDashboard },
-        { id: 'faq_articles', name: 'Articles FAQ', icon: MessageSquare },
-        { id: 'faq_support', name: 'Support FAQ', icon: ShieldAlert }
+        { id: 'faq_articles', name: 'Articles FAQ', icon: MessageSquare }
       ]
     }
   ];
@@ -260,7 +258,6 @@ export default function Admin() {
             {activeTab === 'beta' && <BetaManagementView />}
             {activeTab === 'faq_categories' && <FaqCategoriesView />}
             {activeTab === 'faq_articles' && <FaqArticlesView />}
-            {activeTab === 'faq_support' && <FaqSupportView />}
           </div>
         </main>
 
