@@ -295,22 +295,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
 
       setNewMessage('');
 
-      // Vérifier si le destinataire est un administrateur
-      const { data: receiverData } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', selectedContact.id)
-        .single();
-
-      if (receiverData?.role === 'admin') {
-        // Envoi du message automatique du support
-        const autoReply = "Bonjour,\n\nVous avez contacté un administrateur de la plateforme. Veuillez noter que nous ne traitons pas les demandes d'assistance directement via la messagerie privée.\n\n- Si votre demande concerne un problème avec une commande en cours, veuillez ouvrir un litige depuis le détail de la commande.\n- Pour toute autre assistance, veuillez ouvrir un ticket SAV depuis votre tableau de bord.\n- Vous pouvez également consulter notre FAQ : https://frilya.com/faq\n\nL'équipe Support Frilya";
-        
-        await supabase.rpc('send_support_message', {
-          p_receiver_id: user.id,
-          p_content: autoReply
-        });
-      }
+      // On retire la vérification automatique de l'administrateur ici car l'interface 
+      // bloque désormais complètement l'envoi de messages vers le support pour les non-admins.
     } catch (error) {
       console.error("Erreur envoi", error);
     }
@@ -410,6 +396,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
   const isConversationClosed = 
     (selectedContact?.id === ADMIN_ID && profile?.admin_conversation_closed) || 
     (profile?.role === 'admin' && selectedContact?.admin_conversation_closed);
+
+  const isSupportBlocked = selectedContact?.id === ADMIN_ID && profile?.role !== 'admin';
 
   return (
     <div className={inDashboard ? "h-[calc(100vh-200px)] flex gap-6" : "container mx-auto px-4 py-8 h-[calc(100vh-140px)] flex gap-6"}>
@@ -538,6 +526,12 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           {isConversationClosed ? (
             <div className="text-center p-3 bg-slate-50 text-slate-500 text-sm rounded-xl border border-slate-200">
               L'administration a clôturé cette conversation. Vous ne pouvez plus y répondre.
+            </div>
+          ) : isSupportBlocked ? (
+            <div className="text-center p-4 bg-blue-50 text-blue-800 text-sm rounded-xl border border-blue-200">
+              <p className="font-bold mb-2">Vous ne pouvez pas envoyer de message privé à ce compte.</p>
+              <p className="mb-1">Si vous souhaitez ouvrir un litige concernant une commande, rendez-vous dans : « Litiges »</p>
+              <p>Pour obtenir de l’aide et contacter l’assistance, merci de vous rendre sur : <a href="https://frilya.com/faq" target="_blank" rel="noopener noreferrer" className="underline font-bold">https://frilya.com/faq</a></p>
             </div>
           ) : (
             <form onSubmit={handleSendMessage} className="flex gap-2">
