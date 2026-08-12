@@ -35,7 +35,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       const fetchContact = async () => {
         const { data: contactProfile } = await supabase
           .from('profiles')
-          .select('id, full_name, role, avatar_url, is_verified, slug')
+          .select('id, full_name, role, avatar_url, is_verified, slug, admin_conversation_closed')
           .eq('id', contactIdFromUrl)
           .single();
           
@@ -46,7 +46,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             full_name: finalName,
             avatar_url: contactProfile.avatar_url,
             is_verified: contactProfile.is_verified,
-            slug: contactProfile.slug
+            slug: contactProfile.slug,
+            admin_conversation_closed: contactProfile.admin_conversation_closed
           });
         }
       };
@@ -92,7 +93,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         // Récupérer les profils en une seule requête
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, is_verified, slug')
+          .select('id, full_name, avatar_url, is_verified, slug, admin_conversation_closed')
           .in('id', Array.from(userIds));
           
         const profileMap = new Map();
@@ -112,7 +113,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       if (contactIdFromUrl) {
         const { data: contactProfile } = await supabase
           .from('profiles')
-          .select('id, full_name, role, avatar_url, is_verified, slug')
+          .select('id, full_name, role, avatar_url, is_verified, slug, admin_conversation_closed')
           .eq('id', contactIdFromUrl)
           .single();
           
@@ -123,7 +124,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             full_name: finalName,
             avatar_url: contactProfile.avatar_url,
             is_verified: contactProfile.is_verified,
-            slug: contactProfile.slug
+            slug: contactProfile.slug,
+            admin_conversation_closed: contactProfile.admin_conversation_closed
           });
         }
       } else if (data && data.some(m => m.sender_id === ADMIN_ID || m.receiver_id === ADMIN_ID)) {
@@ -151,8 +153,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
           // Si le message nous concerne, on l'ajoute à la liste
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
-            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug').eq('id', payload.new.sender_id).single();
-            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug').eq('id', payload.new.receiver_id).single();
+            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug, admin_conversation_closed').eq('id', payload.new.sender_id).single();
+            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug, admin_conversation_closed').eq('id', payload.new.receiver_id).single();
             
             const fullMessage = {
               ...payload.new,
@@ -171,6 +173,9 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
             setMessages(prev => prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new } : m));
           }
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` }, payload => {
+          setProfile((prev: any) => ({ ...prev, ...payload.new }));
         })
         .on('broadcast', { event: 'typing' }, payload => {
           if (payload.payload.receiver_id === session.user.id) {
@@ -323,6 +328,27 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     return `Vu le ${date.toLocaleDateString('fr-FR')} à ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
+  const toggleConversationStatus = async () => {
+    if (!selectedContact || profile?.role !== 'admin') return;
+
+    try {
+      const newStatus = !selectedContact.admin_conversation_closed;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ admin_conversation_closed: newStatus })
+        .eq('id', selectedContact.id);
+
+      if (error) throw error;
+
+      setSelectedContact((prev: any) => ({
+        ...prev,
+        admin_conversation_closed: newStatus
+      }));
+    } catch (err) {
+      console.error('Erreur lors de la modification du statut de la conversation', err);
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-frilya-600" /></div>;
   }
@@ -345,6 +371,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         avatar_url: contactProfile?.avatar_url,
         is_verified: contactProfile?.is_verified,
         slug: contactProfile?.slug,
+        admin_conversation_closed: contactProfile?.admin_conversation_closed,
         lastMessage: msg.content,
         date: msg.created_at
       });
@@ -366,6 +393,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       avatar_url: selectedContact.avatar_url,
       is_verified: selectedContact.is_verified,
       slug: selectedContact.slug,
+      admin_conversation_closed: selectedContact.admin_conversation_closed,
       lastMessage: 'Nouvelle conversation',
       date: new Date().toISOString()
     });
@@ -379,7 +407,9 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
      (m.sender_id === selectedContact.id && m.receiver_id === user?.id))
   );
 
-  const isConversationClosed = selectedContact?.id === ADMIN_ID && profile?.admin_conversation_closed;
+  const isConversationClosed = 
+    (selectedContact?.id === ADMIN_ID && profile?.admin_conversation_closed) || 
+    (profile?.role === 'admin' && selectedContact?.admin_conversation_closed);
 
   return (
     <div className={inDashboard ? "h-[calc(100vh-200px)] flex gap-6" : "container mx-auto px-4 py-8 h-[calc(100vh-140px)] flex gap-6"}>
@@ -423,23 +453,39 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
 
       {/* Zone de chat */}
       <div className="flex-1 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-3">
+        <div className="p-4 border-b border-slate-100 font-bold text-slate-900 flex items-center justify-between gap-3">
           {selectedContact ? (
-            <Link 
-              to={`/profil/${selectedContact.slug || selectedContact.id}`} 
-              className="flex items-center gap-3 hover:bg-slate-50 p-1.5 -ml-1.5 rounded-2xl transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200">
-                <img src={selectedContact.avatar_url || catAvatar} alt={selectedContact.full_name} className="w-full h-full object-cover" />
-              </div>
-              <div className="flex items-center gap-1">
-                {selectedContact.full_name}
-                {selectedContact.is_verified && (
-                  <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 shrink-0" />
-                )}
-              </div>
-            </Link>
-          ) : 'Sélectionnez une conversation'}
+            <>
+              <Link 
+                to={`/profil/${selectedContact.slug || selectedContact.id}`} 
+                className="flex items-center gap-3 hover:bg-slate-50 p-1.5 -ml-1.5 rounded-2xl transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200">
+                  <img src={selectedContact.avatar_url || catAvatar} alt={selectedContact.full_name} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex items-center gap-1">
+                  {selectedContact.full_name}
+                  {selectedContact.is_verified && (
+                    <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 shrink-0" />
+                  )}
+                </div>
+              </Link>
+              {profile?.role === 'admin' && (
+                <button
+                  onClick={toggleConversationStatus}
+                  className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${
+                    selectedContact.admin_conversation_closed 
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100' 
+                      : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                  }`}
+                >
+                  {selectedContact.admin_conversation_closed ? 'Rouvrir la conversation' : 'Clôturer la conversation'}
+                </button>
+              )}
+            </>
+          ) : (
+            <div>Sélectionnez une conversation</div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50" ref={chatContainerRef}>
