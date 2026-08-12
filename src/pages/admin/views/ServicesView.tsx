@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Loader2, Search, Edit, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Loader2, Search, Trash2, CheckCircle, XCircle } from 'lucide-react';
 
 export default function ServicesView() {
   const [services, setServices] = useState<any[]>([]);

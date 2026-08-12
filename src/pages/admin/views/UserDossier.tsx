@@ -19,8 +19,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
-  const [disputes, setDisputes] = useState<any[]>([]);
-  const [tickets, setTickets] = useState<any[]>([]);
+  // const [disputes, setDisputes] = useState<any[]>([]);
+  // const [tickets, setTickets] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
 
   // Form states for info
@@ -46,23 +46,23 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         { data: ordersData },
         { data: salesData },
         { data: messagesData },
-        { data: disputesData },
-        { data: ticketsData },
+        // { data: disputesData },
+        // { data: ticketsData },
         { data: logsData }
       ] = await Promise.all([
         supabase.from('orders').select('*, service:services(title)').eq('buyer_id', userId).order('created_at', { ascending: false }),
         supabase.from('orders').select('*, service:services(title)').eq('seller_id', userId).order('created_at', { ascending: false }),
         supabase.from('messages').select('*, sender:profiles!messages_sender_id_fkey(full_name), receiver:profiles!messages_receiver_id_fkey(full_name)').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order('created_at', { ascending: false }),
-        supabase.from('disputes').select('*, order:orders(id)').eq('opened_by', userId).order('created_at', { ascending: false }),
-        supabase.from('tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        // supabase.from('disputes').select('*, order:orders(id)').eq('opened_by', userId).order('created_at', { ascending: false }),
+        // supabase.from('tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
         supabase.from('connection_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       ]);
 
       setOrders(ordersData || []);
       setSales(salesData || []);
       setMessages(messagesData || []);
-      setDisputes(disputesData || []);
-      setTickets(ticketsData || []);
+      // setDisputes(disputesData || []);
+      // setTickets(ticketsData || []);
       setLogs(logsData || []);
 
     } catch (err) {
