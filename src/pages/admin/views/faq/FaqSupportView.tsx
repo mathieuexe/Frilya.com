@@ -1,0 +1,1 @@
+export default function FaqSupportView() { return <div>Support FAQ</div>; }

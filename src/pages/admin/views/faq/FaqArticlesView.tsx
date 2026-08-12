@@ -1,0 +1,1 @@
+export default function FaqArticlesView() { return <div>Articles FAQ</div>; }

@@ -1,0 +1,1 @@
+export default function FaqHome() { return <div>FAQ Home</div>; }

@@ -22,6 +22,11 @@ import CheckoutPage from './pages/checkout/Checkout';
 import MessagesPage from './pages/messages/Messages';
 import ProfilePage from './pages/Profile';
 
+// FAQ
+import FaqHome from './pages/faq/FaqHome';
+import FaqCategory from './pages/faq/FaqCategory';
+import FaqArticle from './pages/faq/FaqArticle';
+
 import Orders from './pages/dashboard/Orders';
 import Favorites from './pages/dashboard/Favorites';
 import Disputes from './pages/dashboard/Disputes';
@@ -170,6 +175,11 @@ function AppRoutes() {
         <Route path="/service/:id" element={<ServiceDetailPage />} />
         <Route path="/profil/:slug" element={<ProfilePage />} />
         <Route path="/messages" element={<MessagesPage />} />
+        
+        {/* FAQ Publique */}
+        <Route path="/faq" element={<FaqHome />} />
+        <Route path="/faq/categorie/:slug" element={<FaqCategory />} />
+        <Route path="/faq/article/:slug" element={<FaqArticle />} />
         
         {/* Dashboard Acheteur */}
         <Route path="/tableau-de-bord" element={<BuyerDashboard />}>

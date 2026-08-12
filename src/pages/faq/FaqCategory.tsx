@@ -1,0 +1,1 @@
+export default function FaqCategory() { return <div>FAQ Category</div>; }
