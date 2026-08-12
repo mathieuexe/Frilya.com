@@ -14,6 +14,15 @@ export default function Settings() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  // Personal info state
+  const [fullName, setFullName] = useState('');
+  const [bio, setBio] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [personalInfoMessage, setPersonalInfoMessage] = useState('');
+  const [personalInfoError, setPersonalInfoError] = useState('');
+  const [savingPersonalInfo, setSavingPersonalInfo] = useState(false);
+
   // Bank form state
   const [beneficiaryName, setBeneficiaryName] = useState('');
   const [iban, setIban] = useState('');
@@ -33,6 +42,8 @@ export default function Settings() {
       const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       setProfile(data);
       if (data) {
+        setFullName(data.full_name || '');
+        setBio(data.bio || '');
         setBeneficiaryName(data.beneficiary_name || '');
         setIban(data.iban || '');
         setBic(data.bic || '');
@@ -41,6 +52,63 @@ export default function Settings() {
       }
     }
     setLoading(false);
+  };
+
+  const handleSavePersonalInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingPersonalInfo(true);
+    setPersonalInfoError('');
+    setPersonalInfoMessage('');
+
+    try {
+      let avatarUrl = profile.avatar_url;
+      let bannerUrl = profile.banner_url;
+
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${profile.id}_${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, avatarFile);
+        
+        if (uploadError) throw new Error("Erreur lors de l'upload de l'avatar. Le bucket 'avatars' existe-t-il ?");
+        
+        const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        avatarUrl = publicUrlData.publicUrl;
+      }
+
+      if (bannerFile) {
+        const fileExt = bannerFile.name.split('.').pop();
+        const fileName = `${profile.id}_${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('banners')
+          .upload(fileName, bannerFile);
+        
+        if (uploadError) throw new Error("Erreur lors de l'upload de la bannière. Le bucket 'banners' existe-t-il ?");
+        
+        const { data: publicUrlData } = supabase.storage.from('banners').getPublicUrl(fileName);
+        bannerUrl = publicUrlData.publicUrl;
+      }
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: fullName,
+          bio: bio,
+          avatar_url: avatarUrl,
+          banner_url: bannerUrl,
+        })
+        .eq('id', profile.id);
+
+      if (updateError) throw updateError;
+
+      setPersonalInfoMessage("Informations personnelles mises à jour avec succès.");
+      fetchProfile();
+    } catch (err: any) {
+      setPersonalInfoError(err.message || "Erreur lors de la mise à jour des informations personnelles");
+    } finally {
+      setSavingPersonalInfo(false);
+    }
   };
 
   const validateIban = async () => {
@@ -187,17 +255,76 @@ export default function Settings() {
           <SettingsIcon className="w-5 h-5 text-slate-400" />
           <h2 className="text-lg font-bold text-slate-900">Informations personnelles</h2>
         </div>
+
+        {personalInfoError && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100">{personalInfoError}</div>}
+        {personalInfoMessage && <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-xl text-sm border border-green-100">{personalInfoMessage}</div>}
         
-        <form className="space-y-4">
+        <form onSubmit={handleSavePersonalInfo} className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Avatar</label>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                {avatarFile ? (
+                  <img src={URL.createObjectURL(avatarFile)} alt="Nouvel avatar" className="w-full h-full object-cover" />
+                ) : profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar actuel" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">Aucun</div>
+                )}
+              </div>
+              <div className="flex-1">
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={e => setAvatarFile(e.target.files ? e.target.files[0] : null)}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-frilya-50 file:text-frilya-700 hover:file:bg-frilya-100 cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Bannière de profil</label>
+            {profile?.banner_url && !bannerFile && (
+              <div className="h-24 w-full rounded-xl overflow-hidden mb-2 border border-slate-200">
+                <img src={profile.banner_url} alt="Bannière actuelle" className="w-full h-full object-cover" />
+              </div>
+            )}
+            {bannerFile && (
+              <div className="h-24 w-full rounded-xl overflow-hidden mb-2 border border-slate-200">
+                <img src={URL.createObjectURL(bannerFile)} alt="Nouvelle bannière" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={e => setBannerFile(e.target.files ? e.target.files[0] : null)}
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-frilya-50 file:text-frilya-700 hover:file:bg-frilya-100 cursor-pointer"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Nom complet</label>
             <input 
               type="text" 
-              defaultValue={profile?.full_name}
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
               placeholder="Votre nom" 
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-frilya-600 focus:ring-1 focus:ring-frilya-600"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Biographie</label>
+            <textarea 
+              value={bio}
+              onChange={e => setBio(e.target.value)}
+              placeholder="Parlez-nous un peu de vous..." 
+              rows={4}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-frilya-600 focus:ring-1 focus:ring-frilya-600 resize-none"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Email</label>
             <input 
@@ -207,6 +334,17 @@ export default function Settings() {
               placeholder="Votre email" 
               className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 outline-none opacity-70"
             />
+          </div>
+
+          <div className="pt-4">
+            <button 
+              type="submit" 
+              disabled={savingPersonalInfo}
+              className="flex items-center gap-2 bg-frilya-600 hover:bg-frilya-500 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm disabled:opacity-70"
+            >
+              {savingPersonalInfo ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              {savingPersonalInfo ? 'Enregistrement...' : 'Enregistrer les modifications'}
+            </button>
           </div>
         </form>
       </div>

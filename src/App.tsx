@@ -115,8 +115,7 @@ function AppRoutes() {
             : "👋 Bienvenue sur Frilya !\n\nNous sommes ravis de vous compter parmi nous. N'hésitez pas à compléter votre profil et à explorer les services disponibles.";
 
           // Send message using RPC to bypass RLS (since we are inserting on behalf of Admin)
-          await supabase.rpc('send_system_message', {
-            p_sender_id: adminId,
+          await supabase.rpc('send_support_message', {
             p_receiver_id: session.user.id,
             p_content: welcomeContent
           });
@@ -170,7 +169,7 @@ function AppRoutes() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/recherche" element={<SearchPage />} />
         <Route path="/service/:id" element={<ServiceDetailPage />} />
-        <Route path="/profil/:id" element={<ProfilePage />} />
+        <Route path="/profil/:slug" element={<ProfilePage />} />
         <Route path="/messages" element={<MessagesPage />} />
         
         {/* Dashboard Acheteur */}

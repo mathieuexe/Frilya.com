@@ -25,6 +25,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
 
   // Form states for info
   const [editForm, setEditForm] = useState<any>({});
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [impersonating, setImpersonating] = useState(false);
 
@@ -76,6 +78,27 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const handleSaveInfo = async () => {
     setSaving(true);
     try {
+      let avatarUrl = editForm.avatar_url;
+      let bannerUrl = editForm.banner_url;
+
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${userId}_${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, avatarFile);
+        if (uploadError) throw uploadError;
+        const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        avatarUrl = publicUrlData.publicUrl;
+      }
+
+      if (bannerFile) {
+        const fileExt = bannerFile.name.split('.').pop();
+        const fileName = `${userId}_${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('banners').upload(fileName, bannerFile);
+        if (uploadError) throw uploadError;
+        const { data: publicUrlData } = supabase.storage.from('banners').getPublicUrl(fileName);
+        bannerUrl = publicUrlData.publicUrl;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -84,12 +107,22 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
           bio: editForm.bio,
           balance: editForm.balance,
           is_seller: editForm.is_seller,
-          role: editForm.role
+          role: editForm.role,
+          avatar_url: avatarUrl,
+          banner_url: bannerUrl
         })
         .eq('id', userId);
         
       if (error) throw error;
-      setProfile({ ...profile, ...editForm });
+
+      // Envoyer un message de notification
+      const messageContent = "Bonjour,\n\nUn administrateur a récemment mis à jour les informations de votre profil (Avatar, Bannière ou Biographie).\n\nSi vous n'êtes pas à l'origine de cette demande, veuillez nous contacter.\n\nCordialement,\nL'équipe Support Frilya";
+      await supabase.rpc('send_support_message', {
+        p_receiver_id: userId,
+        p_content: messageContent
+      });
+
+      setProfile({ ...profile, ...editForm, avatar_url: avatarUrl, banner_url: bannerUrl });
       alert("Informations mises à jour avec succès.");
     } catch (err) {
       console.error("Erreur de sauvegarde", err);
@@ -222,6 +255,47 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
               <h3 className="font-bold text-lg text-slate-900 mb-4 border-b pb-2">Informations Personnelles</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2 flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                    {avatarFile ? (
+                      <img src={URL.createObjectURL(avatarFile)} alt="Nouvel avatar" className="w-full h-full object-cover" />
+                    ) : editForm.avatar_url ? (
+                      <img src={editForm.avatar_url} alt="Avatar actuel" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">Aucun</div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Avatar</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={e => setAvatarFile(e.target.files ? e.target.files[0] : null)}
+                      className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Bannière</label>
+                  {editForm.banner_url && !bannerFile && (
+                    <div className="h-20 w-full rounded-xl overflow-hidden mb-2 border border-slate-200">
+                      <img src={editForm.banner_url} alt="Bannière actuelle" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  {bannerFile && (
+                    <div className="h-20 w-full rounded-xl overflow-hidden mb-2 border border-slate-200">
+                      <img src={URL.createObjectURL(bannerFile)} alt="Nouvelle bannière" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={e => setBannerFile(e.target.files ? e.target.files[0] : null)}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nom Complet</label>
                   <input type="text" value={editForm.full_name || ''} onChange={e => setEditForm({...editForm, full_name: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-frilya-600" />

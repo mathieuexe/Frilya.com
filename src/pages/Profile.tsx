@@ -4,26 +4,33 @@ import { supabase } from '../lib/supabase';
 import { Loader2, Star, Calendar, MessageSquare } from 'lucide-react';
 import catAvatar from '../assets/cat.png';
 import verifiedIcon from '../assets/verified.png';
+import chatIcon from '../assets/chat.png';
 
 export default function Profile() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
 
   useEffect(() => {
-    if (id) {
+    if (slug) {
       fetchProfile();
     }
-  }, [id]);
+  }, [slug]);
 
   const fetchProfile = async () => {
     try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
+      // First try to match by slug, if not try by id (for backward compatibility)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug || '');
+      
+      let query = supabase.from('profiles').select('*');
+      if (isUuid) {
+        query = query.eq('id', slug);
+      } else {
+        query = query.eq('slug', slug);
+      }
+      
+      const { data: profileData, error: profileError } = await query.single();
 
       if (profileError) throw profileError;
       setProfile(profileData);
@@ -32,7 +39,7 @@ export default function Profile() {
         const { data: servicesData } = await supabase
           .from('services')
           .select('*, categories(name)')
-          .eq('seller_id', id)
+          .eq('seller_id', profileData.id)
           .eq('status', 'active');
         
         if (servicesData) setServices(servicesData);
@@ -67,23 +74,32 @@ export default function Profile() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
-        <div className="h-32 bg-frilya-900 w-full relative">
-          <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        <div className="h-40 bg-frilya-900 w-full relative">
+          {profile.banner_url && (
+            <img src={profile.banner_url} alt="Bannière" className="absolute inset-0 w-full h-full object-cover" />
+          )}
+          <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay"></div>
         </div>
         <div className="px-6 md:px-10 pb-10 relative">
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-end -mt-16 mb-6">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white bg-white shrink-0 shadow-md">
+          <div className="flex flex-col md:flex-row gap-6 mb-6">
+            <div className="-mt-16 w-32 h-32 rounded-full overflow-hidden border-4 border-white bg-white shrink-0 shadow-md relative z-10">
               <img 
                 src={profile.avatar_url || catAvatar} 
                 alt={profile.full_name || 'Utilisateur'}
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex-1 pb-2">
+            <div className="flex-1 pt-2 md:pt-4">
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-3xl font-bold text-slate-900">{profile.full_name || 'Utilisateur anonyme'}</h1>
                 {profile.is_verified && (
-                  <img src={verifiedIcon} alt="Vérifié" className="w-6 h-6" title="Compte vérifié par Frilya" />
+                  <div className="relative group cursor-pointer flex items-center">
+                    <img src={verifiedIcon} alt="Vérifié" className="w-6 h-6" />
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center">
+                      Compte vérifié. Frilya certifie que ce compte est authentique.
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
@@ -97,9 +113,9 @@ export default function Profile() {
                 </span>
               </div>
             </div>
-            <div className="w-full md:w-auto shrink-0 pb-2">
+            <div className="w-full md:w-auto shrink-0 pt-2 md:pt-4">
               <button className="w-full md:w-auto bg-frilya-600 hover:bg-frilya-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
-                <MessageSquare className="w-4 h-4" />
+                <img src={chatIcon} alt="Chat" className="w-4 h-4" />
                 Contacter
               </button>
             </div>

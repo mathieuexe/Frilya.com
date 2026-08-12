@@ -4,6 +4,7 @@ import { AlertTriangle, Settings, LayoutDashboard, Plus } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
+import seenIcon from '../../assets/seen.png';
 
 // Import Custom Icons
 import puzzleIcon from '../../assets/puzzle-piece.png';
@@ -122,10 +123,10 @@ export default function SellerDashboard() {
 
             <nav className="space-y-1">
               <Link
-                to={`/profil/${profile.id}`}
+                to={`/profil/${profile.slug || profile.id}`}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium mb-2 border border-slate-100"
               >
-                <span className="text-xl">👁️</span>
+                <img src={seenIcon} alt="Voir" className="w-5 h-5 opacity-70 group-hover:opacity-100" />
                 Voir mon profil public
               </Link>
 
