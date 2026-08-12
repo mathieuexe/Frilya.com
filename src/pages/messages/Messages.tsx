@@ -257,6 +257,9 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !user || !selectedContact) return;
+    
+    // Sécurité supplémentaire côté logique
+    if (isConversationClosed || isSupportBlocked) return;
 
     try {
       const { data: insertedMessage, error } = await supabase
