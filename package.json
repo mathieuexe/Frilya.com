@@ -17,6 +17,7 @@
     "postcss": "^8.5.26",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-easy-crop": "^6.2.3",
     "react-router-dom": "^7.18.2",
     "stripe": "^22.5.0",
     "tailwindcss": "^4.3.3"

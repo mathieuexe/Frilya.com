@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Save, CreditCard, Upload, Loader2, CheckCircle2, AlertTriangle, UserMinus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLocation, useNavigate } from 'react-router-dom';
+import ImageCropper from '../../components/ImageCropper';
 
 export default function Settings() {
   const location = useLocation();
@@ -22,6 +23,9 @@ export default function Settings() {
   const [personalInfoMessage, setPersonalInfoMessage] = useState('');
   const [personalInfoError, setPersonalInfoError] = useState('');
   const [savingPersonalInfo, setSavingPersonalInfo] = useState(false);
+
+  // Cropper state
+  const [cropState, setCropState] = useState<{ url: string, type: 'avatar' | 'banner' } | null>(null);
 
   // Bank form state
   const [beneficiaryName, setBeneficiaryName] = useState('');
@@ -65,7 +69,7 @@ export default function Settings() {
       let bannerUrl = profile.banner_url;
 
       if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop();
+        const fileExt = avatarFile.name.split('.').pop() || 'jpg';
         const fileName = `${profile.id}_${Math.random()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
           .from('avatars')
@@ -78,7 +82,7 @@ export default function Settings() {
       }
 
       if (bannerFile) {
-        const fileExt = bannerFile.name.split('.').pop();
+        const fileExt = bannerFile.name.split('.').pop() || 'jpg';
         const fileName = `${profile.id}_${Math.random()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
           .from('banners')
@@ -108,6 +112,39 @@ export default function Settings() {
       setPersonalInfoError(err.message || "Erreur lors de la mise à jour des informations personnelles");
     } finally {
       setSavingPersonalInfo(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const url = URL.createObjectURL(file);
+      setCropState({ url, type });
+      // Reset input so the same file can be selected again if needed
+      e.target.value = '';
+    }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    if (!cropState) return;
+    
+    const file = new File([croppedBlob], `cropped_${cropState.type}.jpg`, { type: 'image/jpeg' });
+    
+    if (cropState.type === 'avatar') {
+      setAvatarFile(file);
+    } else {
+      setBannerFile(file);
+    }
+    
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(cropState.url);
+    setCropState(null);
+  };
+
+  const handleCropCancel = () => {
+    if (cropState) {
+      URL.revokeObjectURL(cropState.url);
+      setCropState(null);
     }
   };
 
@@ -276,7 +313,7 @@ export default function Settings() {
                 <input 
                   type="file" 
                   accept="image/*"
-                  onChange={e => setAvatarFile(e.target.files ? e.target.files[0] : null)}
+                  onChange={e => handleFileSelect(e, 'avatar')}
                   className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-frilya-50 file:text-frilya-700 hover:file:bg-frilya-100 cursor-pointer"
                 />
               </div>
@@ -298,7 +335,7 @@ export default function Settings() {
             <input 
               type="file" 
               accept="image/*"
-              onChange={e => setBannerFile(e.target.files ? e.target.files[0] : null)}
+              onChange={e => handleFileSelect(e, 'banner')}
               className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-frilya-50 file:text-frilya-700 hover:file:bg-frilya-100 cursor-pointer"
             />
           </div>
@@ -504,6 +541,15 @@ export default function Settings() {
             </div>
           </div>
         </div>
+      )}
+      {cropState && (
+        <ImageCropper
+          image={cropState.url}
+          aspect={cropState.type === 'avatar' ? 1 : 16 / 5}
+          shape={cropState.type === 'avatar' ? 'round' : 'rect'}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
       )}
     </div>
   );
