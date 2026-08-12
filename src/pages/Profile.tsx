@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Loader2, Star, Calendar, MessageSquare } from 'lucide-react';
+import { Loader2, Star, Calendar } from 'lucide-react';
 import catAvatar from '../assets/cat.png';
 import verifiedIcon from '../assets/verified.png';
 import chatIcon from '../assets/chat.png';

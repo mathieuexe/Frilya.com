@@ -107,7 +107,6 @@ function AppRoutes() {
 
         // Check if welcome message was sent
         if (profile && !profile.welcome_message_sent) {
-          const adminId = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
           const isBetaUser = profile.role === 'beta' || profile.is_beta;
           
           const welcomeContent = isBetaUser 
