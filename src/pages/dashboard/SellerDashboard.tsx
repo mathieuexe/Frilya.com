@@ -6,7 +6,7 @@ import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
 
 // Import Custom Icons
-import shapeIcon from '../../assets/shape.png';
+import puzzleIcon from '../../assets/puzzle-piece.png';
 import checkoutIcon from '../../assets/checkout.png';
 import chatIcon from '../../assets/chat.png';
 import moneyIcon from '../../assets/money.png';
@@ -45,7 +45,7 @@ export default function SellerDashboard() {
 
   const navItems = [
     { name: 'Vue d\'ensemble', path: '/dashboard/vendeur', icon: LayoutDashboard },
-    { name: 'Mes services', path: '/dashboard/vendeur/services', customIcon: shapeIcon, hideForBeta: true },
+    { name: 'Mes services', path: '/dashboard/vendeur/services', customIcon: puzzleIcon, hideForBeta: true },
     { name: 'Commandes reçues', path: '/dashboard/vendeur/commandes', customIcon: checkoutIcon, hideForBeta: true },
     { name: 'Messages', path: '/dashboard/vendeur/messages', customIcon: chatIcon },
     { name: 'Litiges', path: '/dashboard/vendeur/litiges', icon: AlertTriangle, hideForBeta: true },
