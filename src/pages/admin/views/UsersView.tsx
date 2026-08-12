@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Loader2, Search, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { Loader2, Search, Edit, Trash2, CheckCircle, Eye } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import verifiedIcon from '../../../assets/verified.png';
+import UserDossier from './UserDossier';
 
 export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -127,8 +129,12 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
                       >
                         <CheckCircle className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-frilya-50 rounded-lg transition-colors" title="Éditer">
-                        <Edit className="w-4 h-4" />
+                      <button 
+                        onClick={() => setSelectedUser(user.id)}
+                        className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-frilya-50 rounded-lg transition-colors" 
+                        title="Ouvrir le dossier complet"
+                      >
+                        <Eye className="w-4 h-4" />
                       </button>
                       <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Bannir/Supprimer">
                         <Trash2 className="w-4 h-4" />
@@ -141,6 +147,10 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
           </tbody>
         </table>
       </div>
+
+      {selectedUser && (
+        <UserDossier userId={selectedUser} onClose={() => { setSelectedUser(null); fetchUsers(); }} />
+      )}
     </div>
   );
 }

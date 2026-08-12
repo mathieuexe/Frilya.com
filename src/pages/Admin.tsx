@@ -15,8 +15,9 @@ import OrdersView from './admin/views/OrdersView';
 import DisputesView from './admin/views/DisputesView';
 import SettingsView from './admin/views/SettingsView';
 import BetaManagementView from './admin/views/BetaManagementView';
+import ServicesView from './admin/views/ServicesView';
 
-type Tab = 'dashboard' | 'buyers' | 'sellers' | 'messages' | 'orders' | 'disputes' | 'settings' | 'beta';
+type Tab = 'dashboard' | 'buyers' | 'sellers' | 'services' | 'messages' | 'orders' | 'disputes' | 'settings' | 'beta';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -137,6 +138,7 @@ export default function Admin() {
     {
       title: 'Activité',
       items: [
+        { id: 'services', name: 'Services', icon: Store },
         { id: 'messages', name: 'Messages', icon: MessageSquare },
         { id: 'orders', name: 'Commandes', icon: ShoppingBag },
         { id: 'disputes', name: 'Litiges', icon: AlertTriangle }
@@ -239,6 +241,7 @@ export default function Admin() {
             {activeTab === 'dashboard' && <DashboardView stats={stats} />}
             {activeTab === 'buyers' && <UsersView type="acheteur" />}
             {activeTab === 'sellers' && <UsersView type="vendeur" />}
+            {activeTab === 'services' && <ServicesView />}
             {activeTab === 'messages' && <MessagesView />}
             {activeTab === 'orders' && <OrdersView />}
             {activeTab === 'disputes' && <DisputesView />}
