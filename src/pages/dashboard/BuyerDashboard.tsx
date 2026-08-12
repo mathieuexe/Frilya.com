@@ -91,6 +91,14 @@ export default function BuyerDashboard() {
             </div>
 
             <nav className="space-y-1">
+              <Link
+                to={`/profil/${profile.id}`}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium mb-2 border border-slate-100"
+              >
+                <span className="text-xl">👁️</span>
+                Voir mon profil public
+              </Link>
+
               {navItems.filter(item => !(profile?.is_beta && item.hideForBeta)).map((item) => {
                 const isActive = location.pathname === item.path;
                 return (

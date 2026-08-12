@@ -20,6 +20,7 @@ import ServicesList from './pages/dashboard/seller/ServicesList';
 import CreateServicePage from './pages/dashboard/seller/CreateService';
 import CheckoutPage from './pages/checkout/Checkout';
 import MessagesPage from './pages/messages/Messages';
+import ProfilePage from './pages/Profile';
 
 import Orders from './pages/dashboard/Orders';
 import Favorites from './pages/dashboard/Favorites';
@@ -166,8 +167,10 @@ function AppRoutes() {
     <Routes>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/recherche" element={<SearchPage />} />
         <Route path="/service/:id" element={<ServiceDetailPage />} />
+        <Route path="/profil/:id" element={<ProfilePage />} />
         <Route path="/messages" element={<MessagesPage />} />
         
         {/* Dashboard Acheteur */}
