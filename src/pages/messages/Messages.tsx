@@ -81,7 +81,11 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           // Si le message nous concerne, on l'ajoute à la liste
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
-            setMessages(prev => [...prev, payload.new]);
+            setMessages(prev => {
+              // Éviter les doublons si on l'a déjà ajouté localement
+              if (prev.some(m => m.id === payload.new.id)) return prev;
+              return [...prev, payload.new];
+            });
           }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
@@ -171,15 +175,25 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     if (!newMessage.trim() || !user || !selectedContact) return;
 
     try {
-      const { error } = await supabase
+      const { data: insertedMessage, error } = await supabase
         .from('messages')
         .insert({
           sender_id: user.id,
           receiver_id: selectedContact.id,
           content: newMessage
-        });
+        })
+        .select('*, sender:profiles!messages_sender_id_fkey(full_name), receiver:profiles!messages_receiver_id_fkey(full_name)')
+        .single();
 
       if (error) throw error;
+
+      // Ajout immédiat au state local pour une interface plus réactive
+      if (insertedMessage) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === insertedMessage.id)) return prev;
+          return [...prev, insertedMessage];
+        });
+      }
 
       // Vérifier si le destinataire est un administrateur
       const { data: receiverData } = await supabase
@@ -246,6 +260,16 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       }
     }
   });
+
+  // Injection du contact sélectionné (nouvelle conversation)
+  if (selectedContact && !contactsMap.has(selectedContact.id)) {
+    contactsMap.set(selectedContact.id, {
+      id: selectedContact.id,
+      full_name: selectedContact.full_name,
+      lastMessage: 'Nouvelle conversation',
+      date: new Date().toISOString()
+    });
+  }
 
   const contacts = Array.from(contactsMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
