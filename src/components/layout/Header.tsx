@@ -85,7 +85,7 @@ export default function Header() {
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Quel service recherchez-vous ?" 
+              placeholder="Rechercher un service, un utilisateur..." 
               className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-full pl-4 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-frilya-600/20 focus:border-frilya-600 transition-all"
             />
             <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-frilya-600 transition-colors">
