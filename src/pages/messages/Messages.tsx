@@ -1,16 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Send, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function Messages({ inDashboard = false }: { inDashboard?: boolean }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const contactIdFromUrl = searchParams.get('contact');
+  
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedContact, setSelectedContact] = useState<any>(null);
+  
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const channelRef = useRef<any>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const ADMIN_ID = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
 
@@ -45,24 +53,60 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       if (error) throw error;
       setMessages(data || []);
 
-      // Sélectionner l'admin par défaut si on a des messages de lui
-      if (data && data.some(m => m.sender_id === ADMIN_ID || m.receiver_id === ADMIN_ID)) {
+      // Sélectionner le contact si présent dans l'URL
+      if (contactIdFromUrl) {
+        const { data: contactProfile } = await supabase
+          .from('profiles')
+          .select('id, full_name, role')
+          .eq('id', contactIdFromUrl)
+          .single();
+          
+        if (contactProfile) {
+          const finalName = contactProfile.id === ADMIN_ID ? 'Équipe Frilya' : (contactProfile.full_name || 'Utilisateur');
+          setSelectedContact({ id: contactProfile.id, full_name: finalName });
+        }
+      } else if (data && data.some(m => m.sender_id === ADMIN_ID || m.receiver_id === ADMIN_ID)) {
+        // Sélectionner l'admin par défaut si on a des messages de lui
         setSelectedContact({ id: ADMIN_ID, full_name: 'Équipe Frilya' });
       }
 
       // Abonnement temps réel (Realtime Supabase)
-      const subscription = supabase
-        .channel('public:messages')
+      const channel = supabase.channel('public:messages', {
+        config: { broadcast: { self: false } }
+      });
+      
+      channelRef.current = channel;
+
+      channel
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           // Si le message nous concerne, on l'ajoute à la liste
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
             setMessages(prev => [...prev, payload.new]);
           }
         })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+          if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
+            setMessages(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
+          }
+        })
+        .on('broadcast', { event: 'typing' }, payload => {
+          if (payload.payload.receiver_id === session.user.id) {
+            setTypingUsers(prev => new Set(prev).add(payload.payload.sender_id));
+          }
+        })
+        .on('broadcast', { event: 'stop_typing' }, payload => {
+          if (payload.payload.receiver_id === session.user.id) {
+            setTypingUsers(prev => {
+              const next = new Set(prev);
+              next.delete(payload.payload.sender_id);
+              return next;
+            });
+          }
+        })
         .subscribe();
 
       return () => {
-        supabase.removeChannel(subscription);
+        supabase.removeChannel(channel);
       };
 
     } catch (error) {
@@ -70,6 +114,56 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, selectedContact]);
+
+  useEffect(() => {
+    // Marquer les messages comme lus
+    if (!selectedContact || !user) return;
+    
+    const unreadIds = messages
+      .filter(m => m.receiver_id === user.id && m.sender_id === selectedContact.id && !m.is_read)
+      .map(m => m.id);
+    
+    if (unreadIds.length > 0) {
+      supabase
+        .from('messages')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .in('id', unreadIds)
+        .then(() => {
+          setMessages(prev => prev.map(m => 
+            unreadIds.includes(m.id) ? { ...m, is_read: true, read_at: new Date().toISOString() } : m
+          ));
+        });
+    }
+  }, [selectedContact, messages, user]);
+
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    
+    if (!selectedContact || !user || !channelRef.current) return;
+    
+    channelRef.current.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { sender_id: user.id, receiver_id: selectedContact.id }
+    });
+    
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'stop_typing',
+        payload: { sender_id: user.id, receiver_id: selectedContact.id }
+      });
+    }, 2000);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -108,6 +202,18 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     } catch (error) {
       console.error("Erreur envoi", error);
     }
+  };
+
+  const formatSeenDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    
+    if (diff < 60000) return "Vu à l'instant";
+    if (diff < 3600000) return `Vu il y a ${Math.floor(diff / 60000)} min`;
+    if (diff < 86400000) return `Vu il y a ${Math.floor(diff / 3600000)}h`;
+    
+    return `Vu le ${date.toLocaleDateString('fr-FR')} à ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   if (loading) {
@@ -193,20 +299,44 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           ) : currentMessages.length === 0 ? (
             <div className="text-center text-slate-500 mt-10">Aucun message pour le moment.</div>
           ) : (
-            currentMessages.map((msg: any) => {
+            currentMessages.map((msg: any, index: number) => {
               const isMine = msg.sender_id === user?.id;
+              
+              // On cherche si ce message est le dernier envoyé par l'utilisateur
+              const isLastMine = isMine && index === currentMessages.map(m => m.sender_id === user?.id).lastIndexOf(true);
+              
               return (
-                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                   <div className={`max-w-[70%] rounded-2xl p-3 ${isMine ? 'bg-frilya-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm'}`}>
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     <span className={`text-[10px] block mt-1 ${isMine ? 'text-frilya-200' : 'text-slate-400'}`}>
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
+                  {isLastMine && msg.is_read && (
+                    <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                      <span className="w-3 h-3 rounded-full bg-frilya-100 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-frilya-500"></div>
+                      </span>
+                      {msg.read_at ? formatSeenDate(msg.read_at) : 'Vu'}
+                    </div>
+                  )}
                 </div>
               );
             })
           )}
+          
+          {selectedContact && typingUsers.has(selectedContact.id) && (
+            <div className="flex items-start">
+              <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-none p-4 shadow-sm flex gap-1 items-center h-10">
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          )}
+          
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-white">
@@ -219,7 +349,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleTyping}
                 placeholder="Écrivez votre message..."
                 disabled={!selectedContact}
                 className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-frilya-600 focus:ring-1 focus:ring-frilya-600 disabled:opacity-50"
