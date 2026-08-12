@@ -133,7 +133,7 @@ export default function FaqArticle() {
     <div className="bg-slate-50 min-h-screen pb-16">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-3xl mx-auto px-4 py-4">
           <nav className="flex items-center text-sm text-slate-500 overflow-x-auto whitespace-nowrap">
             <Link to="/" className="hover:text-frilya-600 transition-colors">Accueil</Link>
             <ChevronRight className="w-4 h-4 mx-2 shrink-0" />
@@ -148,12 +148,12 @@ export default function FaqArticle() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="max-w-3xl mx-auto px-4 py-12">
         {/* Article Content */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12 mb-8 text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8">{article.title}</h1>
           <div 
-            className="prose max-w-none text-slate-600"
+            className="prose max-w-none text-slate-600 mx-auto text-left"
             dangerouslySetInnerHTML={{ __html: article.content }}
           />
         </div>

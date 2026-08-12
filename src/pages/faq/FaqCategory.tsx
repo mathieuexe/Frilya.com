@@ -85,7 +85,7 @@ export default function FaqCategory() {
     <div className="bg-slate-50 min-h-screen pb-16">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-3xl mx-auto px-4 py-4">
           <nav className="flex items-center text-sm text-slate-500">
             <Link to="/" className="hover:text-frilya-600 transition-colors">Accueil</Link>
             <ChevronRight className="w-4 h-4 mx-2" />
@@ -97,7 +97,7 @@ export default function FaqCategory() {
       </div>
 
       {/* Header */}
-      <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="max-w-3xl mx-auto px-4 py-12 text-center">
         <h1 className="text-3xl font-bold text-slate-900 mb-4">{category.name}</h1>
         {category.description && (
           <p className="text-lg text-slate-600">{category.description}</p>
@@ -105,7 +105,7 @@ export default function FaqCategory() {
       </div>
 
       {/* Articles List */}
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-3xl mx-auto px-4">
         {articles.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
             <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />

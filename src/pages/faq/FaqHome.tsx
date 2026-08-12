@@ -171,13 +171,13 @@ export default function FaqHome() {
       </div>
 
       {/* Categories Grid */}
-      <div className="max-w-5xl mx-auto px-4 -mt-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="max-w-5xl mx-auto px-4 -mt-8 relative z-10 flex justify-center">
+        <div className="flex flex-wrap justify-center gap-6 w-full">
           {categories.map((category) => (
             <Link 
               key={category.id} 
               to={`/faq/categorie/${category.slug}`}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md hover:border-frilya-200 transition-all group flex flex-col h-full"
+              className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md hover:border-frilya-200 transition-all group flex flex-col"
             >
               <div className="w-12 h-12 bg-frilya-50 rounded-xl flex items-center justify-center text-frilya-600 mb-4 group-hover:scale-110 transition-transform">
                 <HelpCircle className="w-6 h-6" />
