@@ -18,7 +18,7 @@ export default function BuyerDashboard() {
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      navigate('/auth');
+      navigate('/connexion');
       return;
     }
 
@@ -33,12 +33,12 @@ export default function BuyerDashboard() {
   };
 
   const navItems = [
-    { name: 'Vue d\'ensemble', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Mes commandes', path: '/dashboard/commandes', icon: Package, hideForBeta: true },
-    { name: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-    { name: 'Favoris', path: '/dashboard/favoris', icon: Heart },
-    { name: 'Litiges', path: '/dashboard/litiges', icon: AlertTriangle, hideForBeta: true },
-    { name: 'Paramètres', path: '/dashboard/parametres', icon: Settings, hideForBeta: true },
+    { name: 'Vue d\'ensemble', path: '/tableau-de-bord', icon: LayoutDashboard },
+    { name: 'Mes commandes', path: '/tableau-de-bord/commandes', icon: Package, hideForBeta: true },
+    { name: 'Messages', path: '/tableau-de-bord/messages', icon: MessageSquare },
+    { name: 'Favoris', path: '/tableau-de-bord/favoris', icon: Heart },
+    { name: 'Litiges', path: '/tableau-de-bord/litiges', icon: AlertTriangle, hideForBeta: true },
+    { name: 'Paramètres', path: '/tableau-de-bord/parametres', icon: Settings, hideForBeta: true },
   ];
 
   if (loading) {
@@ -55,7 +55,7 @@ export default function BuyerDashboard() {
           </Link>
         )}
         {(profile?.role === 'vendeur' || profile?.role === 'admin' || profile?.role === 'beta') && (
-          <Link to="/dashboard/vendeur" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
+          <Link to="/tableau-de-bord/vendeur" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
             → Espace Vendeur
           </Link>
         )}
@@ -110,9 +110,9 @@ export default function BuyerDashboard() {
               })}
               {profile?.is_beta && (
                 <Link
-                  to="/dashboard/feedback"
+                  to="/tableau-de-bord/feedback"
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all mt-2 ${
-                    location.pathname === '/dashboard/feedback' 
+                    location.pathname === '/tableau-de-bord/feedback' 
                       ? 'bg-amber-100 text-amber-700 font-bold' 
                       : 'bg-amber-50 text-amber-600 hover:bg-amber-100 font-medium'
                   }`}
@@ -149,7 +149,7 @@ export default function BuyerDashboard() {
             </div>
           )}
 
-          {location.pathname === '/dashboard' ? (
+          {location.pathname === '/tableau-de-bord' ? (
             <div className="space-y-6">
               <h1 className="text-2xl font-bold text-slate-900">Bienvenue sur votre espace</h1>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

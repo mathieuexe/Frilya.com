@@ -56,7 +56,7 @@ export default async function handler(req: any, res: any) {
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: redirectTo || (req.headers.origin + '/dashboard'),
+        redirectTo: redirectTo || (req.headers.origin + '/tableau-de-bord'),
       }
     });
 

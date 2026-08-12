@@ -187,7 +187,7 @@ export default function CreateService() {
         if (error) throw error;
         currentServiceId = data.id;
         setServiceId(currentServiceId);
-        window.history.replaceState(null, '', `/dashboard/vendeur/services/edition/${currentServiceId}`);
+        window.history.replaceState(null, '', `/tableau-de-bord/vendeur/services/edition/${currentServiceId}`);
       }
 
       // Sauvegarder les Packages (uniquement si l'étape 2 a été atteinte ou si on a un ID)
@@ -313,7 +313,7 @@ export default function CreateService() {
         if (serviceId) {
           const { error } = await supabase.from('services').update({ status: 'active' }).eq('id', serviceId);
           if (error) throw error;
-          navigate('/dashboard/vendeur/services');
+          navigate('/tableau-de-bord/vendeur/services');
         }
       } catch (err) {
         console.error(err);
@@ -470,7 +470,7 @@ export default function CreateService() {
       {/* En-tête */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <Link to="/dashboard/vendeur/services" className="p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors">
+          <Link to="/tableau-de-bord/vendeur/services" className="p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors">
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </Link>
           <h1 className="text-2xl font-bold text-slate-900">

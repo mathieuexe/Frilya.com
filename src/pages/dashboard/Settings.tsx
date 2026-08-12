@@ -171,7 +171,7 @@ export default function Settings() {
       if (updateError) throw updateError;
 
       alert("Votre compte vendeur a été clôturé avec succès. Vous allez être redirigé vers l'espace acheteur.");
-      navigate('/dashboard');
+      navigate('/tableau-de-bord');
       
     } catch (err: any) {
       console.error(err);

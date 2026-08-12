@@ -156,7 +156,7 @@ export default function Home() {
                 />
               </div>
               <Link 
-                to={`/search?q=${searchQuery}`}
+                to={`/recherche?q=${searchQuery}`}
                 className="bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3.5 px-8 rounded-xl transition-colors whitespace-nowrap text-center"
               >
                 Rechercher
@@ -166,7 +166,7 @@ export default function Home() {
             <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-frilya-200">
                 <span className="font-bold">Populaire :</span>
                 {categoryCards.slice(0, 3).map(cat => (
-                  <Link key={cat.name} to={`/search?category=${cat.slug}`} className="hover:text-white hover:underline transition-all">
+                  <Link key={cat.name} to={`/recherche?category=${cat.slug}`} className="hover:text-white hover:underline transition-all">
                     {cat.name}
                   </Link>
                 ))}
@@ -225,7 +225,7 @@ export default function Home() {
             {categoryCards.map((cat) => (
               <Link 
                 key={cat.name} 
-                to={`/search?category=${cat.slug}`}
+                to={`/recherche?category=${cat.slug}`}
                 className="group flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl hover:bg-frilya-50 border border-transparent hover:border-frilya-100 transition-all cursor-pointer"
               >
                 <div className="w-12 h-12 mb-4 group-hover:scale-110 transition-transform bg-white rounded-2xl shadow-sm flex items-center justify-center">
@@ -337,10 +337,10 @@ export default function Home() {
                 Rejoignez la communauté Frilya dès aujourd'hui. Que vous soyez acheteur ou freelance, votre place est ici.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/auth" className="bg-white text-frilya-900 hover:bg-slate-50 font-bold py-4 px-8 rounded-xl transition-colors shadow-lg">
+                <Link to="/connexion" className="bg-white text-frilya-900 hover:bg-slate-50 font-bold py-4 px-8 rounded-xl transition-colors shadow-lg">
                   Trouver un freelance
                 </Link>
-                <Link to="/vendeur/onboarding" className="bg-transparent border border-white/30 hover:bg-white/10 text-white font-bold py-4 px-8 rounded-xl transition-colors">
+                <Link to="/vendeur/inscription" className="bg-transparent border border-white/30 hover:bg-white/10 text-white font-bold py-4 px-8 rounded-xl transition-colors">
                   Devenir vendeur
                 </Link>
               </div>

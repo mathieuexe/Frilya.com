@@ -45,7 +45,7 @@ export default function Admin() {
       if (sessionError) throw sessionError;
       
       if (!session) {
-        navigate('/auth');
+        navigate('/connexion');
         return;
       }
 
@@ -95,7 +95,7 @@ export default function Admin() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/auth');
+    navigate('/connexion');
   };
 
   if (loading) {
@@ -223,10 +223,10 @@ export default function Admin() {
             {navCategories.flatMap(c => c.items).find(i => i.id === activeTab)?.name}
           </h1>
           <div className="flex items-center gap-4">
-            <a href="/dashboard" className="text-sm font-medium text-slate-500 hover:text-frilya-600 transition-colors">
+            <a href="/tableau-de-bord" className="text-sm font-medium text-slate-500 hover:text-frilya-600 transition-colors">
               Espace Acheteur
             </a>
-            <a href="/dashboard/vendeur" className="text-sm font-medium text-slate-500 hover:text-frilya-600 transition-colors">
+            <a href="/tableau-de-bord/vendeur" className="text-sm font-medium text-slate-500 hover:text-frilya-600 transition-colors">
               Espace Vendeur
             </a>
             <a href="/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-500 hover:text-frilya-600 transition-colors border-l border-slate-200 pl-4">

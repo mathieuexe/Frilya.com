@@ -205,7 +205,7 @@ export default function BetaRegistration() {
               Retour
             </a>
             {!isAuthenticated ? (
-              <a href="/auth" className="inline-block bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3 px-8 rounded-xl transition-colors">
+              <a href="/connexion" className="inline-block bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3 px-8 rounded-xl transition-colors">
                 Se connecter
               </a>
             ) : (
@@ -237,7 +237,7 @@ export default function BetaRegistration() {
                     Connecté en tant que <strong>{userProfile?.full_name || 'Utilisateur'}</strong>
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <a href="/dashboard" className="inline-flex items-center justify-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto">
+                    <a href="/tableau-de-bord" className="inline-flex items-center justify-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto">
                       Accéder à mon espace
                     </a>
                     <button 
@@ -254,7 +254,7 @@ export default function BetaRegistration() {
               ) : (
                 <>
                   <p className="text-sm text-slate-500 mb-3">Vous avez déjà un compte Bêta ?</p>
-                  <a href="/auth" className="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto">
+                  <a href="/connexion" className="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-6 rounded-xl transition-colors w-full sm:w-auto">
                     Se connecter à son compte Bêta
                   </a>
                 </>

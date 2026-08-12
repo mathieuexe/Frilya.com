@@ -24,7 +24,7 @@ export default function SellerDashboard() {
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      navigate('/auth');
+      navigate('/connexion');
       return;
     }
 
@@ -35,7 +35,7 @@ export default function SellerDashboard() {
       .single();
     
     if (!data?.is_seller) {
-      navigate('/vendeur/onboarding');
+      navigate('/vendeur/inscription');
       return;
     }
 
@@ -44,12 +44,12 @@ export default function SellerDashboard() {
   };
 
   const navItems = [
-    { name: 'Vue d\'ensemble', path: '/dashboard/vendeur', icon: LayoutDashboard },
-    { name: 'Mes services', path: '/dashboard/vendeur/services', customIcon: puzzleIcon, hideForBeta: true },
-    { name: 'Commandes reçues', path: '/dashboard/vendeur/commandes', customIcon: checkoutIcon, hideForBeta: true },
-    { name: 'Messages', path: '/dashboard/vendeur/messages', customIcon: chatIcon },
-    { name: 'Litiges', path: '/dashboard/vendeur/litiges', icon: AlertTriangle, hideForBeta: true },
-    { name: 'Paramètres pro', path: '/dashboard/vendeur/parametres', icon: Settings, hideForBeta: true },
+    { name: 'Vue d\'ensemble', path: '/tableau-de-bord/vendeur', icon: LayoutDashboard },
+    { name: 'Mes services', path: '/tableau-de-bord/vendeur/services', customIcon: puzzleIcon, hideForBeta: true },
+    { name: 'Commandes reçues', path: '/tableau-de-bord/vendeur/commandes', customIcon: checkoutIcon, hideForBeta: true },
+    { name: 'Messages', path: '/tableau-de-bord/vendeur/messages', customIcon: chatIcon },
+    { name: 'Litiges', path: '/tableau-de-bord/vendeur/litiges', icon: AlertTriangle, hideForBeta: true },
+    { name: 'Paramètres pro', path: '/tableau-de-bord/vendeur/parametres', icon: Settings, hideForBeta: true },
   ];
 
   if (loading) {
@@ -74,7 +74,7 @@ export default function SellerDashboard() {
             → Administration
           </Link>
         )}
-        <Link to="/dashboard" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
+        <Link to="/tableau-de-bord" className="text-sm font-bold text-slate-500 hover:text-frilya-600 transition-colors">
           → Espace Acheteur
         </Link>
       </div>
@@ -107,6 +107,18 @@ export default function SellerDashboard() {
                 Espace Vendeur
               </span>
             </div>
+            
+            {!profile?.is_beta && (
+              <div className="mb-4">
+                <Link 
+                  to="/tableau-de-bord/vendeur/services/nouveau"
+                  className="w-full flex items-center justify-center gap-2 bg-frilya-600 hover:bg-frilya-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Créer un service
+                </Link>
+              </div>
+            )}
 
             <nav className="space-y-1">
               {navItems.filter(item => !(profile?.is_beta && item.hideForBeta)).map((item) => {
@@ -132,9 +144,9 @@ export default function SellerDashboard() {
               })}
               {profile?.is_beta && (
                 <Link
-                  to="/dashboard/feedback"
+                  to="/tableau-de-bord/feedback"
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all mt-2 ${
-                    location.pathname === '/dashboard/feedback' 
+                    location.pathname === '/tableau-de-bord/feedback' 
                       ? 'bg-amber-100 text-amber-700 font-bold' 
                       : 'bg-amber-50 text-amber-600 hover:bg-amber-100 font-medium'
                   }`}
@@ -156,18 +168,6 @@ export default function SellerDashboard() {
                 Se déconnecter
               </button>
             </div>
-
-            {!profile?.is_beta && (
-              <div className="mt-4">
-                <Link 
-                  to="/dashboard/vendeur/services/nouveau"
-                  className="w-full flex items-center justify-center gap-2 bg-frilya-600 hover:bg-frilya-500 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  Créer un service
-                </Link>
-              </div>
-            )}
           </div>
         </aside>
 
@@ -183,7 +183,7 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {!hasBankInfo && location.pathname !== '/dashboard/vendeur' && !profile?.is_beta && (
+        {!hasBankInfo && location.pathname !== '/tableau-de-bord/vendeur' && !profile?.is_beta && (
           <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4">
             <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
             <div>
@@ -191,14 +191,14 @@ export default function SellerDashboard() {
               <p className="text-amber-700 text-sm mb-3">
                 Vous devez enregistrer vos informations bancaires et faire valider votre RIB pour pouvoir publier des services et recevoir vos paiements.
               </p>
-              <Link to="/dashboard/vendeur/parametres" className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+              <Link to="/tableau-de-bord/vendeur/parametres" className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
                 Configurer mon compte
               </Link>
             </div>
           </div>
         )}
 
-        {location.pathname === '/dashboard/vendeur' ? (
+        {location.pathname === '/tableau-de-bord/vendeur' ? (
             <div className="space-y-6">
               <h1 className="text-2xl font-bold text-slate-900">Tableau de bord Vendeur</h1>
               
@@ -223,7 +223,7 @@ export default function SellerDashboard() {
                   <div>
                     <h3 className="font-bold text-red-800">RIB refusé</h3>
                     <p className="text-sm text-red-700 mt-1">Votre relevé d'identité bancaire a été refusé. Veuillez mettre à jour vos coordonnées dans vos paramètres.</p>
-                    <Link to="/dashboard/vendeur/parametres" className="inline-block mt-3 bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">
+                    <Link to="/tableau-de-bord/vendeur/parametres" className="inline-block mt-3 bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">
                       Mettre à jour mon RIB
                     </Link>
                   </div>
@@ -277,7 +277,7 @@ export default function SellerDashboard() {
                     Pour pouvoir publier des annonces et recevoir l'argent de vos ventes, vous devez configurer votre compte bancaire. Frilya sécurise les paiements et vous les reverse une fois la commande terminée.
                   </p>
                   <Link 
-                    to="/dashboard/vendeur/parametres" 
+                    to="/tableau-de-bord/vendeur/parametres" 
                     className="inline-block bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm"
                   >
                     Enregistrer mes informations bancaires

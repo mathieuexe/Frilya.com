@@ -56,7 +56,7 @@ export default function ServicesList() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-900">Mes services</h1>
         <Link 
-          to="/dashboard/vendeur/services/nouveau" 
+          to="/tableau-de-bord/vendeur/services/nouveau" 
           className="bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
@@ -74,7 +74,7 @@ export default function ServicesList() {
             Commencez à proposer vos compétences en créant votre première annonce. C'est gratuit et ça ne prend que quelques minutes.
           </p>
           <Link 
-            to="/dashboard/vendeur/services/nouveau" 
+            to="/tableau-de-bord/vendeur/services/nouveau" 
             className="inline-flex items-center gap-2 bg-frilya-600 hover:bg-frilya-500 text-white font-bold py-3 px-6 rounded-xl transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -136,7 +136,7 @@ export default function ServicesList() {
                             <Eye className="w-4 h-4" />
                           </Link>
                         )}
-                        <Link to={`/dashboard/vendeur/services/edition/${service.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
+                        <Link to={`/tableau-de-bord/vendeur/services/edition/${service.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
                           <Edit className="w-4 h-4" />
                         </Link>
                         <button onClick={() => handleDelete(service.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">

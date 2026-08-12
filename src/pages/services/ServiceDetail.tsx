@@ -52,9 +52,9 @@ export default function ServiceDetail() {
       <div className="bg-white border-b border-slate-200 py-3">
         <div className="container mx-auto px-4">
           <div className="text-sm text-slate-500 flex items-center gap-2">
-            <Link to="/search" className="hover:text-frilya-600">Accueil</Link>
+            <Link to="/recherche" className="hover:text-frilya-600">Accueil</Link>
             <span>/</span>
-            <Link to="/search" className="hover:text-frilya-600">Services</Link>
+            <Link to="/recherche" className="hover:text-frilya-600">Services</Link>
             <span>/</span>
             <span className="text-slate-900 truncate max-w-xs">{service.title}</span>
           </div>
@@ -153,7 +153,7 @@ export default function ServiceDetail() {
               </div>
 
               <Link 
-                to={`/checkout/${service.id}`}
+                to={`/paiement/${service.id}`}
                 className="w-full flex justify-center items-center bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md"
               >
                 Commander ({service.price_basic} €)

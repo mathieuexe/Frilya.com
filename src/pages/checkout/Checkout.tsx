@@ -23,7 +23,7 @@ export default function Checkout() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate(`/auth?redirect=/checkout/${id}`);
+        navigate(`/connexion?redirect=/checkout/${id}`);
         return;
       }
       setUser(session.user);
@@ -104,7 +104,7 @@ export default function Checkout() {
           order_id: order.id,
           service_title: service.title,
           success_url: window.location.origin + `/success?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: window.location.origin + `/checkout/${service.slug || service.id}`,
+          cancel_url: window.location.origin + `/paiement/${service.slug || service.id}`,
         }),
       });
 

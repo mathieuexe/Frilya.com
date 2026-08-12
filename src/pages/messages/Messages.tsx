@@ -22,7 +22,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate('/auth');
+        navigate('/connexion');
         return;
       }
       setUser(session.user);

@@ -35,7 +35,7 @@ export default function Auth() {
           password,
         });
         if (signInError) throw signInError;
-        navigate('/dashboard'); // Redirection après connexion vers le dashboard
+        navigate('/tableau-de-bord'); // Redirection après connexion vers le dashboard
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,

@@ -120,7 +120,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         },
         body: JSON.stringify({
           email: profile.email,
-          redirectTo: window.location.origin + '/dashboard'
+          redirectTo: window.location.origin + '/tableau-de-bord'
         })
       });
 

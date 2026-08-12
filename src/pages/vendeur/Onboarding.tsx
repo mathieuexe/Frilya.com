@@ -17,7 +17,7 @@ export default function Onboarding() {
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      navigate('/auth?redirect=/vendeur/onboarding');
+      navigate('/connexion?redirect=/vendeur/onboarding');
       return;
     }
 
@@ -28,7 +28,7 @@ export default function Onboarding() {
       .single();
     
     if (data?.is_seller) {
-      navigate('/dashboard/vendeur');
+      navigate('/tableau-de-bord/vendeur');
       return;
     }
 
@@ -48,7 +48,7 @@ export default function Onboarding() {
 
       if (error) throw error;
       
-      navigate('/dashboard/vendeur');
+      navigate('/tableau-de-bord/vendeur');
     } catch (error) {
       console.error('Erreur lors de la mise à jour du profil', error);
       alert('Une erreur est survenue.');

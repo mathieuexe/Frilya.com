@@ -97,7 +97,7 @@ function AppRoutes() {
         if (profile?.role === 'beta' || profile?.is_beta) {
           if (profile.beta_end_date && new Date(profile.beta_end_date) < new Date()) {
             await supabase.auth.signOut();
-            window.location.href = '/auth?error=beta_expired';
+            window.location.href = '/connexion?error=beta_expired';
             return;
           }
         }
@@ -147,7 +147,7 @@ function AppRoutes() {
   // Si on est en maintenance et pas admin, on redirige tout vers /maintenance
   // Sauf si on est déjà sur /maintenance ou /auth (pour pouvoir se connecter en tant qu'admin)
   if (maintenanceMode && !isAdmin) {
-    if (location.pathname !== '/maintenance' && location.pathname !== '/auth' && location.pathname !== '/beta') {
+    if (location.pathname !== '/maintenance' && location.pathname !== '/connexion' && location.pathname !== '/beta') {
       return <Navigate to="/maintenance" replace />;
     }
   } else if (!maintenanceMode && location.pathname === '/maintenance') {
@@ -166,12 +166,12 @@ function AppRoutes() {
     <Routes>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/search" element={<SearchPage />} />
+        <Route path="/recherche" element={<SearchPage />} />
         <Route path="/service/:id" element={<ServiceDetailPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         
         {/* Dashboard Acheteur */}
-        <Route path="/dashboard" element={<BuyerDashboard />}>
+        <Route path="/tableau-de-bord" element={<BuyerDashboard />}>
           <Route path="commandes" element={<Orders />} />
           <Route path="messages" element={<MessagesPage inDashboard={true} />} />
           <Route path="favoris" element={<Favorites />} />
@@ -181,8 +181,8 @@ function AppRoutes() {
         </Route>
 
         {/* Dashboard Vendeur */}
-        <Route path="/vendeur/onboarding" element={<OnboardingSeller />} />
-        <Route path="/dashboard/vendeur" element={<SellerDashboard />}>
+        <Route path="/vendeur/inscription" element={<OnboardingSeller />} />
+        <Route path="/tableau-de-bord/vendeur" element={<SellerDashboard />}>
           <Route path="services" element={<ServicesList />} />
           <Route path="services/nouveau" element={<CreateServicePage />} />
           <Route path="services/edition/:id" element={<CreateServicePage />} />
@@ -197,8 +197,8 @@ function AppRoutes() {
       {/* Routes sans layout standard (plein écran) */}
       <Route path="/maintenance" element={<MaintenancePage />} />
       <Route path="/beta" element={<BetaRegistrationPage />} />
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="/checkout/:id" element={<CheckoutPage />} />
+      <Route path="/connexion" element={<AuthPage />} />
+      <Route path="/paiement/:id" element={<CheckoutPage />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

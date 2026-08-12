@@ -22,7 +22,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-slate-500">
               <li><Link to="/about" className="hover:text-frilya-600 transition-colors">Qui sommes-nous ?</Link></li>
               <li><Link to="/comment-ca-marche" className="hover:text-frilya-600 transition-colors">Comment ça marche</Link></li>
-              <li><Link to="/vendeur/onboarding" className="hover:text-frilya-600 transition-colors">Devenir vendeur</Link></li>
+              <li><Link to="/vendeur/inscription" className="hover:text-frilya-600 transition-colors">Devenir vendeur</Link></li>
             </ul>
           </div>
           
