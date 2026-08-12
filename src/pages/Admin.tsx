@@ -157,7 +157,7 @@ export default function Admin() {
     {
       title: 'Support & SAV',
       items: [
-        { id: 'tickets', name: 'Tickets SAV', icon: AlertTriangle },
+        { id: 'tickets', name: 'Mes tickets', icon: AlertTriangle },
         { id: 'faq_categories', name: 'Catégories FAQ', icon: LayoutDashboard },
         { id: 'faq_articles', name: 'Articles FAQ', icon: MessageSquare }
       ]

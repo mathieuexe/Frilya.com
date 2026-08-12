@@ -107,7 +107,7 @@ export default function TicketsView() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Tickets SAV & Signalements</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Mes tickets</h1>
           <p className="text-slate-500">Gérez les problèmes remontés par les utilisateurs.</p>
         </div>
       </div>
