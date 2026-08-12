@@ -86,6 +86,24 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         });
 
       if (error) throw error;
+
+      // Vérifier si le destinataire est un administrateur
+      const { data: receiverData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', selectedContact.id)
+        .single();
+
+      if (receiverData?.role === 'admin') {
+        // Envoi du message automatique du support
+        const autoReply = "Bonjour,\n\nVous avez contacté un administrateur de la plateforme. Veuillez noter que nous ne traitons pas les demandes d'assistance directement via la messagerie privée.\n\n- Si votre demande concerne un problème avec une commande en cours, veuillez ouvrir un litige depuis le détail de la commande.\n- Pour toute autre assistance, veuillez ouvrir un ticket SAV depuis votre tableau de bord.\n- Vous pouvez également consulter notre FAQ : https://frilya.com/faq\n\nL'équipe Support Frilya";
+        
+        await supabase.rpc('send_support_message', {
+          p_receiver_id: user.id,
+          p_content: autoReply
+        });
+      }
+
       setNewMessage('');
     } catch (error) {
       console.error("Erreur envoi", error);

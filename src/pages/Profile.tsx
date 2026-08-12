@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Loader2, Star, Calendar } from 'lucide-react';
 import catAvatar from '../assets/cat.png';
 import verifiedIcon from '../assets/verified.png';
-import chatIcon from '../assets/chat.png';
+import messengerIcon from '../assets/messenger.png';
 
 export default function Profile() {
   const { slug } = useParams();
@@ -114,10 +114,10 @@ export default function Profile() {
               </div>
             </div>
             <div className="w-full md:w-auto shrink-0 pt-2 md:pt-4">
-              <button className="w-full md:w-auto bg-frilya-600 hover:bg-frilya-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
-                <img src={chatIcon} alt="Chat" className="w-4 h-4" />
+              <Link to="/messages" className="w-full md:w-auto bg-frilya-600 hover:bg-frilya-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
+                <img src={messengerIcon} alt="Message" className="w-4 h-4" />
                 Contacter
-              </button>
+              </Link>
             </div>
           </div>
 
