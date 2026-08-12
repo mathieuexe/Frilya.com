@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
-import { Search, Filter, AlertTriangle, CheckCircle, Clock, X, ExternalLink, Paperclip } from 'lucide-react';
+import { Filter, AlertTriangle, CheckCircle, Clock, X, ExternalLink, Paperclip } from 'lucide-react';
 
 export default function TicketsView() {
   const [tickets, setTickets] = useState<any[]>([]);
