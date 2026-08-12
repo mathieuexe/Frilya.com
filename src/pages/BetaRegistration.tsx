@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { sendBetaConfirmationEmail } from '../lib/email';
-import { Loader2, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { DiscordIcon } from '../components/DiscordIcon';
 import logo from '../assets/logo.png';
 import bgVideo from '../assets/original-e6c90943d3d9da57b997c2898244009e.mp4';
 
@@ -340,7 +341,7 @@ export default function BetaRegistration() {
             <label className="block text-sm font-bold text-slate-700 mb-2">ID Discord</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <MessageCircle className="h-5 w-5 text-slate-400" />
+                <DiscordIcon className="h-5 w-5 text-[#5865F2]" />
               </div>
               <input
                 type="text"

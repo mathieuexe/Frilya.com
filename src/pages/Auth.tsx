@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, Loader2, ArrowRight, User, MessageCircle } from 'lucide-react';
+import { Lock, Mail, Loader2, ArrowRight, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { DiscordIcon } from '../components/DiscordIcon';
 import logo from '../assets/logo.png';
 
 export default function Auth() {
@@ -151,7 +152,7 @@ export default function Auth() {
                 <label className="block text-sm font-bold text-slate-700 mb-2">ID Discord</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <MessageCircle className="h-5 w-5 text-slate-400" />
+                    <DiscordIcon className="h-5 w-5 text-[#5865F2]" />
                   </div>
                   <input
                     type="text"
