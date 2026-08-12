@@ -114,7 +114,7 @@ export default function Profile() {
               </div>
             </div>
             <div className="w-full md:w-auto shrink-0 pt-2 md:pt-4">
-              <Link to={`/messages?contact=${profile.id}`} className="w-full md:w-auto bg-frilya-600 hover:bg-frilya-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
+              <Link to={`/tableau-de-bord/messages?contact=${profile.id}`} className="w-full md:w-auto bg-frilya-600 hover:bg-frilya-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
                 <img src={messengerIcon} alt="Message" className="w-4 h-4" />
                 Contacter
               </Link>
