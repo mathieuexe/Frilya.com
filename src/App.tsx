@@ -22,10 +22,11 @@ import CheckoutPage from './pages/checkout/Checkout';
 import MessagesPage from './pages/messages/Messages';
 import ProfilePage from './pages/Profile';
 
-// FAQ
+// FAQ & Signalement
 import FaqHome from './pages/faq/FaqHome';
 import FaqCategory from './pages/faq/FaqCategory';
 import FaqArticle from './pages/faq/FaqArticle';
+import ReportIssue from './pages/ReportIssue';
 
 import Orders from './pages/dashboard/Orders';
 import Favorites from './pages/dashboard/Favorites';
@@ -176,10 +177,11 @@ function AppRoutes() {
         <Route path="/profil/:slug" element={<ProfilePage />} />
         <Route path="/messages" element={<MessagesPage />} />
         
-        {/* FAQ Publique */}
+        {/* FAQ Publique & Signalement */}
         <Route path="/faq" element={<FaqHome />} />
         <Route path="/faq/categorie/:slug" element={<FaqCategory />} />
         <Route path="/faq/article/:slug" element={<FaqArticle />} />
+        <Route path="/signaler-probleme" element={<ReportIssue />} />
         
         {/* Dashboard Acheteur */}
         <Route path="/tableau-de-bord" element={<BuyerDashboard />}>
