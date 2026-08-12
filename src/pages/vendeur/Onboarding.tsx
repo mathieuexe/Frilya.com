@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowRight, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import equipeImg from '../../assets/equipe.png';
 
 export default function Onboarding() {
@@ -9,6 +9,7 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     checkUser();
@@ -30,6 +31,18 @@ export default function Onboarding() {
     if (data?.is_seller) {
       navigate('/tableau-de-bord/vendeur');
       return;
+    }
+
+    if (data?.seller_closed_at) {
+      const closedAt = new Date(data.seller_closed_at);
+      const now = new Date();
+      const threeWeeksInMs = 3 * 7 * 24 * 60 * 60 * 1000;
+      const timeSinceClosed = now.getTime() - closedAt.getTime();
+      
+      if (timeSinceClosed < threeWeeksInMs) {
+        const daysRemaining = Math.ceil((threeWeeksInMs - timeSinceClosed) / (1000 * 60 * 60 * 24));
+        setCooldownRemaining(daysRemaining);
+      }
     }
 
     setProfile(data);
@@ -93,17 +106,36 @@ export default function Onboarding() {
           </ul>
         </div>
 
-        <button
-          onClick={handleBecomeSeller}
-          disabled={saving}
-          className="w-full flex items-center justify-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md disabled:opacity-70"
-        >
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Activer mon espace vendeur'}
-          {!saving && <ArrowRight className="w-5 h-5" />}
-        </button>
-        <p className="text-xs text-slate-400 mt-4">
-          En activant votre espace vendeur, vous acceptez nos Conditions Générales de Vente.
-        </p>
+        {cooldownRemaining !== null ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-left">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-amber-100 rounded-xl shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-amber-900 mb-1">Période de carence active</h3>
+                <p className="text-amber-700 text-sm">
+                  Suite à la clôture récente de votre précédent compte vendeur, vous devez patienter un délai de 3 semaines avant de pouvoir en ouvrir un nouveau. 
+                  Il vous reste <strong>{cooldownRemaining} jour{cooldownRemaining > 1 ? 's' : ''}</strong> d'attente.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={handleBecomeSeller}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md disabled:opacity-70"
+            >
+              {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Activer mon espace vendeur'}
+              {!saving && <ArrowRight className="w-5 h-5" />}
+            </button>
+            <p className="text-xs text-slate-400 mt-4">
+              En activant votre espace vendeur, vous acceptez nos Conditions Générales de Vente.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

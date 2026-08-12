@@ -153,7 +153,7 @@ export default function Settings() {
       // Le prompt dit "ses messages dédié au compte vendeur". Comme on n'a pas de distinction claire, on va le faire via une RPC plus tard
       // ou on update simplement le profil pour lui retirer le statut vendeur, ce qui cache l'accès.)
       
-      // Update profile to remove seller status
+      // Update profile to remove seller status and record closure date for cooldown
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -163,8 +163,8 @@ export default function Settings() {
           iban: null,
           bic: null,
           bank_name: null,
-          bank_address: null,
-          beneficiary_name: null
+          beneficiary_name: null,
+          seller_closed_at: new Date().toISOString()
         })
         .eq('id', profile.id);
 
@@ -355,6 +355,8 @@ export default function Settings() {
                   <p className="text-sm text-red-700 mb-4 leading-relaxed">
                     Si vous ne souhaitez plus vendre sur Frilya, vous pouvez clôturer votre espace vendeur pour redevenir un simple acheteur.
                     <strong> Cette action supprimera tous vos services et données associées.</strong>
+                    <br/><br/>
+                    <em>Note : Suite à une clôture, vous devrez patienter 3 semaines avant de pouvoir ouvrir un nouveau compte vendeur.</em>
                   </p>
                   <button 
                     onClick={handleCloseSellerAccount}
