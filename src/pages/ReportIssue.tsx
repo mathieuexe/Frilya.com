@@ -47,10 +47,8 @@ export default function ReportIssue() {
   };
 
   const generateTicketNumber = () => {
-    const date = new Date();
-    const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
-    const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `TCK-${dateStr}-${randomStr}`;
+    const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `TCK-${randomStr}`;
   };
 
   const uploadFiles = async () => {
