@@ -26,6 +26,25 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     checkUserAndFetchMessages();
   }, []);
 
+  useEffect(() => {
+    if (contactIdFromUrl && user) {
+      // S'assurer qu'on sélectionne bien le contact passé en paramètre
+      const fetchContact = async () => {
+        const { data: contactProfile } = await supabase
+          .from('profiles')
+          .select('id, full_name, role')
+          .eq('id', contactIdFromUrl)
+          .single();
+          
+        if (contactProfile) {
+          const finalName = contactProfile.id === ADMIN_ID ? 'Équipe Frilya' : (contactProfile.full_name || 'Utilisateur');
+          setSelectedContact({ id: contactProfile.id, full_name: finalName });
+        }
+      };
+      fetchContact();
+    }
+  }, [contactIdFromUrl, user]);
+
   const checkUserAndFetchMessages = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();

@@ -120,9 +120,9 @@ export default function ServiceDetail() {
                   <p className="text-slate-600 mb-4">
                     {service.profiles?.bio || "Ce vendeur n'a pas encore rédigé de description."}
                   </p>
-                  <button className="px-6 py-2 border border-slate-300 rounded-xl text-slate-700 font-bold hover:bg-slate-50 transition-colors">
+                  <Link to={`/tableau-de-bord/messages?contact=${service.seller_id}`} className="inline-block px-6 py-2 border border-slate-300 rounded-xl text-slate-700 font-bold hover:bg-slate-50 transition-colors text-center">
                     Contacter
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
