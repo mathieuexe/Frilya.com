@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft } from 'lucide-react';
+import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 
 interface UserDossierProps {
@@ -26,6 +26,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   // Form states for info
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [impersonating, setImpersonating] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -95,6 +96,48 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       alert("Erreur lors de la sauvegarde.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImpersonate = async () => {
+    if (!profile?.email) return;
+    
+    if (!confirm(`Voulez-vous vraiment vous connecter en tant que ${profile.full_name || profile.email} ? Vous serez redirigé.`)) {
+      return;
+    }
+
+    setImpersonating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Non autorisé");
+
+      // Appeler notre fonction Vercel pour générer le Magic Link
+      const res = await fetch('/api/impersonate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          email: profile.email,
+          redirectTo: window.location.origin + '/dashboard'
+        })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur de connexion");
+      }
+
+      if (data.url) {
+        // Rediriger vers l'URL générée qui va logguer l'admin en tant que l'utilisateur
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error("Erreur d'impersonation", err);
+      alert(err.message || "Impossible de se connecter en tant que cet utilisateur.");
+      setImpersonating(false);
     }
   };
 
@@ -211,10 +254,19 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                 </div>
               </div>
               
-              <div className="pt-4 border-t mt-4">
+              <div className="pt-4 border-t mt-4 flex items-center justify-between">
                 <button onClick={handleSaveInfo} disabled={saving} className="flex items-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors disabled:opacity-50">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Sauvegarder les modifications
+                </button>
+                <button 
+                  onClick={handleImpersonate} 
+                  disabled={impersonating} 
+                  className="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg font-bold text-sm transition-colors disabled:opacity-50"
+                  title="Se connecter au compte de cet utilisateur"
+                >
+                  {impersonating ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                  Se connecter en tant que...
                 </button>
               </div>
             </div>
