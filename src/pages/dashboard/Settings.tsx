@@ -154,16 +154,11 @@ export default function Settings() {
       // ou on update simplement le profil pour lui retirer le statut vendeur, ce qui cache l'accès.)
       
       // Update profile to remove seller status and record closure date for cooldown
+      // We only update core seller fields to avoid schema cache errors on bank columns
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           is_seller: false,
-          rib_status: 'none',
-          rib_file_url: null,
-          iban: null,
-          bic: null,
-          bank_name: null,
-          beneficiary_name: null,
           seller_closed_at: new Date().toISOString()
         })
         .eq('id', profile.id);
