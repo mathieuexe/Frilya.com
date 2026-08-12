@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { X, User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard } from 'lucide-react';
+import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 
 interface UserDossierProps {
@@ -100,10 +100,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-8 flex items-center justify-center shadow-2xl">
-          <Loader2 className="w-8 h-8 animate-spin text-frilya-600" />
-        </div>
+      <div className="bg-white rounded-3xl w-full flex items-center justify-center shadow-sm border border-slate-200 h-[calc(100vh-8rem)]">
+        <Loader2 className="w-8 h-8 animate-spin text-frilya-600" />
       </div>
     );
   }
@@ -119,41 +117,40 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   ].filter(t => !t.hidden);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-6">
-      <div className="bg-white rounded-3xl w-full max-w-5xl h-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50 shrink-0">
-          <div className="flex items-center gap-4">
-            <img src={profile?.avatar_url || catAvatar} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">{profile?.full_name || 'Utilisateur inconnu'}</h2>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>{profile?.email}</span>
-                <span>•</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${profile?.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-700'}`}>
-                  {profile?.role}
-                </span>
-                {profile?.is_seller && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Vendeur</span>
-                )}
-              </div>
+    <div className="bg-white rounded-3xl w-full flex flex-col shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-200 h-[calc(100vh-8rem)]">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50 shrink-0">
+        <div className="flex items-center gap-4">
+          <button onClick={onClose} className="p-2.5 text-slate-500 hover:text-frilya-600 hover:bg-white rounded-xl transition-colors shadow-sm border border-slate-200 bg-white mr-2">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <img src={profile?.avatar_url || catAvatar} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">{profile?.full_name || 'Utilisateur inconnu'}</h2>
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <span>{profile?.email}</span>
+              <span>•</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${profile?.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-700'}`}>
+                {profile?.role}
+              </span>
+              {profile?.is_seller && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Vendeur</span>
+              )}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-right mr-4 hidden md:block">
-              <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Solde Actuel</div>
-              <div className="text-xl font-bold text-frilya-600 flex items-center gap-1">
-                <CreditCard className="w-4 h-4" />
-                {profile?.balance || 0} €
-              </div>
-            </div>
-            <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-200 rounded-full transition-colors">
-              <X className="w-6 h-6" />
-            </button>
           </div>
         </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="text-right hidden md:block">
+            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Solde Actuel</div>
+            <div className="text-xl font-bold text-frilya-600 flex items-center gap-1">
+              <CreditCard className="w-4 h-4" />
+              {profile?.balance || 0} €
+            </div>
+          </div>
+        </div>
+      </div>
 
         {/* Tabs */}
         <div className="flex overflow-x-auto border-b border-slate-100 px-6 shrink-0 custom-scrollbar">
@@ -333,6 +330,5 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
 
         </div>
       </div>
-    </div>
   );
 }

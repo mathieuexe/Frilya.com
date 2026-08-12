@@ -55,6 +55,10 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
     u.email?.toLowerCase().includes(search.toLowerCase())
   );
 
+  if (selectedUser) {
+    return <UserDossier userId={selectedUser} onClose={() => { setSelectedUser(null); fetchUsers(); }} />;
+  }
+
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -147,10 +151,6 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
           </tbody>
         </table>
       </div>
-
-      {selectedUser && (
-        <UserDossier userId={selectedUser} onClose={() => { setSelectedUser(null); fetchUsers(); }} />
-      )}
     </div>
   );
 }
