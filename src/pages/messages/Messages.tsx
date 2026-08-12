@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Send, Loader2 } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
 
@@ -21,6 +21,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
   const channelRef = useRef<any>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const ADMIN_ID = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
 
@@ -34,7 +35,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       const fetchContact = async () => {
         const { data: contactProfile } = await supabase
           .from('profiles')
-          .select('id, full_name, role, avatar_url, is_verified')
+          .select('id, full_name, role, avatar_url, is_verified, slug')
           .eq('id', contactIdFromUrl)
           .single();
           
@@ -44,7 +45,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             id: contactProfile.id, 
             full_name: finalName,
             avatar_url: contactProfile.avatar_url,
-            is_verified: contactProfile.is_verified
+            is_verified: contactProfile.is_verified,
+            slug: contactProfile.slug
           });
         }
       };
@@ -90,7 +92,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         // Récupérer les profils en une seule requête
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, is_verified')
+          .select('id, full_name, avatar_url, is_verified, slug')
           .in('id', Array.from(userIds));
           
         const profileMap = new Map();
@@ -110,7 +112,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       if (contactIdFromUrl) {
         const { data: contactProfile } = await supabase
           .from('profiles')
-          .select('id, full_name, role, avatar_url, is_verified')
+          .select('id, full_name, role, avatar_url, is_verified, slug')
           .eq('id', contactIdFromUrl)
           .single();
           
@@ -120,7 +122,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             id: contactProfile.id, 
             full_name: finalName,
             avatar_url: contactProfile.avatar_url,
-            is_verified: contactProfile.is_verified
+            is_verified: contactProfile.is_verified,
+            slug: contactProfile.slug
           });
         }
       } else if (data && data.some(m => m.sender_id === ADMIN_ID || m.receiver_id === ADMIN_ID)) {
@@ -132,7 +135,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           id: ADMIN_ID, 
           full_name: 'Support Frilya',
           avatar_url: adminProfile?.avatar_url,
-          is_verified: adminProfile?.is_verified
+          is_verified: adminProfile?.is_verified,
+          slug: adminProfile?.slug
         });
       }
 
@@ -147,8 +151,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
           // Si le message nous concerne, on l'ajoute à la liste
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
-            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified').eq('id', payload.new.sender_id).single();
-            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified').eq('id', payload.new.receiver_id).single();
+            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug').eq('id', payload.new.sender_id).single();
+            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug').eq('id', payload.new.receiver_id).single();
             
             const fullMessage = {
               ...payload.new,
@@ -197,8 +201,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
 
   useEffect(() => {
     // Scroll to bottom when messages change
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages, selectedContact]);
 
@@ -340,6 +344,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         full_name: finalName,
         avatar_url: contactProfile?.avatar_url,
         is_verified: contactProfile?.is_verified,
+        slug: contactProfile?.slug,
         lastMessage: msg.content,
         date: msg.created_at
       });
@@ -360,6 +365,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       full_name: selectedContact.full_name,
       avatar_url: selectedContact.avatar_url,
       is_verified: selectedContact.is_verified,
+      slug: selectedContact.slug,
       lastMessage: 'Nouvelle conversation',
       date: new Date().toISOString()
     });
@@ -419,7 +425,10 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       <div className="flex-1 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="p-4 border-b border-slate-100 font-bold text-slate-900 flex items-center gap-3">
           {selectedContact ? (
-            <>
+            <Link 
+              to={`/profil/${selectedContact.slug || selectedContact.id}`} 
+              className="flex items-center gap-3 hover:bg-slate-50 p-1.5 -ml-1.5 rounded-2xl transition-colors"
+            >
               <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200">
                 <img src={selectedContact.avatar_url || catAvatar} alt={selectedContact.full_name} className="w-full h-full object-cover" />
               </div>
@@ -429,11 +438,11 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
                   <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 shrink-0" />
                 )}
               </div>
-            </>
+            </Link>
           ) : 'Sélectionnez une conversation'}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50" ref={chatContainerRef}>
           {!selectedContact ? (
             <div className="text-center text-slate-500 mt-10">Sélectionnez une conversation pour voir les messages.</div>
           ) : currentMessages.length === 0 ? (
