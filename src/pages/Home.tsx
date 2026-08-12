@@ -1,15 +1,6 @@
 import { Link } from 'react-router-dom';
 import { 
   Search,
-  Palette, 
-  TrendingUp, 
-  Briefcase, 
-  Video as VideoIcon, 
-  Code, 
-  PenTool, 
-  Share2 as ShareIcon, 
-  GraduationCap, 
-  Coffee,
   Star 
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -29,6 +20,16 @@ import supabaseLogo from '../assets/8xHF2DW9QR2diK7qLaVS.svg';
 import creditCardIcon from '../assets/credit-card.png';
 import verifiedIcon from '../assets/verified.png';
 import simplifyIcon from '../assets/simplify.png';
+
+import designIcon from '../assets/icons/design.svg';
+import marketingIcon from '../assets/icons/marketing.svg';
+import businessIcon from '../assets/icons/business.svg';
+import audioIcon from '../assets/icons/audio.svg';
+import devIcon from '../assets/icons/dev.svg';
+import writingIcon from '../assets/icons/writing.svg';
+import socialIcon from '../assets/icons/social.svg';
+import coachingIcon from '../assets/icons/coaching.svg';
+import dailyIcon from '../assets/icons/daily.svg';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,15 +77,15 @@ export default function Home() {
   }, []);
 
   const categoryCards = [
-    { name: 'Design & Graphisme', icon: Palette, slug: 'design-graphisme' },
-    { name: 'Marketing digital', icon: TrendingUp, slug: 'marketing-digital' },
-    { name: 'Business', icon: Briefcase, slug: 'business' },
-    { name: 'Audiovisuel', icon: VideoIcon, slug: 'audiovisuel' },
-    { name: 'Site & Développement', icon: Code, slug: 'site-developpement' },
-    { name: 'Rédaction', icon: PenTool, slug: 'redaction' },
-    { name: 'Réseaux sociaux', icon: ShareIcon, slug: 'reseaux-sociaux' },
-    { name: 'Formations & Coaching', icon: GraduationCap, slug: 'formations-coaching' },
-    { name: 'Vie quotidienne', icon: Coffee, slug: 'vie-quotidienne' },
+    { name: 'Design & Graphisme', iconImg: designIcon, slug: 'design-graphisme' },
+    { name: 'Marketing digital', iconImg: marketingIcon, slug: 'marketing-digital' },
+    { name: 'Business', iconImg: businessIcon, slug: 'business' },
+    { name: 'Audiovisuel', iconImg: audioIcon, slug: 'audiovisuel' },
+    { name: 'Site & Développement', iconImg: devIcon, slug: 'site-developpement' },
+    { name: 'Rédaction', iconImg: writingIcon, slug: 'redaction' },
+    { name: 'Réseaux sociaux', iconImg: socialIcon, slug: 'reseaux-sociaux' },
+    { name: 'Formations & Coaching', iconImg: coachingIcon, slug: 'formations-coaching' },
+    { name: 'Vie quotidienne', iconImg: dailyIcon, slug: 'vie-quotidienne' },
   ];
 
   const featuredFreelances = [
@@ -229,7 +230,7 @@ export default function Home() {
                 className="group flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl hover:bg-frilya-50 border border-transparent hover:border-frilya-100 transition-all cursor-pointer"
               >
                 <div className="w-12 h-12 mb-4 group-hover:scale-110 transition-transform bg-white rounded-2xl shadow-sm flex items-center justify-center">
-                  <cat.icon className="w-6 h-6 text-frilya-600" />
+                  <img src={cat.iconImg} alt={cat.name} className="w-7 h-7" />
                 </div>
                 <span className="font-bold text-slate-700 text-center text-sm">{cat.name}</span>
               </Link>
