@@ -6,31 +6,37 @@ import { Link, useSearchParams } from 'react-router-dom';
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
+  const initialType = (searchParams.get('type') as 'services' | 'users') || 'services';
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [services, setServices] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchType, setSearchType] = useState<'services' | 'users'>('services');
+  const [searchType, setSearchType] = useState<'services' | 'users'>(initialType);
 
   useEffect(() => {
-    fetchResults();
+    // Sync local state when URL params change (e.g. from Header search)
+    const urlQuery = searchParams.get('q') || '';
+    const urlType = (searchParams.get('type') as 'services' | 'users') || 'services';
+    setSearchQuery(urlQuery);
+    setSearchType(urlType);
+    
+    fetchResults(urlQuery, urlType);
   }, [searchParams]);
 
-  const fetchResults = async () => {
+  const fetchResults = async (q: string, type: 'services' | 'users') => {
     setLoading(true);
-    const q = searchParams.get('q') || '';
     const cat = searchParams.get('category') || '';
 
     try {
-      if (searchType === 'services') {
+      if (type === 'services') {
         let query = supabase
           .from('services')
           .select('*, profiles(full_name, avatar_url)')
           .eq('status', 'active');
 
         if (q) {
-          query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%,sub_category.ilike.%${q}%`);
+          query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
         }
         if (cat) {
           const { data: catData } = await supabase.from('categories').select('id').eq('slug', cat).maybeSingle();
@@ -65,11 +71,11 @@ export default function Search() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery) {
-      setSearchParams({ q: searchQuery });
-    } else {
-      setSearchParams({});
+    const params: Record<string, string> = { type: searchType };
+    if (searchQuery.trim()) {
+      params.q = searchQuery.trim();
     }
+    setSearchParams(params);
   };
 
   return (
@@ -233,7 +239,7 @@ export default function Search() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {users.map((user) => (
-                  <div key={user.id} className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center hover:shadow-lg transition-shadow">
+                  <Link key={user.id} to={`/profil/${user.slug || user.id}`} className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col items-center text-center hover:shadow-lg transition-shadow">
                     <div className="w-20 h-20 bg-frilya-100 rounded-full mb-4 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
                       {user.avatar_url ? (
                         <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
@@ -246,7 +252,7 @@ export default function Search() {
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 capitalize">
                       {user.role}
                     </span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )

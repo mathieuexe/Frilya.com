@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Search, Menu, LogOut, LayoutDashboard } from 'lucide-react';
 import logo from '../../assets/logo.png';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import chatIcon from '../../assets/chat.png';
 import notificationBellIcon from '../../assets/notification-bell.png';
 import userIcon from '../../assets/user.png';
@@ -14,6 +15,16 @@ export default function Header() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsMenuOpen(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -69,16 +80,18 @@ export default function Header() {
             <img src={logo} alt="Frilya" className="h-8 w-auto" />
           </Link>
           
-          <div className="hidden md:flex flex-1 max-w-md relative">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md relative">
             <input 
               type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Quel service recherchez-vous ?" 
               className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-full pl-4 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-frilya-600/20 focus:border-frilya-600 transition-all"
             />
-            <Link to="/recherche" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-frilya-600 transition-colors">
+            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-frilya-600 transition-colors">
               <Search className="w-4 h-4" />
-            </Link>
-          </div>
+            </button>
+          </form>
         </div>
 
         {/* Right: Actions */}
@@ -184,14 +197,18 @@ export default function Header() {
       {isMenuOpen && (
         <div className="md:hidden border-t border-slate-100 bg-white absolute w-full shadow-lg">
           <div className="p-4 space-y-4">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher..." 
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-sm"
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-            </div>
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <Search className="w-4 h-4" />
+              </button>
+            </form>
             <div className="grid grid-cols-2 gap-2">
               <Link to={getDashboardLink()} className="flex items-center justify-center gap-2 bg-slate-50 py-2.5 rounded-xl text-sm font-bold text-slate-700 border border-slate-100">
                 {userProfile ? (
