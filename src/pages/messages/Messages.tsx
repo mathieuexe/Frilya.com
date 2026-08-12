@@ -397,7 +397,9 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     (selectedContact?.id === ADMIN_ID && profile?.admin_conversation_closed) || 
     (profile?.role === 'admin' && selectedContact?.admin_conversation_closed);
 
-  const isSupportBlocked = selectedContact?.id === ADMIN_ID && profile?.role !== 'admin';
+  const firstMessage = currentMessages[0];
+  const hasAdminInitiated = firstMessage?.sender_id === ADMIN_ID;
+  const isSupportBlocked = selectedContact?.id === ADMIN_ID && profile?.role !== 'admin' && !hasAdminInitiated;
 
   return (
     <div className={inDashboard ? "h-[calc(100vh-200px)] flex gap-6" : "container mx-auto px-4 py-8 h-[calc(100vh-140px)] flex gap-6"}>

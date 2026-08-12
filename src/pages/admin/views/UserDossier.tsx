@@ -48,22 +48,45 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       const [
         { data: ordersData },
         { data: salesData },
-        { data: messagesData },
+        { data: messagesRawData },
         // { data: disputesData },
         // { data: ticketsData },
         { data: logsData }
       ] = await Promise.all([
         supabase.from('orders').select('*, service:services(title)').eq('buyer_id', userId).order('created_at', { ascending: false }),
         supabase.from('orders').select('*, service:services(title)').eq('seller_id', userId).order('created_at', { ascending: false }),
-        supabase.from('messages').select('*, sender:profiles!messages_sender_id_fkey(full_name), receiver:profiles!messages_receiver_id_fkey(full_name)').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order('created_at', { ascending: false }),
+        supabase.from('messages').select('*').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order('created_at', { ascending: false }),
         // supabase.from('disputes').select('*, order:orders(id)').eq('opened_by', userId).order('created_at', { ascending: false }),
         // supabase.from('tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
         supabase.from('connection_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       ]);
 
+      let finalMessages = [];
+      if (messagesRawData && messagesRawData.length > 0) {
+        const userIds = new Set<string>();
+        messagesRawData.forEach((m: any) => {
+          userIds.add(m.sender_id);
+          userIds.add(m.receiver_id);
+        });
+        
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', Array.from(userIds));
+          
+        const profileMap = new Map();
+        profiles?.forEach(p => profileMap.set(p.id, p));
+        
+        finalMessages = messagesRawData.map((m: any) => ({
+          ...m,
+          sender: profileMap.get(m.sender_id),
+          receiver: profileMap.get(m.receiver_id)
+        }));
+      }
+
       setOrders(ordersData || []);
       setSales(salesData || []);
-      setMessages(messagesData || []);
+      setMessages(finalMessages);
       // setDisputes(disputesData || []);
       // setTickets(ticketsData || []);
       setLogs(logsData || []);
