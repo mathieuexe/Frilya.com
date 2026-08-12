@@ -27,6 +27,7 @@ import FaqHome from './pages/faq/FaqHome';
 import FaqCategory from './pages/faq/FaqCategory';
 import FaqArticle from './pages/faq/FaqArticle';
 import ReportIssue from './pages/ReportIssue';
+import UserTickets from './pages/dashboard/UserTickets';
 
 import Orders from './pages/dashboard/Orders';
 import Favorites from './pages/dashboard/Favorites';
@@ -189,6 +190,7 @@ function AppRoutes() {
           <Route path="messages" element={<MessagesPage inDashboard={true} />} />
           <Route path="favoris" element={<Favorites />} />
           <Route path="litiges" element={<Disputes />} />
+          <Route path="tickets" element={<UserTickets />} />
           <Route path="parametres" element={<Settings />} />
           <Route path="feedback" element={<BetaFeedback />} />
         </Route>
@@ -202,6 +204,7 @@ function AppRoutes() {
           <Route path="commandes" element={<Orders />} />
           <Route path="messages" element={<MessagesPage inDashboard={true} />} />
           <Route path="litiges" element={<Disputes />} />
+          <Route path="tickets" element={<UserTickets />} />
           <Route path="parametres" element={<Settings />} />
           <Route path="feedback" element={<BetaFeedback />} />
         </Route>

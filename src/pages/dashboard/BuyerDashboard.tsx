@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Package, Heart, MessageSquare, AlertTriangle, Settings, LayoutDashboard } from 'lucide-react';
+import { Package, Heart, MessageSquare, AlertTriangle, Settings, LayoutDashboard, LifeBuoy } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
@@ -39,6 +39,7 @@ export default function BuyerDashboard() {
     { name: 'Messages', path: '/tableau-de-bord/messages', icon: MessageSquare },
     { name: 'Favoris', path: '/tableau-de-bord/favoris', icon: Heart },
     { name: 'Litiges', path: '/tableau-de-bord/litiges', icon: AlertTriangle, hideForBeta: true },
+    { name: 'Mes tickets', path: '/tableau-de-bord/tickets', icon: LifeBuoy, hideForBeta: true },
     { name: 'Paramètres', path: '/tableau-de-bord/parametres', icon: Settings, hideForBeta: true },
   ];
 
