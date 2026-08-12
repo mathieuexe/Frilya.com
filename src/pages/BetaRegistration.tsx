@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { sendBetaConfirmationEmail } from '../lib/email';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
 import logo from '../assets/logo.png';
 import bgVideo from '../assets/original-e6c90943d3d9da57b997c2898244009e.mp4';
 
@@ -9,8 +9,10 @@ export default function BetaRegistration() {
   const [formData, setFormData] = useState({
     pseudo: '',
     email: '',
-    motivation: ''
+    motivation: '',
+    discordUsername: '',
   });
+  const [discordConsent, setDiscordConsent] = useState(false);
   const [honeypot, setHoneypot] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -119,7 +121,24 @@ export default function BetaRegistration() {
 
       if (dbError) throw dbError;
 
-      // 2. Envoyer l'email de confirmation via Resend
+      // 5. Envoi au webhook Discord si le consentement est donné
+      if (discordConsent && formData.discordUsername) {
+        try {
+          await fetch('https://discord.com/api/webhooks/1537067880808452157/p3MvVrdU7wLO-_CwStKyPxc7R3Nm9L9k_Fr8w6zZrsTYBx57AxI8wO972LXmHBFn2gvo', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              content: `<@${formData.discordUsername}> vient de s'inscrire à la bêta ! Merci beaucoup ! ✨`
+            })
+          });
+        } catch (webhookError) {
+          console.error("Erreur d'envoi webhook discord:", webhookError);
+        }
+      }
+
+      // 6. Envoyer l'email de confirmation via Resend
       await sendBetaConfirmationEmail(formData.email, formData.pseudo);
 
       setSuccess(true);
@@ -315,6 +334,36 @@ export default function BetaRegistration() {
               <AlertCircle className="w-3 h-3" />
               Cette adresse doit être valide pour recevoir vos accès.
             </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-2">ID Discord</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <MessageCircle className="h-5 w-5 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                required
+                value={formData.discordUsername}
+                onChange={(e) => setFormData({...formData, discordUsername: e.target.value})}
+                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600 transition-shadow bg-slate-50"
+                placeholder="ID ou Pseudo Discord"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-3 mt-4">
+            <input
+              type="checkbox"
+              id="discord-consent"
+              checked={discordConsent}
+              onChange={(e) => setDiscordConsent(e.target.checked)}
+              className="mt-1 w-4 h-4 text-frilya-600 border-slate-300 rounded focus:ring-frilya-600"
+            />
+            <label htmlFor="discord-consent" className="text-sm text-slate-600 leading-snug">
+              J'accepte la diffusion de mon inscription sur notre serveur discord (les autres utilisateurs verront que vous vous êtes inscrit).
+            </label>
           </div>
 
           <div>
