@@ -298,12 +298,16 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     if (isChatClosed || isSupportBlocked) return;
 
     try {
+      const finalContent = profile?.role === 'admin' && profile?.signature
+        ? `${newMessage}\n\n${profile.signature}`
+        : newMessage;
+
       const { data: insertedMessage, error } = await supabase
         .from('messages')
         .insert({
           sender_id: user.id,
           receiver_id: selectedContact.id,
-          content: newMessage
+          content: finalContent
         })
         .select()
         .single();

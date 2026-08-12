@@ -1,24 +1,48 @@
 import { useState, useEffect } from 'react';
-import { Power, Loader2, Percent, FileCheck, Check, X } from 'lucide-react';
+import { Power, Loader2, Percent, FileCheck, Check, X, PenTool } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 export default function SettingsView() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [allowedIps, setAllowedIps] = useState<string>('');
   const [platformFee, setPlatformFee] = useState<string>('20');
+  const [signature, setSignature] = useState<string>('');
   const [actionLoading, setActionLoading] = useState(false);
   const [feeLoading, setFeeLoading] = useState(false);
+  const [signatureLoading, setSignatureLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // RIB Verification State
   const [pendingRibs, setPendingRibs] = useState<any[]>([]);
   const [ribLoading, setRibLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    fetchSettings();
+    fetchUserAndSettings();
     fetchPendingRibs();
   }, []);
+
+  const fetchUserAndSettings = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUser(session.user);
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('signature')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profileData && profileData.signature) {
+          setSignature(profileData.signature);
+        }
+      }
+      await fetchSettings();
+    } catch (err) {
+      console.error("Erreur session", err);
+    }
+  };
 
   const fetchPendingRibs = async () => {
     try {
@@ -164,6 +188,26 @@ export default function SettingsView() {
     }
   };
 
+  const saveSignature = async () => {
+    if (!user) return;
+    setSignatureLoading(true);
+    setError(null);
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ signature: signature })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+      alert("Signature mise à jour avec succès.");
+    } catch (err: any) {
+      console.error("Erreur lors de la sauvegarde de la signature:", err);
+      setError("Impossible de sauvegarder la signature.");
+    } finally {
+      setSignatureLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -289,6 +333,45 @@ export default function SettingsView() {
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               'Enregistrer les frais'
+            )}
+          </button>
+        </div>
+
+        {/* Carte Signature Admin */}
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Signature des Messages</h2>
+              <p className="text-slate-500 text-sm mt-1">Ajoutée automatiquement à la fin de vos messages privés</p>
+            </div>
+            <div className="p-3 rounded-2xl bg-purple-100 text-purple-600">
+              <PenTool className="w-6 h-6" />
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
+            <label className="block text-sm font-medium text-slate-700 mb-2">Votre signature personnalisée</label>
+            <textarea
+              value={signature}
+              onChange={(e) => setSignature(e.target.value)}
+              placeholder="Cordialement,&#10;L'équipe Support"
+              rows={4}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600 transition-shadow bg-white text-sm resize-none"
+            />
+            <p className="text-xs text-slate-500 mt-3">
+              Laissez ce champ vide pour ne pas utiliser de signature.
+            </p>
+          </div>
+
+          <button
+            onClick={saveSignature}
+            disabled={signatureLoading}
+            className="w-full flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50"
+          >
+            {signatureLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              'Enregistrer la signature'
             )}
           </button>
         </div>
