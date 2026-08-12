@@ -16,6 +16,7 @@ export default function Header() {
   const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -27,6 +28,8 @@ export default function Header() {
   };
 
   useEffect(() => {
+    let messageChannel: any;
+
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -38,6 +41,28 @@ export default function Header() {
         if (profile) {
           setUserProfile(profile);
         }
+
+        // Vérifier les messages non lus
+        const checkUnread = async () => {
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('receiver_id', session.user.id)
+            .eq('is_read', false);
+          
+          setHasUnreadMessages((count || 0) > 0);
+        };
+        checkUnread();
+
+        // Écouter les nouveaux messages
+        messageChannel = supabase.channel('header_unread_messages')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` }, () => {
+            setHasUnreadMessages(true);
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` }, () => {
+            checkUnread();
+          })
+          .subscribe();
       }
     };
     
@@ -52,13 +77,17 @@ export default function Header() {
           .eq('id', session.user.id)
           .single();
         setUserProfile(profile || null);
+        fetchUser(); // Relancer pour recréer le channel et vérifier les messages
       } else {
         setUserProfile(null);
+        setHasUnreadMessages(false);
+        if (messageChannel) supabase.removeChannel(messageChannel);
       }
     });
 
     return () => {
       subscription.unsubscribe();
+      if (messageChannel) supabase.removeChannel(messageChannel);
     };
   }, []);
 
@@ -103,7 +132,9 @@ export default function Header() {
           <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
             <Link to="/messages" className="p-2 hover:bg-slate-50 rounded-full transition-all relative">
               <img src={chatIcon} alt="Messages" className="w-5 h-5 opacity-70" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+              {hasUnreadMessages && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+              )}
             </Link>
             <Link to="/notifications" className="p-2 hover:bg-slate-50 rounded-full transition-all">
               <img src={notificationBellIcon} alt="Notifications" className="w-5 h-5 opacity-70" />

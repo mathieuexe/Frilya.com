@@ -72,12 +72,39 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       // Récupérer les messages où l'utilisateur est expéditeur ou destinataire
       const { data, error } = await supabase
         .from('messages')
-        .select('*, sender:profiles!messages_sender_id_fkey(full_name, avatar_url, is_verified), receiver:profiles!messages_receiver_id_fkey(full_name, avatar_url, is_verified)')
+        .select('*')
         .or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      let finalMessages = [];
+      if (data && data.length > 0) {
+        // Collecter tous les IDs d'utilisateurs uniques
+        const userIds = new Set<string>();
+        data.forEach(m => {
+          userIds.add(m.sender_id);
+          userIds.add(m.receiver_id);
+        });
+        
+        // Récupérer les profils en une seule requête
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, is_verified')
+          .in('id', Array.from(userIds));
+          
+        const profileMap = new Map();
+        profiles?.forEach(p => profileMap.set(p.id, p));
+        
+        // Assigner les profils aux messages
+        finalMessages = data.map(m => ({
+          ...m,
+          sender: profileMap.get(m.sender_id),
+          receiver: profileMap.get(m.receiver_id)
+        }));
+      }
+      
+      setMessages(finalMessages);
 
       // Sélectionner le contact si présent dans l'URL
       if (contactIdFromUrl) {
@@ -109,19 +136,28 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       channelRef.current = channel;
 
       channel
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
           // Si le message nous concerne, on l'ajoute à la liste
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
+            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified').eq('id', payload.new.sender_id).single();
+            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified').eq('id', payload.new.receiver_id).single();
+            
+            const fullMessage = {
+              ...payload.new,
+              sender,
+              receiver
+            };
+
             setMessages(prev => {
               // Éviter les doublons si on l'a déjà ajouté localement
               if (prev.some(m => m.id === payload.new.id)) return prev;
-              return [...prev, payload.new];
+              return [...prev, fullMessage];
             });
           }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
-            setMessages(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
+            setMessages(prev => prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new } : m));
           }
         })
         .on('broadcast', { event: 'typing' }, payload => {
@@ -213,18 +249,34 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           receiver_id: selectedContact.id,
           content: newMessage
         })
-        .select('*, sender:profiles!messages_sender_id_fkey(full_name, avatar_url, is_verified), receiver:profiles!messages_receiver_id_fkey(full_name, avatar_url, is_verified)')
+        .select()
         .single();
 
       if (error) throw error;
 
       // Ajout immédiat au state local pour une interface plus réactive
       if (insertedMessage) {
+        const fullMessage = {
+          ...insertedMessage,
+          sender: {
+            full_name: profile?.full_name || 'Utilisateur',
+            avatar_url: profile?.avatar_url,
+            is_verified: profile?.is_verified
+          },
+          receiver: {
+            full_name: selectedContact.full_name,
+            avatar_url: selectedContact.avatar_url,
+            is_verified: selectedContact.is_verified
+          }
+        };
+
         setMessages(prev => {
           if (prev.some(m => m.id === insertedMessage.id)) return prev;
-          return [...prev, insertedMessage];
+          return [...prev, fullMessage];
         });
       }
+
+      setNewMessage('');
 
       // Vérifier si le destinataire est un administrateur
       const { data: receiverData } = await supabase
@@ -242,8 +294,6 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           p_content: autoReply
         });
       }
-
-      setNewMessage('');
     } catch (error) {
       console.error("Erreur envoi", error);
     }
