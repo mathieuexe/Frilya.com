@@ -18,12 +18,50 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
   const [selectedContact, setSelectedContact] = useState<any>(null);
   
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [isChatClosed, setIsChatClosed] = useState(false);
   const channelRef = useRef<any>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const ADMIN_ID = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
+
+  useEffect(() => {
+    if (!selectedContact || !user) return;
+
+    const p1 = user.id < selectedContact.id ? user.id : selectedContact.id;
+    const p2 = user.id < selectedContact.id ? selectedContact.id : user.id;
+
+    const fetchStatus = async () => {
+      const { data } = await supabase
+        .from('conversation_status')
+        .select('is_closed')
+        .eq('participant1_id', p1)
+        .eq('participant2_id', p2)
+        .maybeSingle();
+        
+      setIsChatClosed(data?.is_closed || false);
+    };
+
+    fetchStatus();
+
+    const statusChannel = supabase.channel(`status_${p1}_${p2}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'conversation_status'
+      }, payload => {
+        const newData = payload.new as any;
+        if (newData && newData.participant1_id === p1 && newData.participant2_id === p2) {
+          setIsChatClosed(newData.is_closed);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(statusChannel);
+    };
+  }, [selectedContact, user]);
 
   useEffect(() => {
     checkUserAndFetchMessages();
@@ -35,7 +73,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       const fetchContact = async () => {
         const { data: contactProfile } = await supabase
           .from('profiles')
-          .select('id, full_name, role, avatar_url, is_verified, slug, admin_conversation_closed')
+          .select('id, full_name, role, avatar_url, is_verified, slug')
           .eq('id', contactIdFromUrl)
           .single();
           
@@ -47,7 +85,6 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             avatar_url: contactProfile.avatar_url,
             is_verified: contactProfile.is_verified,
             slug: contactProfile.slug,
-            admin_conversation_closed: contactProfile.admin_conversation_closed
           });
         }
       };
@@ -93,7 +130,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         // Récupérer les profils en une seule requête
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, is_verified, slug, admin_conversation_closed')
+          .select('id, full_name, avatar_url, is_verified, slug')
           .in('id', Array.from(userIds));
           
         const profileMap = new Map();
@@ -113,7 +150,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       if (contactIdFromUrl) {
         const { data: contactProfile } = await supabase
           .from('profiles')
-          .select('id, full_name, role, avatar_url, is_verified, slug, admin_conversation_closed')
+          .select('id, full_name, role, avatar_url, is_verified, slug')
           .eq('id', contactIdFromUrl)
           .single();
           
@@ -125,7 +162,6 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             avatar_url: contactProfile.avatar_url,
             is_verified: contactProfile.is_verified,
             slug: contactProfile.slug,
-            admin_conversation_closed: contactProfile.admin_conversation_closed
           });
         }
       } else if (data && data.some(m => m.sender_id === ADMIN_ID || m.receiver_id === ADMIN_ID)) {
@@ -153,8 +189,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
           // Si le message nous concerne, on l'ajoute à la liste
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
-            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug, admin_conversation_closed').eq('id', payload.new.sender_id).single();
-            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug, admin_conversation_closed').eq('id', payload.new.receiver_id).single();
+            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug').eq('id', payload.new.sender_id).single();
+            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug').eq('id', payload.new.receiver_id).single();
             
             const fullMessage = {
               ...payload.new,
@@ -259,7 +295,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     if (!newMessage.trim() || !user || !selectedContact) return;
     
     // Sécurité supplémentaire côté logique
-    if (isConversationClosed || isSupportBlocked) return;
+    if (isChatClosed || isSupportBlocked) return;
 
     try {
       const { data: insertedMessage, error } = await supabase
@@ -320,19 +356,23 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
   const toggleConversationStatus = async () => {
     if (!selectedContact || profile?.role !== 'admin') return;
 
+    const p1 = user.id < selectedContact.id ? user.id : selectedContact.id;
+    const p2 = user.id < selectedContact.id ? selectedContact.id : user.id;
+    const newStatus = !isChatClosed;
+
     try {
-      const newStatus = !selectedContact.admin_conversation_closed;
       const { error } = await supabase
-        .from('profiles')
-        .update({ admin_conversation_closed: newStatus })
-        .eq('id', selectedContact.id);
+        .from('conversation_status')
+        .upsert({ 
+          participant1_id: p1,
+          participant2_id: p2,
+          is_closed: newStatus,
+          closed_by: user.id,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'participant1_id, participant2_id' });
 
       if (error) throw error;
-
-      setSelectedContact((prev: any) => ({
-        ...prev,
-        admin_conversation_closed: newStatus
-      }));
+      setIsChatClosed(newStatus);
     } catch (err) {
       console.error('Erreur lors de la modification du statut de la conversation', err);
     }
@@ -360,7 +400,6 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         avatar_url: contactProfile?.avatar_url,
         is_verified: contactProfile?.is_verified,
         slug: contactProfile?.slug,
-        admin_conversation_closed: contactProfile?.admin_conversation_closed,
         lastMessage: msg.content,
         date: msg.created_at
       });
@@ -382,7 +421,6 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       avatar_url: selectedContact.avatar_url,
       is_verified: selectedContact.is_verified,
       slug: selectedContact.slug,
-      admin_conversation_closed: selectedContact.admin_conversation_closed,
       lastMessage: 'Nouvelle conversation',
       date: new Date().toISOString()
     });
@@ -396,9 +434,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
      (m.sender_id === selectedContact.id && m.receiver_id === user?.id))
   );
 
-  const isConversationClosed = 
-    (selectedContact?.id === ADMIN_ID && profile?.admin_conversation_closed) || 
-    (profile?.role === 'admin' && selectedContact?.admin_conversation_closed);
+
 
   const firstMessage = currentMessages[0];
   const hasAdminInitiated = firstMessage?.sender_id === ADMIN_ID;
@@ -467,12 +503,12 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
                 <button
                   onClick={toggleConversationStatus}
                   className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${
-                    selectedContact.admin_conversation_closed 
+                    isChatClosed
                       ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100' 
                       : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
                   }`}
                 >
-                  {selectedContact.admin_conversation_closed ? 'Rouvrir la conversation' : 'Clôturer la conversation'}
+                  {isChatClosed ? 'Rouvrir la conversation' : 'Clôturer la conversation'}
                 </button>
               )}
             </>
@@ -528,7 +564,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-white">
-          {isConversationClosed ? (
+          {isChatClosed ? (
             <div className="text-center p-3 bg-slate-50 text-slate-500 text-sm rounded-xl border border-slate-200">
               L'administration a clôturé cette conversation. Vous ne pouvez plus y répondre.
             </div>
