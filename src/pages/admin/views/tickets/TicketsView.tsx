@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
-import { Filter, AlertTriangle, CheckCircle, Clock, X, ExternalLink, Paperclip } from 'lucide-react';
+import { Filter, AlertTriangle, CheckCircle, Clock, X, ExternalLink, Paperclip, Hourglass, Activity } from 'lucide-react';
 
 export default function TicketsView() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -17,7 +17,7 @@ export default function TicketsView() {
       const { data, error } = await supabase
         .from('report_tickets')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true }); // Du plus ancien au plus récent
 
       if (error) throw error;
       setTickets(data || []);
@@ -70,6 +70,28 @@ export default function TicketsView() {
     filterStatus === 'all' ? true : t.status === filterStatus
   );
 
+  // Statistiques
+  const pendingTickets = tickets.filter(t => ['nouveau', 'en_attente'].includes(t.status));
+  const inProgressTickets = tickets.filter(t => t.status === 'en_cours');
+  
+  const getWaitTime = () => {
+    if (pendingTickets.length === 0) return "Aucun ticket en attente";
+    const now = Date.now();
+    const totalWaitMs = pendingTickets.reduce((acc, t) => acc + (now - new Date(t.created_at).getTime()), 0);
+    const avgWaitMs = totalWaitMs / pendingTickets.length;
+    
+    const days = Math.floor(avgWaitMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((avgWaitMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((avgWaitMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    const parts = [];
+    if (days > 0) parts.push(`${days} j`);
+    if (hours > 0) parts.push(`${hours} h`);
+    if (minutes > 0 || parts.length === 0) parts.push(`${minutes} min`);
+    
+    return parts.join(' ');
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'nouveau': return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Nouveau</span>;
@@ -107,12 +129,46 @@ export default function TicketsView() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Mes tickets</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Tickets</h1>
           <p className="text-slate-500">Gérez les problèmes remontés par les utilisateurs.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+      {/* Compteurs / Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Clock className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Tickets en attente</p>
+            <h3 className="text-2xl font-bold text-slate-900">{pendingTickets.length}</h3>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
+            <Activity className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Tickets en cours</p>
+            <h3 className="text-2xl font-bold text-slate-900">{inProgressTickets.length}</h3>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center">
+            <Hourglass className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Attente moyenne</p>
+            <h3 className="text-xl font-bold text-slate-900">{getWaitTime()}</h3>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col" style={{ minHeight: '500px' }}>
         {/* Filters */}
         <div className="p-4 border-b border-slate-200 flex items-center gap-4 bg-slate-50">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
@@ -134,7 +190,7 @@ export default function TicketsView() {
         </div>
 
         {/* Tickets List */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto max-h-[600px]">
           {loading ? (
             <div className="p-8 text-center text-slate-500">Chargement des tickets...</div>
           ) : filteredTickets.length === 0 ? (
