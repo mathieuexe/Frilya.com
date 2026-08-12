@@ -131,7 +131,7 @@ export default function BetaRegistration() {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              content: `<@${formData.discordUsername}> vient de s'inscrire à la bêta ! Merci beaucoup ! ✨`
+              content: `@${formData.discordUsername} vient de s'inscrire à la bêta ! Merci beaucoup ! ✨`
             })
           });
         } catch (webhookError) {

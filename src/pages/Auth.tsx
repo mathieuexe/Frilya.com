@@ -61,7 +61,7 @@ export default function Auth() {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                content: `<@${discordUsername}> vient de s'inscrire à la bêta ! Merci beaucoup ! ✨`
+                content: `@${discordUsername} vient de s'inscrire à la bêta ! Merci beaucoup ! ✨`
               })
             });
           } catch (webhookError) {
