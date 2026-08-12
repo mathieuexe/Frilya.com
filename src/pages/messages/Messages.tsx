@@ -39,7 +39,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           .single();
           
         if (contactProfile) {
-          const finalName = contactProfile.id === ADMIN_ID ? 'Équipe Frilya' : (contactProfile.full_name || 'Utilisateur');
+          const finalName = contactProfile.id === ADMIN_ID ? 'Support Frilya' : (contactProfile.full_name || 'Utilisateur');
           setSelectedContact({ 
             id: contactProfile.id, 
             full_name: finalName,
@@ -115,7 +115,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           .single();
           
         if (contactProfile) {
-          const finalName = contactProfile.id === ADMIN_ID ? 'Équipe Frilya' : (contactProfile.full_name || 'Utilisateur');
+          const finalName = contactProfile.id === ADMIN_ID ? 'Support Frilya' : (contactProfile.full_name || 'Utilisateur');
           setSelectedContact({ 
             id: contactProfile.id, 
             full_name: finalName,
@@ -125,7 +125,15 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         }
       } else if (data && data.some(m => m.sender_id === ADMIN_ID || m.receiver_id === ADMIN_ID)) {
         // Sélectionner l'admin par défaut si on a des messages de lui
-        setSelectedContact({ id: ADMIN_ID, full_name: 'Équipe Frilya' });
+        const adminMsg = finalMessages.find(m => m.sender_id === ADMIN_ID || m.receiver_id === ADMIN_ID);
+        const adminProfile = adminMsg?.sender_id === ADMIN_ID ? adminMsg.sender : adminMsg?.receiver;
+        
+        setSelectedContact({ 
+          id: ADMIN_ID, 
+          full_name: 'Support Frilya',
+          avatar_url: adminProfile?.avatar_url,
+          is_verified: adminProfile?.is_verified
+        });
       }
 
       // Abonnement temps réel (Realtime Supabase)
@@ -324,7 +332,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     const contactName = contactProfile?.full_name || 'Utilisateur';
     
     // Remplacer le nom si c'est l'admin
-    const finalName = contactId === ADMIN_ID ? 'Équipe Frilya' : contactName;
+    const finalName = contactId === ADMIN_ID ? 'Support Frilya' : contactName;
 
     if (!contactsMap.has(contactId)) {
       contactsMap.set(contactId, {
