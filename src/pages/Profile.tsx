@@ -38,11 +38,21 @@ export default function Profile() {
       if (profileData?.is_seller) {
         const { data: servicesData } = await supabase
           .from('services')
-          .select('*, categories(name)')
+          .select('*, categories(name), reviews(rating)')
           .eq('seller_id', profileData.id)
           .eq('status', 'active');
         
-        if (servicesData) setServices(servicesData);
+        if (servicesData) {
+          // Compute average ratings
+          const processedServices = servicesData.map(service => {
+            const revs = service.reviews || [];
+            const avg = revs.length > 0 
+              ? revs.reduce((acc: number, curr: any) => acc + curr.rating, 0) / revs.length 
+              : 5.0;
+            return { ...service, averageRating: Math.round(avg * 10) / 10, reviewCount: revs.length };
+          });
+          setServices(processedServices);
+        }
       }
     } catch (err) {
       console.error('Erreur lors du chargement du profil:', err);
@@ -141,11 +151,17 @@ export default function Profile() {
               {services.map((service) => (
                 <Link key={service.id} to={`/service/${service.id}`} className="group bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full">
                   <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
-                    <img 
-                      src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800" 
-                      alt="Service placeholder" 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    {service.cover_image_url ? (
+                      <img 
+                        src={service.cover_image_url} 
+                        alt={service.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400">
+                        Aucune image
+                      </div>
+                    )}
                     {service.categories?.name && (
                       <div className="absolute top-4 left-4 bg-white/90 backdrop-blur text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg">
                         {service.categories.name}
@@ -158,8 +174,8 @@ export default function Profile() {
                     </h3>
                     <div className="flex items-center gap-1 text-sm text-slate-500 mb-4">
                       <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="font-bold text-slate-700">5.0</span>
-                      <span>(0 avis)</span>
+                      <span className="font-bold text-slate-700">{service.averageRating?.toFixed(1) || '5.0'}</span>
+                      <span>({service.reviewCount || 0} avis)</span>
                     </div>
                     <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-xs text-slate-500 uppercase tracking-wider font-bold">À partir de</span>

@@ -6,6 +6,11 @@ import { Star, Clock, CheckCircle, ShieldCheck, Heart, Share2, Loader2 } from 'l
 export default function ServiceDetail() {
   const { id } = useParams();
   const [service, setService] = useState<any>(null);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [media, setMedia] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [averageRating, setAverageRating] = useState<number>(5);
+  const [activePackage, setActivePackage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,6 +36,49 @@ export default function ServiceDetail() {
 
       if (error) throw error;
       setService(data);
+
+      // Fetch packages
+      const { data: pkgs } = await supabase
+        .from('service_packages')
+        .select('*')
+        .eq('service_id', data.id)
+        .order('price', { ascending: true });
+        
+      if (pkgs && pkgs.length > 0) {
+        setPackages(pkgs);
+        setActivePackage(pkgs[0]);
+      } else {
+        // Fallback for older services without packages
+        setActivePackage({
+          name: 'Formule Basique',
+          description: "La prestation de base décrite dans l'annonce.",
+          price: data.price_basic,
+          delivery_days: data.delivery_time_days
+        });
+      }
+
+      // Fetch media
+      const { data: med } = await supabase
+        .from('service_media')
+        .select('*')
+        .eq('service_id', data.id)
+        .order('position', { ascending: true });
+        
+      if (med) setMedia(med);
+
+      // Fetch reviews
+      const { data: revs } = await supabase
+        .from('reviews')
+        .select('*, buyer_id(full_name, avatar_url)')
+        .eq('service_id', data.id)
+        .order('created_at', { ascending: false });
+
+      if (revs && revs.length > 0) {
+        setReviews(revs);
+        const avg = revs.reduce((acc: number, curr: any) => acc + curr.rating, 0) / revs.length;
+        setAverageRating(Math.round(avg * 10) / 10);
+      }
+
     } catch (error) {
       console.error("Erreur", error);
     } finally {
@@ -80,8 +128,8 @@ export default function ServiceDetail() {
                     <p className="font-bold text-slate-900">{service.profiles?.full_name || 'Vendeur Mystère'}</p>
                     <div className="flex items-center gap-1 text-sm text-slate-500">
                       <Star className="w-4 h-4 text-amber-500 fill-current" />
-                      <span className="font-bold text-amber-500">5.0</span>
-                      <span>(0 avis)</span>
+                      <span className="font-bold text-amber-500">{averageRating.toFixed(1)}</span>
+                      <span>({reviews.length} avis)</span>
                     </div>
                   </div>
                 </div>
@@ -96,15 +144,70 @@ export default function ServiceDetail() {
                 </div>
               </div>
 
-              {/* Image / Galerie (Placeholder) */}
-              <div className="aspect-video bg-slate-100 rounded-2xl mb-8 flex items-center justify-center text-slate-400">
-                [Image du service]
+              {/* Image / Galerie */}
+              <div className="aspect-video bg-slate-100 rounded-2xl mb-8 overflow-hidden relative">
+                {media && media.length > 0 ? (
+                  <img src={media[0].url} alt={service.title} className="w-full h-full object-cover" />
+                ) : service.cover_image_url ? (
+                  <img src={service.cover_image_url} alt={service.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    Aucune image
+                  </div>
+                )}
               </div>
 
               <h2 className="text-xl font-bold text-slate-900 mb-4">À propos de ce service</h2>
               <div className="prose max-w-none text-slate-600 whitespace-pre-line">
                 {service.description}
               </div>
+            </div>
+
+            {/* Section Avis */}
+            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Avis des clients ({reviews.length})</h2>
+              
+              {reviews.length === 0 ? (
+                <div className="text-center py-8 bg-slate-50 rounded-2xl">
+                  <p className="text-slate-500 font-medium">Ce service n'a pas encore reçu d'avis.</p>
+                  <p className="text-sm text-slate-400 mt-1">Passez commande pour être le premier à laisser un avis !</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {reviews.map(review => (
+                    <div key={review.id} className="border-b border-slate-100 last:border-0 pb-6 last:pb-0">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="w-10 h-10 bg-slate-100 rounded-full overflow-hidden shrink-0">
+                          {review.buyer_id?.avatar_url ? (
+                            <img src={review.buyer_id.avatar_url} alt={review.buyer_id.full_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center font-bold text-slate-400 text-sm">
+                              {review.buyer_id?.full_name?.charAt(0) || 'A'}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{review.buyer_id?.full_name || 'Acheteur Anonyme'}</p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map(star => (
+                                <Star 
+                                  key={star} 
+                                  className={`w-3 h-3 ${review.rating >= star ? 'text-amber-500 fill-current' : 'text-slate-200'}`} 
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-slate-400">
+                              il y a {Math.floor((new Date().getTime() - new Date(review.created_at).getTime()) / (1000 * 3600 * 24))} jours
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-slate-700 italic">"{review.comment}"</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Section Vendeur */}
@@ -132,32 +235,60 @@ export default function ServiceDetail() {
           <div className="w-full lg:w-80 shrink-0">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 sticky top-24">
               
-              <div className="flex justify-between items-start mb-6">
-                <h3 className="text-xl font-bold text-slate-900">Formule Basique</h3>
-                <span className="text-2xl font-bold text-frilya-600">{service.price_basic} €</span>
-              </div>
-
-              <p className="text-sm text-slate-600 mb-6 font-medium">
-                La prestation de base décrite dans l'annonce.
-              </p>
-
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
-                  <Clock className="w-4 h-4 text-slate-400" />
-                  Livraison en {service.delivery_time_days} jour(s)
+              {packages.length > 1 && (
+                <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+                  {packages.map(pkg => (
+                    <button
+                      key={pkg.id}
+                      onClick={() => setActivePackage(pkg)}
+                      className={`flex-1 text-sm font-bold py-2 px-3 rounded-lg transition-all ${
+                        activePackage?.id === pkg.id 
+                          ? 'bg-white text-frilya-600 shadow-sm' 
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      {pkg.name || pkg.package_type}
+                    </button>
+                  ))}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-700">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  Paiement sécurisé
-                </div>
-              </div>
+              )}
 
-              <Link 
-                to={`/paiement/${service.id}`}
-                className="w-full flex justify-center items-center bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md"
-              >
-                Commander ({service.price_basic} €)
-              </Link>
+              {activePackage && (
+                <>
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-xl font-bold text-slate-900">{activePackage.name}</h3>
+                    <span className="text-2xl font-bold text-frilya-600">{activePackage.price} €</span>
+                  </div>
+
+                  <p className="text-sm text-slate-600 mb-6 font-medium">
+                    {activePackage.description}
+                  </p>
+
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      Livraison en {activePackage.delivery_days} jour(s)
+                    </div>
+                    {activePackage.revisions_included > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
+                        <CheckCircle className="w-4 h-4 text-slate-400" />
+                        {activePackage.revisions_included} Révision(s) incluse(s)
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm text-slate-700">
+                      <ShieldCheck className="w-4 h-4 text-green-500" />
+                      Paiement sécurisé
+                    </div>
+                  </div>
+
+                  <Link 
+                    to={`/paiement/${service.id}?pkg=${activePackage.id || 'basic'}`}
+                    className="w-full flex justify-center items-center bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md"
+                  >
+                    Commander ({activePackage.price} €)
+                  </Link>
+                </>
+              )}
               
               <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium">
                 <ShieldCheck className="w-4 h-4 text-green-500" />
