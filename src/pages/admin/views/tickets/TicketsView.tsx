@@ -1,26 +1,48 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
-import { Filter, AlertTriangle, CheckCircle, Clock, X, ExternalLink, Paperclip, Hourglass, Activity } from 'lucide-react';
+import { Filter, AlertTriangle, CheckCircle, Clock, ExternalLink, Paperclip, Hourglass, Activity, ArrowLeft, Send, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function TicketsView() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  
+  // Nouveaux states pour les messages
+  const [messages, setMessages] = useState<any[]>([]);
+  const [replyContent, setReplyContent] = useState('');
+  const [sending, setSending] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [adminProfile, setAdminProfile] = useState<any>(null);
 
   useEffect(() => {
     fetchTickets();
+    getCurrentUser();
   }, []);
+
+  const getCurrentUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setCurrentUser(session.user);
+      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+      if (data) setAdminProfile(data);
+    }
+  };
 
   const fetchTickets = async () => {
     try {
-      const { data, error } = await supabase
-        .from('report_tickets')
-        .select('*')
-        .order('created_at', { ascending: true }); // Du plus ancien au plus récent
-
-      if (error) throw error;
-      setTickets(data || []);
+      const response = await fetch('/api/freescout?action=listAllTickets');
+      const resData = await response.json();
+      
+      if (!response.ok) throw new Error(resData.error || 'Erreur API');
+      
+      // FreeScout retourne les conversations dans _embedded.conversations
+      const conversations = resData._embedded?.conversations || [];
+      
+      // Trier du plus ancien au plus récent (FreeScout renvoie généralement du plus récent au plus ancien)
+      conversations.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      
+      setTickets(conversations);
     } catch (err) {
       console.error('Erreur lors de la récupération des tickets:', err);
     } finally {
@@ -28,14 +50,70 @@ export default function TicketsView() {
     }
   };
 
+  const fetchMessages = async (ticketId: string) => {
+    try {
+      const response = await fetch(`/api/freescout?action=getTicket&id=${ticketId}`);
+      const resData = await response.json();
+      
+      if (!response.ok) throw new Error(resData.error || 'Erreur API');
+      
+      const threads = resData._embedded?.threads || [];
+      // Inverser pour afficher chronologiquement
+      setMessages(threads.reverse());
+    } catch (err) {
+      console.error('Erreur messages:', err);
+    }
+  };
+
+  const handleTicketClick = (ticket: any) => {
+    setSelectedTicket(ticket);
+    fetchMessages(ticket.id);
+  };
+
+  const handleSendMessage = async () => {
+    if (!replyContent.trim() || !selectedTicket || !currentUser) return;
+    setSending(true);
+
+    try {
+      const identity = adminProfile?.ticket_reply_identity || 'support';
+      
+      let finalContent = replyContent;
+      if (identity === 'personal' && adminProfile?.signature) {
+        finalContent = `${replyContent}\n\n${adminProfile.signature}`;
+      }
+
+      const response = await fetch('/api/freescout?action=replyTicket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedTicket.id,
+          text: finalContent,
+          type: 'reply',
+          userId: 1 // Admin user ID in FreeScout (can be mapped later if needed)
+        })
+      });
+
+      if (!response.ok) throw new Error('Erreur API');
+
+      setReplyContent('');
+      fetchMessages(selectedTicket.id);
+    } catch (err) {
+      console.error('Erreur envoi message:', err);
+      alert('Erreur lors de l\'envoi du message.');
+    } finally {
+      setSending(false);
+    }
+  };
+
   const updateTicketStatus = async (id: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('report_tickets')
-        .update({ status: newStatus })
-        .eq('id', id);
+      const response = await fetch('/api/freescout?action=updateStatus', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus })
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Erreur API');
       
       setTickets(tickets.map(t => t.id === id ? { ...t, status: newStatus } : t));
       if (selectedTicket && selectedTicket.id === id) {
@@ -71,13 +149,13 @@ export default function TicketsView() {
   );
 
   // Statistiques
-  const pendingTickets = tickets.filter(t => ['nouveau', 'en_attente'].includes(t.status));
-  const inProgressTickets = tickets.filter(t => t.status === 'en_cours');
+  const pendingTickets = tickets.filter(t => ['active', 'pending'].includes(t.status));
+  const inProgressTickets = tickets.filter(t => t.status === 'active');
   
   const getWaitTime = () => {
     if (pendingTickets.length === 0) return "Aucun ticket en attente";
     const now = Date.now();
-    const totalWaitMs = pendingTickets.reduce((acc, t) => acc + (now - new Date(t.created_at).getTime()), 0);
+    const totalWaitMs = pendingTickets.reduce((acc, t) => acc + (now - new Date(t.createdAt).getTime()), 0);
     const avgWaitMs = totalWaitMs / pendingTickets.length;
     
     const days = Math.floor(avgWaitMs / (1000 * 60 * 60 * 24));
@@ -94,11 +172,9 @@ export default function TicketsView() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'nouveau': return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Nouveau</span>;
-      case 'en_cours': return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">En cours</span>;
-      case 'en_attente': return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">En attente</span>;
-      case 'escalade': return <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">Escaladé</span>;
-      case 'cloture': return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Clôturé</span>;
+      case 'active': return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Actif</span>;
+      case 'pending': return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">En attente</span>;
+      case 'closed': return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Clôturé</span>;
       default: return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">{status}</span>;
     }
   };
@@ -124,6 +200,177 @@ export default function TicketsView() {
     };
     return labels[cat] || cat;
   };
+
+  if (selectedTicket) {
+    const isClosed = selectedTicket.status === 'closed';
+
+    // Extraction du numéro et du titre depuis le sujet [SNL-XXXX] Titre
+    const subjectMatch = selectedTicket.subject.match(/^\[(.*?)\]\s*(.*)$/);
+    const ticketNumber = subjectMatch ? subjectMatch[1] : `Ticket #${selectedTicket.number}`;
+    const ticketTitle = subjectMatch ? subjectMatch[2] : selectedTicket.subject;
+
+    return (
+      <div className="space-y-6">
+        {/* Header Détail */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{ticketNumber}</h1>
+            <p className="text-slate-500">Gestion et réponse</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setSelectedTicket(null)}
+              className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour
+            </button>
+            {isClosed && (
+              <button 
+                onClick={() => updateTicketStatus(selectedTicket.id, 'active')}
+                className="px-4 py-2 border border-blue-200 text-blue-600 bg-blue-50 rounded-xl text-sm font-bold hover:bg-blue-100 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Réouvrir le ticket
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* Colonne Gauche : Détails et Actions */}
+          <div className="w-full lg:w-1/3 xl:w-1/4 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
+              <div className="w-6 h-4 bg-frilya-600 rounded-sm"></div>
+              <h2 className="font-bold text-slate-900 text-lg">Détails</h2>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Statut</p>
+              <select 
+                value={selectedTicket.status}
+                onChange={(e) => updateTicketStatus(selectedTicket.id, e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-frilya-600"
+              >
+                <option value="active">Nouveau / Actif</option>
+                <option value="pending">En attente (Client)</option>
+                <option value="closed">Clôturé</option>
+              </select>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Déclarant</p>
+              <p className="font-bold text-slate-800">
+                {selectedTicket.customer?.email}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Créé le</p>
+              <p className="font-bold text-slate-800 text-sm">
+                {new Date(selectedTicket.createdAt).toLocaleString('fr-FR', {
+                  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                })}
+              </p>
+            </div>
+            
+            {selectedTicket.updatedAt && (
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Modifié le</p>
+                <p className="font-bold text-slate-800 text-sm">
+                  {new Date(selectedTicket.updatedAt).toLocaleString('fr-FR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Colonne Droite : Messages */}
+          <div className="w-full lg:flex-1 space-y-4">
+            
+            {isClosed && (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-slate-400 mt-0.5" />
+                <div>
+                  <p className="font-bold text-slate-700">Ce ticket est clôturé.</p>
+                  <p className="text-sm text-slate-500">Réouvrez-le pour pouvoir envoyer de nouveaux messages.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Fil de discussion */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              
+              {/* Message initial (Titre du ticket) */}
+              <div className="p-6 border-b border-slate-100 bg-slate-50">
+                <h3 className="text-lg font-bold text-slate-900">{ticketTitle}</h3>
+              </div>
+
+              {/* Réponses */}
+              {messages.map((msg) => {
+                const isAdmin = msg.type === 'reply' || msg.type === 'note';
+                const senderName = isAdmin ? 'Support Frilya' : (msg.customer?.firstName || msg.customer?.email || 'Utilisateur');
+                const initialLetter = senderName.charAt(0).toUpperCase();
+                
+                return (
+                  <div key={msg.id} className={`p-6 border-b border-slate-100 ${isAdmin ? 'bg-frilya-50/30' : ''}`}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isAdmin ? 'bg-frilya-600' : 'bg-slate-400'}`}>
+                        {isAdmin ? 'S' : initialLetter}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 flex items-center gap-2">
+                          {senderName}
+                          {isAdmin && <span className="px-2 py-0.5 bg-frilya-100 text-frilya-700 rounded-full text-[10px] uppercase tracking-wider">Admin</span>}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(msg.createdAt).toLocaleString('fr-FR', {
+                            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: msg.body }} />
+                  </div>
+                );
+              })}
+
+              {/* Zone de réponse */}
+              {!isClosed && (
+                <div className="p-6 bg-slate-50">
+                  <textarea
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    placeholder="Écrivez votre réponse ici..."
+                    className="w-full min-h-[120px] p-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600 resize-y text-sm mb-4"
+                  />
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-slate-500">
+                      Vous répondez en tant que : <span className="font-bold">{adminProfile?.ticket_reply_identity === 'personal' ? adminProfile?.full_name : 'Support Frilya'}</span>
+                    </p>
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={sending || !replyContent.trim()}
+                      className="px-6 py-2.5 bg-frilya-900 text-white rounded-xl font-bold text-sm hover:bg-frilya-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {sending ? 'Envoi...' : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Envoyer
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -181,11 +428,9 @@ export default function TicketsView() {
             className="px-3 py-1.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-frilya-600"
           >
             <option value="all">Tous les tickets</option>
-            <option value="nouveau">Nouveaux</option>
-            <option value="en_cours">En cours</option>
-            <option value="en_attente">En attente</option>
-            <option value="escalade">Escaladés</option>
-            <option value="cloture">Clôturés</option>
+            <option value="active">Actifs</option>
+            <option value="pending">En attente</option>
+            <option value="closed">Clôturés</option>
           </select>
         </div>
 
@@ -201,166 +446,36 @@ export default function TicketsView() {
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {filteredTickets.map(ticket => (
-                <div 
-                  key={ticket.id} 
-                  onClick={() => setSelectedTicket(ticket)}
-                  className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors flex items-center gap-4 ${selectedTicket?.id === ticket.id ? 'bg-frilya-50 border-l-4 border-frilya-600' : 'border-l-4 border-transparent'}`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="font-mono text-xs font-bold text-slate-500">{ticket.ticket_number}</span>
-                      {getStatusBadge(ticket.status)}
-                      {getPriorityBadge(ticket.priority)}
-                      <span className="text-xs text-slate-400 flex items-center gap-1 ml-auto">
-                        <Clock className="w-3 h-3" />
-                        {new Date(ticket.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </span>
+              {filteredTickets.map(ticket => {
+                const subjectMatch = ticket.subject.match(/^\[(.*?)\]\s*(.*)$/);
+                const tNumber = subjectMatch ? subjectMatch[1] : `Ticket #${ticket.number}`;
+                const tTitle = subjectMatch ? subjectMatch[2] : ticket.subject;
+
+                return (
+                  <div 
+                    key={ticket.id} 
+                    onClick={() => handleTicketClick(ticket)}
+                    className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors flex items-center gap-4 ${selectedTicket?.id === ticket.id ? 'bg-frilya-50 border-l-4 border-frilya-600' : 'border-l-4 border-transparent'}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="font-mono text-xs font-bold text-slate-500">{tNumber}</span>
+                        {getStatusBadge(ticket.status)}
+                        <span className="text-xs text-slate-400 flex items-center gap-1 ml-auto">
+                          <Clock className="w-3 h-3" />
+                          {new Date(ticket.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-slate-900 truncate">{tTitle}</h4>
+                      <p className="text-sm text-slate-500 truncate">{ticket.customer?.email} • {ticket.preview}</p>
                     </div>
-                    <h4 className="font-bold text-slate-900 truncate">{ticket.title}</h4>
-                    <p className="text-sm text-slate-500 truncate">{getCategoryLabel(ticket.category)} • {ticket.is_anonymous ? 'Anonyme' : ticket.email}</p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
-
-      {/* Ticket Detail Modal */}
-      {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                  {selectedTicket.ticket_number}
-                  {getStatusBadge(selectedTicket.status)}
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  Créé le {new Date(selectedTicket.created_at).toLocaleString('fr-FR')}
-                </p>
-              </div>
-              <button onClick={() => setSelectedTicket(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-                <X className="w-6 h-6 text-slate-500" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              
-              {/* Header Info */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm font-bold text-slate-900 mb-1">Catégorie</p>
-                  <p className="text-slate-600">{getCategoryLabel(selectedTicket.category)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900 mb-1">Déclarant</p>
-                  <p className="text-slate-600">
-                    {selectedTicket.is_anonymous ? 'Anonyme' : selectedTicket.email}
-                  </p>
-                </div>
-              </div>
-
-              {/* Dynamic Sub Data */}
-              {selectedTicket.sub_data && Object.keys(selectedTicket.sub_data).length > 0 && (
-                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                  <h4 className="text-sm font-bold text-blue-900 mb-3">Informations spécifiques</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(selectedTicket.sub_data).map(([key, value]) => (
-                      <div key={key}>
-                        <span className="text-xs font-bold text-blue-700 uppercase">{key.replace('_', ' ')}</span>
-                        <p className="text-sm text-blue-900 font-medium">{String(value)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Content */}
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">{selectedTicket.title}</h3>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 whitespace-pre-wrap">
-                  {selectedTicket.description}
-                </div>
-              </div>
-
-              {/* Attachments & Links */}
-              <div className="grid grid-cols-2 gap-6">
-                {selectedTicket.reference_link && (
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 mb-2">Lien de référence</p>
-                    <a href={selectedTicket.reference_link} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-frilya-600 hover:underline text-sm font-medium">
-                      <ExternalLink className="w-4 h-4" />
-                      Voir l'élément concerné
-                    </a>
-                  </div>
-                )}
-
-                {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 mb-2">Pièces jointes</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedTicket.attachments.map((url: string, idx: number) => (
-                        <a key={idx} href={url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg text-sm hover:bg-slate-200 transition-colors">
-                          <Paperclip className="w-4 h-4 text-slate-500" />
-                          Pièce jointe {idx + 1}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Actions Footer */}
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Statut</label>
-                  <select 
-                    value={selectedTicket.status}
-                    onChange={(e) => updateTicketStatus(selectedTicket.id, e.target.value)}
-                    className="px-3 py-2 rounded-lg border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-frilya-600"
-                  >
-                    <option value="nouveau">Nouveau</option>
-                    <option value="en_cours">En cours</option>
-                    <option value="en_attente">En attente</option>
-                    <option value="escalade">Escaladé</option>
-                    <option value="cloture">Clôturé</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Priorité</label>
-                  <select 
-                    value={selectedTicket.priority}
-                    onChange={(e) => updateTicketPriority(selectedTicket.id, e.target.value)}
-                    className="px-3 py-2 rounded-lg border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-frilya-600"
-                  >
-                    <option value="faible">Faible</option>
-                    <option value="moyenne">Moyenne</option>
-                    <option value="haute">Haute</option>
-                    <option value="critique">Critique</option>
-                  </select>
-                </div>
-              </div>
-              <button 
-                onClick={() => {
-                  if (selectedTicket.email) {
-                    window.location.href = `mailto:${selectedTicket.email}?subject=Suite à votre signalement ${selectedTicket.ticket_number}`;
-                  } else {
-                    alert("Ce signalement est anonyme, vous ne pouvez pas recontacter l'utilisateur.");
-                  }
-                }}
-                className="px-6 py-2 bg-frilya-900 text-white rounded-xl font-bold hover:bg-frilya-800 transition-colors"
-              >
-                Contacter par email
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

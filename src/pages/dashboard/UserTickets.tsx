@@ -29,16 +29,16 @@ export default function UserTickets() {
   const fetchTickets = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session || !session.user.email) return;
 
-      const { data, error } = await supabase
-        .from('report_tickets')
-        .select('*')
-        .eq('reporter_id', session.user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTickets(data || []);
+      const response = await fetch(`/api/freescout?action=listUserTickets&email=${encodeURIComponent(session.user.email)}`);
+      const resData = await response.json();
+      
+      if (!response.ok) throw new Error(resData.error || 'Erreur API');
+      
+      // FreeScout retourne les conversations dans _embedded.conversations
+      const conversations = resData._embedded?.conversations || [];
+      setTickets(conversations);
     } catch (err) {
       console.error('Erreur lors de la récupération de vos tickets:', err);
     } finally {
@@ -48,17 +48,14 @@ export default function UserTickets() {
 
   const fetchMessages = async (ticketId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('ticket_messages')
-        .select(`
-          *,
-          sender:profiles(full_name, avatar_url, role)
-        `)
-        .eq('ticket_id', ticketId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setMessages(data || []);
+      const response = await fetch(`/api/freescout?action=getTicket&id=${ticketId}`);
+      const resData = await response.json();
+      
+      if (!response.ok) throw new Error(resData.error || 'Erreur API');
+      
+      const threads = resData._embedded?.threads || [];
+      // Les threads FreeScout sont renvoyés du plus récent au plus ancien, on les inverse pour l'affichage
+      setMessages(threads.reverse());
     } catch (err) {
       console.error('Erreur messages:', err);
     }
@@ -74,21 +71,18 @@ export default function UserTickets() {
     setSending(true);
 
     try {
-      const { error } = await supabase
-        .from('ticket_messages')
-        .insert({
-          ticket_id: selectedTicket.id,
-          sender_id: currentUser.id,
-          content: replyContent
-        });
+      const response = await fetch('/api/freescout?action=replyTicket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedTicket.id,
+          text: replyContent,
+          type: 'customer',
+          email: currentUser.email
+        })
+      });
 
-      if (error) throw error;
-
-      // Mettre à jour la date de modification du ticket
-      await supabase
-        .from('report_tickets')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', selectedTicket.id);
+      if (!response.ok) throw new Error('Erreur API');
 
       setReplyContent('');
       fetchMessages(selectedTicket.id);
@@ -103,15 +97,18 @@ export default function UserTickets() {
   const handleReopenTicket = async () => {
     if (!selectedTicket) return;
     try {
-      const { error } = await supabase
-        .from('report_tickets')
-        .update({ status: 'en_cours', updated_at: new Date().toISOString() })
-        .eq('id', selectedTicket.id);
+      const response = await fetch('/api/freescout?action=updateStatus', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedTicket.id,
+          status: 'active'
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Erreur API');
       
-      setSelectedTicket({ ...selectedTicket, status: 'en_cours' });
-      // Rafraichir la liste principale en arrière-plan
+      setSelectedTicket({ ...selectedTicket, status: 'active' });
       fetchTickets();
     } catch (err) {
       console.error('Erreur réouverture:', err);
@@ -147,14 +144,19 @@ export default function UserTickets() {
 
   // --- VUE DÉTAIL DU TICKET ---
   if (selectedTicket) {
-    const isClosed = selectedTicket.status === 'cloture';
+    const isClosed = selectedTicket.status === 'closed';
+
+    // Extraction du numéro et du titre depuis le sujet [SNL-XXXX] Titre
+    const subjectMatch = selectedTicket.subject.match(/^\[(.*?)\]\s*(.*)$/);
+    const ticketNumber = subjectMatch ? subjectMatch[1] : `Ticket #${selectedTicket.number}`;
+    const ticketTitle = subjectMatch ? subjectMatch[2] : selectedTicket.subject;
 
     return (
       <div className="space-y-6">
         {/* Header Détail */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-frilya-900">Ticket {selectedTicket.ticket_number}</h1>
+            <h1 className="text-2xl font-bold text-frilya-900">{ticketNumber}</h1>
             <p className="text-slate-500">Réception mail / Assistance</p>
           </div>
           <div className="flex items-center gap-3">
@@ -191,39 +193,24 @@ export default function UserTickets() {
             </div>
 
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Catégorie</p>
-              <p className="font-bold text-slate-800">{getCategoryLabel(selectedTicket.category)}</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Déclarant</p>
+              <p className="font-bold text-slate-800">{selectedTicket.customer?.email}</p>
             </div>
-
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Priorité</p>
-              <p className="font-bold text-slate-800 capitalize">{selectedTicket.priority}</p>
-            </div>
-
-            {selectedTicket.reference_link && (
-              <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Référence</p>
-                <a href={selectedTicket.reference_link} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1 font-medium break-all">
-                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                  Lien concerné
-                </a>
-              </div>
-            )}
 
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Créé le</p>
               <p className="font-bold text-slate-800 text-sm">
-                {new Date(selectedTicket.created_at).toLocaleString('fr-FR', {
+                {new Date(selectedTicket.createdAt).toLocaleString('fr-FR', {
                   day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                 })}
               </p>
             </div>
 
-            {selectedTicket.updated_at && (
+            {selectedTicket.updatedAt && (
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Modifié le</p>
                 <p className="font-bold text-slate-800 text-sm">
-                  {new Date(selectedTicket.updated_at).toLocaleString('fr-FR', {
+                  {new Date(selectedTicket.updatedAt).toLocaleString('fr-FR', {
                     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                   })}
                 </p>
@@ -247,67 +234,36 @@ export default function UserTickets() {
             {/* Fil de discussion */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               
-              {/* Message initial (Description du ticket) */}
-              <div className="p-6 border-b border-slate-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
-                    {selectedTicket.email ? selectedTicket.email.charAt(0).toUpperCase() : 'A'}
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-900">{selectedTicket.is_anonymous ? 'Anonyme' : selectedTicket.email}</p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(selectedTicket.created_at).toLocaleString('fr-FR', {
-                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-3">{selectedTicket.title}</h3>
-                <div className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">
-                  {selectedTicket.description}
-                </div>
-
-                {/* Pièces jointes initiales */}
-                {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-slate-50 flex flex-wrap gap-2">
-                    {selectedTicket.attachments.map((url: string, idx: number) => (
-                      <a key={idx} href={url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors">
-                        <Paperclip className="w-3 h-3" />
-                        Pièce jointe {idx + 1}
-                      </a>
-                    ))}
-                  </div>
-                )}
+              {/* Message initial (Titre du ticket) */}
+              <div className="p-6 border-b border-slate-100 bg-slate-50">
+                <h3 className="text-lg font-bold text-slate-900">{ticketTitle}</h3>
               </div>
 
-              {/* Réponses */}
+              {/* Réponses (les threads incluent le message initial) */}
               {messages.map((msg) => {
-                const isAdmin = msg.sender?.role === 'admin';
+                const isAdmin = msg.type === 'reply' || msg.type === 'note';
+                const senderName = isAdmin ? 'Support Frilya' : (msg.customer?.firstName || msg.customer?.email || 'Utilisateur');
+                const initialLetter = senderName.charAt(0).toUpperCase();
+                
                 return (
                   <div key={msg.id} className={`p-6 border-b border-slate-100 ${isAdmin ? 'bg-blue-50/30' : ''}`}>
                     <div className="flex items-center gap-3 mb-4">
-                      {msg.sender?.avatar_url ? (
-                        <img src={msg.sender.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
-                      ) : (
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isAdmin ? 'bg-frilya-600' : 'bg-slate-400'}`}>
-                          {isAdmin ? 'S' : (msg.sender?.full_name ? msg.sender.full_name.charAt(0) : 'U')}
-                        </div>
-                      )}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isAdmin ? 'bg-frilya-600' : 'bg-slate-400'}`}>
+                        {isAdmin ? 'S' : initialLetter}
+                      </div>
                       <div>
                         <p className="font-bold text-slate-900 flex items-center gap-2">
-                          {isAdmin ? 'Support Frilya' : (msg.sender?.full_name || 'Utilisateur')}
+                          {senderName}
                           {isAdmin && <span className="px-2 py-0.5 bg-frilya-100 text-frilya-700 rounded-full text-[10px] uppercase tracking-wider">Admin</span>}
                         </p>
                         <p className="text-xs text-slate-500">
-                          {new Date(msg.created_at).toLocaleString('fr-FR', {
+                          {new Date(msg.createdAt).toLocaleString('fr-FR', {
                             day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                           })}
                         </p>
                       </div>
                     </div>
-                    <div className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">
-                      {msg.content}
-                    </div>
+                    <div className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: msg.body }} />
                   </div>
                 );
               })}
@@ -371,31 +327,37 @@ export default function UserTickets() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {tickets.map(ticket => (
-              <div 
-                key={ticket.id} 
-                onClick={() => handleTicketClick(ticket)}
-                className="p-6 hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="font-mono text-sm font-bold text-slate-500">{ticket.ticket_number}</span>
-                      {getStatusBadge(ticket.status)}
-                    </div>
-                    <h3 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-frilya-600 transition-colors">{ticket.title}</h3>
-                    <p className="text-slate-600 text-sm mb-4 whitespace-pre-wrap line-clamp-2">{ticket.description}</p>
-                    
-                    <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {new Date(ticket.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </span>
+            {tickets.map(ticket => {
+              const subjectMatch = ticket.subject.match(/^\[(.*?)\]\s*(.*)$/);
+              const tNumber = subjectMatch ? subjectMatch[1] : `Ticket #${ticket.number}`;
+              const tTitle = subjectMatch ? subjectMatch[2] : ticket.subject;
+
+              return (
+                <div 
+                  key={ticket.id} 
+                  onClick={() => handleTicketClick(ticket)}
+                  className="p-6 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-mono text-sm font-bold text-slate-500">{tNumber}</span>
+                        {getStatusBadge(ticket.status)}
+                      </div>
+                      <h3 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-frilya-600 transition-colors">{tTitle}</h3>
+                      <p className="text-slate-600 text-sm mb-4 whitespace-pre-wrap line-clamp-2">{ticket.preview}</p>
+                      
+                      <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {new Date(ticket.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

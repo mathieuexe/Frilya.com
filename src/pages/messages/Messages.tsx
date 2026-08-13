@@ -298,27 +298,55 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     if (isChatClosed || isSupportBlocked) return;
 
     try {
-      const finalContent = profile?.role === 'admin' && profile?.signature
+      const finalContent = profile?.role === 'admin' && profile?.signature && profile?.message_reply_identity !== 'support'
         ? `${newMessage}\n\n${profile.signature}`
         : newMessage;
 
-      const { data: insertedMessage, error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: selectedContact.id,
-          content: finalContent
-        })
-        .select()
-        .single();
+      let insertedMessage = null;
 
-      if (error) throw error;
+      if (profile?.role === 'admin' && profile?.message_reply_identity === 'support') {
+        // Envoi en tant que Support Frilya via RPC
+        const { error } = await supabase.rpc('send_support_message', {
+          p_receiver_id: selectedContact.id,
+          p_content: finalContent
+        });
+
+        if (error) throw error;
+        
+        // Créer un message factice pour l'affichage immédiat
+        insertedMessage = {
+          id: Math.random().toString(),
+          sender_id: ADMIN_ID,
+          receiver_id: selectedContact.id,
+          content: finalContent,
+          created_at: new Date().toISOString(),
+          is_read: false
+        };
+      } else {
+        // Envoi normal
+        const { data, error } = await supabase
+          .from('messages')
+          .insert({
+            sender_id: user.id,
+            receiver_id: selectedContact.id,
+            content: finalContent
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        insertedMessage = data;
+      }
 
       // Ajout immédiat au state local pour une interface plus réactive
       if (insertedMessage) {
         const fullMessage = {
           ...insertedMessage,
-          sender: {
+          sender: insertedMessage.sender_id === ADMIN_ID ? {
+            full_name: 'Support Frilya',
+            avatar_url: null,
+            is_verified: true
+          } : {
             full_name: profile?.full_name || 'Utilisateur',
             avatar_url: profile?.avatar_url,
             is_verified: profile?.is_verified
@@ -579,22 +607,29 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
               <p>Pour obtenir de l’aide et contacter l’assistance, merci de vous rendre sur : <a href="https://frilya.com/faq" target="_blank" rel="noopener noreferrer" className="underline font-bold">https://frilya.com/faq</a></p>
             </div>
           ) : (
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={handleTyping}
-                placeholder="Écrivez votre message..."
-                disabled={!selectedContact}
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-frilya-600 focus:ring-1 focus:ring-frilya-600 disabled:opacity-50"
-              />
-              <button 
-                type="submit"
-                disabled={!newMessage.trim() || !selectedContact}
-                className="bg-frilya-900 hover:bg-frilya-800 text-white p-3 rounded-xl transition-colors disabled:opacity-50"
-              >
-                <Send className="w-5 h-5" />
-              </button>
+            <form onSubmit={handleSendMessage} className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={handleTyping}
+                  placeholder="Écrivez votre message..."
+                  disabled={!selectedContact}
+                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-frilya-600 focus:ring-1 focus:ring-frilya-600 disabled:opacity-50"
+                />
+                <button 
+                  type="submit"
+                  disabled={!newMessage.trim() || !selectedContact}
+                  className="bg-frilya-900 hover:bg-frilya-800 text-white p-3 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </div>
+              {profile?.role === 'admin' && selectedContact && (
+                <div className="text-xs text-slate-500 text-right pr-14">
+                  Vous répondez en tant que : <span className="font-bold">{profile?.message_reply_identity === 'support' ? 'Support Frilya' : profile?.full_name}</span>
+                </div>
+              )}
             </form>
           )}
         </div>

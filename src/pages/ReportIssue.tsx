@@ -47,8 +47,8 @@ export default function ReportIssue() {
   };
 
   const generateTicketNumber = () => {
-    const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `TCK-${randomStr}`;
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    return `SNL-${randomDigits}`;
   };
 
   const uploadFiles = async () => {
@@ -83,24 +83,29 @@ export default function ReportIssue() {
       const uploadedUrls = files.length > 0 ? await uploadFiles() : [];
 
       const ticketData = {
-        ticket_number: ticketNumber,
-        reporter_id: user && !isAnonymous ? user.id : null,
-        email: isAnonymous ? null : email,
-        is_anonymous: isAnonymous,
+        ticketNumber: ticketNumber,
+        email: email,
+        firstName: user?.user_metadata?.full_name?.split(' ')[0] || '',
+        lastName: user?.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
         category,
-        sub_data: subData,
+        subData: subData,
         title,
         description,
-        incident_date: incidentDate || null,
+        incidentDate: incidentDate || null,
         attachments: uploadedUrls,
-        reference_link: referenceLink
+        referenceLink: referenceLink
       };
 
-      const { error: insertError } = await supabase
-        .from('report_tickets')
-        .insert(ticketData);
+      const response = await fetch('/api/freescout?action=createTicket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticketData)
+      });
 
-      if (insertError) throw insertError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la création du ticket sur FreeScout');
+      }
 
       setSuccessTicketId(ticketNumber);
     } catch (err: any) {
