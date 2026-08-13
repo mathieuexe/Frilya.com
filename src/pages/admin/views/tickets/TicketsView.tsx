@@ -1,16 +1,30 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
-import { Filter, AlertTriangle, CheckCircle, Clock, X, ExternalLink, Paperclip, Hourglass, Activity } from 'lucide-react';
+import { Filter, AlertTriangle, CheckCircle, Clock, X, ExternalLink, Paperclip, Hourglass, Activity, Send } from 'lucide-react';
 
 export default function TicketsView() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  
+  // Nouveau state pour les messages
+  const [messages, setMessages] = useState<any[]>([]);
+  const [replyContent, setReplyContent] = useState('');
+  const [sending, setSending] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     fetchTickets();
+    getCurrentUser();
   }, []);
+
+  const getCurrentUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      setCurrentUser(session.user);
+    }
+  };
 
   const fetchTickets = async () => {
     try {
@@ -25,6 +39,55 @@ export default function TicketsView() {
       console.error('Erreur lors de la récupération des tickets:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMessages = async (ticketId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('ticket_messages')
+        .select(`
+          *,
+          sender:profiles(full_name, avatar_url, role)
+        `)
+        .eq('ticket_id', ticketId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (err) {
+      console.error('Erreur messages:', err);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!replyContent.trim() || !selectedTicket || !currentUser) return;
+    setSending(true);
+
+    try {
+      const { error } = await supabase
+        .from('ticket_messages')
+        .insert({
+          ticket_id: selectedTicket.id,
+          sender_id: currentUser.id,
+          content: replyContent
+        });
+
+      if (error) throw error;
+
+      // Mettre à jour la date de modification du ticket
+      await supabase
+        .from('report_tickets')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', selectedTicket.id);
+
+      setReplyContent('');
+      fetchMessages(selectedTicket.id);
+    } catch (err) {
+      console.error('Erreur envoi message:', err);
+      alert('Erreur lors de l\'envoi du message.');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -205,7 +268,10 @@ export default function TicketsView() {
               {filteredTickets.map(ticket => (
                 <div 
                   key={ticket.id} 
-                  onClick={() => setSelectedTicket(ticket)}
+                  onClick={() => {
+                        setSelectedTicket(ticket);
+                        fetchMessages(ticket.id);
+                      }}
                   className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors flex items-center gap-4 ${selectedTicket?.id === ticket.id ? 'bg-frilya-50 border-l-4 border-frilya-600' : 'border-l-4 border-transparent'}`}
                 >
                   <div className="flex-1 min-w-0">
@@ -287,7 +353,7 @@ export default function TicketsView() {
               </div>
 
               {/* Attachments & Links */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-6 mt-6">
                 {selectedTicket.reference_link && (
                   <div>
                     <p className="text-sm font-bold text-slate-900 mb-2">Lien de référence</p>
@@ -308,6 +374,66 @@ export default function TicketsView() {
                           Pièce jointe {idx + 1}
                         </a>
                       ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Messages & Chat */}
+              <div className="mt-8 border-t border-slate-200 pt-8">
+                <h3 className="text-lg font-bold text-slate-900 mb-6">Échanges avec l'utilisateur</h3>
+                
+                <div className="space-y-6 mb-6">
+                  {messages.map((msg) => {
+                    const isAdmin = msg.sender?.role === 'admin';
+                    return (
+                      <div key={msg.id} className={`p-4 rounded-xl ${isAdmin ? 'bg-frilya-50 border border-frilya-100 ml-8' : 'bg-slate-50 border border-slate-100 mr-8'}`}>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${isAdmin ? 'bg-frilya-600' : 'bg-slate-400'}`}>
+                            {isAdmin ? 'A' : 'U'}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">{isAdmin ? 'Équipe Support' : (msg.sender?.full_name || 'Utilisateur')}</p>
+                            <p className="text-xs text-slate-500">
+                              {new Date(msg.created_at).toLocaleString('fr-FR', {
+                                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-slate-700 text-sm whitespace-pre-wrap">
+                          {msg.content}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {messages.length === 0 && (
+                    <p className="text-slate-500 text-sm text-center py-4">Aucun échange pour le moment.</p>
+                  )}
+                </div>
+
+                {/* Formulaire de réponse */}
+                {selectedTicket.status !== 'cloture' && (
+                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-frilya-600 focus-within:border-transparent">
+                    <textarea
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      placeholder="Écrire une réponse à l'utilisateur..."
+                      className="w-full min-h-[100px] p-4 resize-none outline-none text-sm"
+                    />
+                    <div className="bg-slate-50 p-3 border-t border-slate-100 flex justify-end">
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={sending || !replyContent.trim()}
+                        className="px-6 py-2 bg-frilya-900 text-white rounded-lg font-bold text-sm hover:bg-frilya-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {sending ? 'Envoi...' : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            Répondre
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -346,18 +472,6 @@ export default function TicketsView() {
                   </select>
                 </div>
               </div>
-              <button 
-                onClick={() => {
-                  if (selectedTicket.email) {
-                    window.location.href = `mailto:${selectedTicket.email}?subject=Suite à votre signalement ${selectedTicket.ticket_number}`;
-                  } else {
-                    alert("Ce signalement est anonyme, vous ne pouvez pas recontacter l'utilisateur.");
-                  }
-                }}
-                className="px-6 py-2 bg-frilya-900 text-white rounded-xl font-bold hover:bg-frilya-800 transition-colors"
-              >
-                Contacter par email
-              </button>
             </div>
           </div>
         </div>
