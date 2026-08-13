@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
-import { Filter, AlertTriangle, CheckCircle, Clock, ExternalLink, Paperclip, Hourglass, Activity, ArrowLeft, Send, AlertCircle, RefreshCw } from 'lucide-react';
+import { Filter, CheckCircle, Clock, Hourglass, Activity, ArrowLeft, Send, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function TicketsView() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -125,25 +125,6 @@ export default function TicketsView() {
     }
   };
 
-  const updateTicketPriority = async (id: string, newPriority: string) => {
-    try {
-      const { error } = await supabase
-        .from('report_tickets')
-        .update({ priority: newPriority })
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      setTickets(tickets.map(t => t.id === id ? { ...t, priority: newPriority } : t));
-      if (selectedTicket && selectedTicket.id === id) {
-        setSelectedTicket({ ...selectedTicket, priority: newPriority });
-      }
-    } catch (err) {
-      console.error('Erreur lors de la mise à jour de la priorité:', err);
-      alert('Impossible de mettre à jour la priorité.');
-    }
-  };
-
   const filteredTickets = tickets.filter(t => 
     filterStatus === 'all' ? true : t.status === filterStatus
   );
@@ -177,28 +158,6 @@ export default function TicketsView() {
       case 'closed': return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Clôturé</span>;
       default: return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">{status}</span>;
     }
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'faible': return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">Faible</span>;
-      case 'moyenne': return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Moyenne</span>;
-      case 'haute': return <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">Haute</span>;
-      case 'critique': return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><AlertTriangle className="w-3 h-3"/> Critique</span>;
-      default: return null;
-    }
-  };
-
-  const getCategoryLabel = (cat: string) => {
-    const labels: any = {
-      annonce: "Annonce / Mission",
-      user: "Utilisateur",
-      security: "Sécurité",
-      payment: "Paiement",
-      bug: "Bug technique",
-      other: "Autre"
-    };
-    return labels[cat] || cat;
   };
 
   if (selectedTicket) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { AlertCircle, Clock, ExternalLink, ArrowLeft, Send, RefreshCw, Paperclip } from 'lucide-react';
+import { AlertCircle, Clock, ArrowLeft, Send, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function UserTickets() {
@@ -117,25 +117,11 @@ export default function UserTickets() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'nouveau': return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Nouveau</span>;
-      case 'en_cours': return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">En cours</span>;
-      case 'en_attente': return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">En attente</span>;
-      case 'escalade': return <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">Escaladé</span>;
-      case 'cloture': return <span className="px-3 py-1 bg-slate-200 text-slate-700 rounded-full text-xs font-bold">Fermé</span>;
+      case 'active': return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Actif</span>;
+      case 'pending': return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">En attente</span>;
+      case 'closed': return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Clôturé</span>;
       default: return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">{status}</span>;
     }
-  };
-
-  const getCategoryLabel = (cat: string) => {
-    const labels: any = {
-      annonce: "Annonce / Mission",
-      user: "Utilisateur",
-      security: "Sécurité",
-      payment: "Paiement",
-      bug: "Bug technique",
-      other: "Autre"
-    };
-    return labels[cat] || cat;
   };
 
   if (loading) {
