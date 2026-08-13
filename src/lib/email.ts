@@ -37,8 +37,8 @@ export const sendBetaAcceptedEmail = async (email: string, pseudo: string, passw
         <p style="color: #64748b; font-size: 14px; margin-top: 5px;">La plateforme freelance française pour réaliser tous vos projets</p>
       </div>
       
-      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
-        <h2 style="color: #166534; margin-top: 0;">Félicitations ${pseudo}, votre demande est acceptée ! 🚀</h2>
+      <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #0f172a; margin-top: 0;">Félicitations ${pseudo}, votre demande est acceptée ! 🚀</h2>
         <p>Vous faites maintenant partie de nos bêta-testeurs exclusifs.</p>
         
         <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
