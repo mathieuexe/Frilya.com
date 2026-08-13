@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { 
   LogOut, LayoutDashboard, Users, ShoppingBag, 
   MessageSquare, AlertTriangle, Settings, ShieldAlert, Loader2, ArrowLeft, Store, Beaker,
@@ -8,27 +8,27 @@ import {
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
 
-// Import Views
+// Views
 import DashboardView from './admin/views/DashboardView';
 import UsersView from './admin/views/UsersView';
+import ServicesView from './admin/views/ServicesView';
 import MessagesView from './admin/views/MessagesView';
 import OrdersView from './admin/views/OrdersView';
 import DisputesView from './admin/views/DisputesView';
 import SettingsView from './admin/views/SettingsView';
 import BetaManagementView from './admin/views/BetaManagementView';
-import ServicesView from './admin/views/ServicesView';
+
+// FAQ & Support Views
+import TicketsView from './admin/views/tickets/TicketsView';
 import FaqCategoriesView from './admin/views/faq/FaqCategoriesView';
 import FaqArticlesView from './admin/views/faq/FaqArticlesView';
-import TicketsView from './admin/views/tickets/TicketsView';
-
-type Tab = 'dashboard' | 'buyers' | 'sellers' | 'services' | 'messages' | 'orders' | 'disputes' | 'settings' | 'beta' | 'faq_categories' | 'faq_articles' | 'tickets';
 
 export default function Admin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [adminProfile, setAdminProfile] = useState<any>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -195,7 +195,13 @@ export default function Admin() {
     }
   ];
 
+  const currentPath = location.pathname.replace('/admin', '') || '/';
   const isHorizontal = adminProfile?.admin_layout !== 'vertical';
+
+  const isActivePath = (itemId: string) => {
+    if (itemId === 'dashboard' && currentPath === '/') return true;
+    return currentPath.includes(`/${itemId}`);
+  };
 
   return (
     <div className={`min-h-screen bg-slate-100 flex ${isHorizontal ? 'flex-col' : 'flex-col md:flex-row'}`}>
@@ -309,21 +315,21 @@ export default function Admin() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id as Tab)}
+                    onClick={() => navigate(item.id === 'dashboard' ? '/admin' : `/admin/${item.id}`)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
-                      activeTab === item.id 
+                      isActivePath(item.id) 
                         ? 'bg-frilya-600 text-white' 
                         : 'hover:bg-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
-                    {cat.icon && <cat.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-white' : 'text-slate-400'}`} />}
+                    {cat.icon && <cat.icon className={`w-4 h-4 ${isActivePath(item.id) ? 'text-white' : 'text-slate-400'}`} />}
                     {cat.title}
                   </button>
                 );
               }
 
               // Sinon, on crée un menu déroulant
-              const isActiveCategory = cat.items.some(item => item.id === activeTab);
+              const isActiveCategory = cat.items.some(item => isActivePath(item.id));
               return (
                 <div key={idx} className="relative group">
                   <button
@@ -344,14 +350,14 @@ export default function Admin() {
                       {cat.items.map((item) => (
                         <button
                           key={item.id}
-                          onClick={() => setActiveTab(item.id as Tab)}
+                          onClick={() => navigate(item.id === 'dashboard' ? '/admin' : `/admin/${item.id}`)}
                           className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${
-                            activeTab === item.id 
+                            isActivePath(item.id) 
                               ? 'bg-frilya-50 text-frilya-600' 
                               : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                           }`}
                         >
-                          <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-frilya-600' : 'text-slate-400'}`} />
+                          <item.icon className={`w-4 h-4 ${isActivePath(item.id) ? 'text-frilya-600' : 'text-slate-400'}`} />
                           {item.name}
                         </button>
                       ))}
@@ -461,14 +467,14 @@ export default function Admin() {
                   {cat.items.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => setActiveTab(item.id as Tab)}
+                      onClick={() => navigate(item.id === 'dashboard' ? '/admin' : `/admin/${item.id}`)}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        activeTab === item.id 
+                        isActivePath(item.id) 
                           ? 'bg-frilya-600 text-white' 
                           : 'hover:bg-slate-800 hover:text-white'
                       }`}
                     >
-                      <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-white' : 'text-slate-400'}`} />
+                      <item.icon className={`w-4 h-4 ${isActivePath(item.id) ? 'text-white' : 'text-slate-400'}`} />
                       {item.name}
                     </button>
                   ))}
@@ -495,7 +501,7 @@ export default function Admin() {
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
           <h1 className="text-xl font-bold text-slate-900 capitalize">
-            {navCategories.flatMap(c => c.items).find(i => i.id === activeTab)?.name}
+            {navCategories.flatMap(c => c.items).find(i => isActivePath(i.id))?.name || 'Tableau de bord'}
           </h1>
           <div className="flex items-center gap-4">
             <a href="/tableau-de-bord" className="text-sm font-medium text-slate-500 hover:text-frilya-600 transition-colors">
@@ -513,18 +519,21 @@ export default function Admin() {
         {/* Dynamic View */}
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
-            {activeTab === 'dashboard' && <DashboardView stats={stats} />}
-            {activeTab === 'buyers' && <UsersView type="acheteur" />}
-            {activeTab === 'sellers' && <UsersView type="vendeur" />}
-            {activeTab === 'services' && <ServicesView />}
-            {activeTab === 'messages' && <MessagesView />}
-            {activeTab === 'orders' && <OrdersView />}
-            {activeTab === 'disputes' && <DisputesView />}
-            {activeTab === 'settings' && <SettingsView />}
-            {activeTab === 'beta' && <BetaManagementView />}
-            {activeTab === 'tickets' && <TicketsView />}
-            {activeTab === 'faq_categories' && <FaqCategoriesView />}
-            {activeTab === 'faq_articles' && <FaqArticlesView />}
+            <Routes>
+              <Route path="/" element={<DashboardView stats={stats} />} />
+              <Route path="/buyers" element={<UsersView type="acheteur" />} />
+              <Route path="/sellers" element={<UsersView type="vendeur" />} />
+              <Route path="/services" element={<ServicesView />} />
+              <Route path="/messages" element={<MessagesView />} />
+              <Route path="/orders" element={<OrdersView />} />
+              <Route path="/disputes" element={<DisputesView />} />
+              <Route path="/settings" element={<SettingsView />} />
+              <Route path="/beta" element={<BetaManagementView />} />
+              <Route path="/tickets" element={<TicketsView />} />
+              <Route path="/faq_categories" element={<FaqCategoriesView />} />
+              <Route path="/faq_articles" element={<FaqArticlesView />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
+            </Routes>
           </div>
         </main>
 

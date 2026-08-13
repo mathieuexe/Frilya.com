@@ -215,7 +215,7 @@ function AppRoutes() {
       <Route path="/beta" element={<BetaRegistrationPage />} />
       <Route path="/connexion" element={<AuthPage />} />
       <Route path="/paiement/:id" element={<CheckoutPage />} />
-      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/admin/*" element={<AdminPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
