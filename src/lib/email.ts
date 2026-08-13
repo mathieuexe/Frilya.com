@@ -129,3 +129,158 @@ const sendEmail = async (to: string, subject: string, html: string) => {
     throw error;
   }
 };
+
+export const sendRegistrationConfirmationEmail = async (email: string, pseudo: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #0f172a; margin-top: 0;">Bienvenue sur Frilya, ${pseudo} ! 🎉</h2>
+        <p>Votre compte a été créé avec succès. Vous pouvez dès maintenant explorer la plateforme, découvrir des talents ou proposer vos propres services.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/dashboard" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Accéder à mon espace</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, 'Bienvenue sur Frilya !', html);
+};
+
+export const sendTicketCreatedEmail = async (email: string, pseudo: string, ticketRef: string, category: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #0f172a; margin-top: 0;">Bonjour ${pseudo},</h2>
+        <p>Nous vous confirmons l'ouverture de votre ticket de support <strong>${ticketRef}</strong> concernant : <em>${category}</em>.</p>
+        <p>Notre équipe va traiter votre demande dans les plus brefs délais.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/dashboard/tickets" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Suivre mon ticket</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, `Confirmation d'ouverture de ticket [${ticketRef}]`, html);
+};
+
+export const sendTicketReplyEmail = async (email: string, pseudo: string, ticketRef: string, replierName: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #0f172a; margin-top: 0;">Nouveau message sur votre ticket</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p><strong>${replierName}</strong> a répondu à votre ticket <strong>${ticketRef}</strong>.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/dashboard/tickets" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Lire la réponse</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, `Nouvelle réponse - Ticket [${ticketRef}]`, html);
+};
+
+export const sendOrderCreatedEmail = async (email: string, pseudo: string, serviceTitle: string, isSeller: boolean) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #0f172a; margin-top: 0;">${isSeller ? 'Nouvelle commande reçue !' : 'Confirmation de commande'}</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>${isSeller ? 'Félicitations ! Vous venez de recevoir une nouvelle commande' : 'Votre commande a été confirmée'} pour le service : <strong>${serviceTitle}</strong>.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/dashboard/${isSeller ? 'vendeur' : 'orders'}" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Voir la commande</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, isSeller ? 'Nouvelle commande sur Frilya !' : 'Confirmation de votre commande', html);
+};
+
+export const sendOrderDeliveredEmail = async (email: string, pseudo: string, serviceTitle: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #166534; margin-top: 0;">Votre commande a été livrée ! 🎉</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>Le vendeur a marqué la commande du service <strong>${serviceTitle}</strong> comme étant livrée.</p>
+        <p>Veuillez vérifier que tout est conforme. N'oubliez pas de laisser un avis au vendeur !</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/dashboard/orders" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Vérifier ma livraison</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, 'Votre commande a été livrée !', html);
+};
+
+export const sendDisputeOpenedEmail = async (email: string, pseudo: string, serviceTitle: string, isSeller: boolean) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #991b1b; margin-top: 0;">Litige ouvert</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>Un litige a été ouvert pour la commande concernant le service : <strong>${serviceTitle}</strong>.</p>
+        <p>Notre équipe de médiation a été alertée et va intervenir pour trouver une solution. Nous vous contacterons très prochainement.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/dashboard/${isSeller ? 'vendeur' : 'disputes'}" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Voir le litige</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, 'Information : Litige ouvert sur une commande', html);
+};
+
+export const sendDisputeClosedEmail = async (email: string, pseudo: string, serviceTitle: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #0f172a; margin-top: 0;">Litige clôturé</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>Le litige concernant la commande du service <strong>${serviceTitle}</strong> a été résolu et clôturé par notre équipe.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/dashboard/disputes" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Consulter les détails</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, 'Litige résolu', html);
+};
