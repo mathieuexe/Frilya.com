@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
+import BetaFeedbackWidget from '../BetaFeedbackWidget';
 
 export default function MainLayout() {
   return (
@@ -12,6 +13,7 @@ export default function MainLayout() {
       </main>
 
       <Footer />
+      <BetaFeedbackWidget />
     </div>
   );
 }
