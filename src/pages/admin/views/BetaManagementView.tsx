@@ -28,6 +28,9 @@ export default function BetaManagementView() {
   const [betaEndDate, setBetaEndDate] = useState<string>('');
   const [isBetaActiveGlobal, setIsBetaActiveGlobal] = useState(false);
   const [toggleLoading, setToggleLoading] = useState(false);
+  const [ipWhitelist, setIpWhitelist] = useState<string[]>([]);
+  const [newIp, setNewIp] = useState('');
+  const [ipLoading, setIpLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -42,10 +45,15 @@ export default function BetaManagementView() {
     try {
       const { data } = await supabase
         .from('settings')
-        .select('value')
-        .eq('key', 'beta_mode_active')
-        .single();
-      setIsBetaActiveGlobal(data?.value === 'true' || data?.value === true);
+        .select('key, value')
+        .in('key', ['beta_mode_active', 'beta_ip_whitelist']);
+        
+      if (data) {
+        data.forEach(s => {
+          if (s.key === 'beta_mode_active') setIsBetaActiveGlobal(s.value === 'true' || s.value === true);
+          if (s.key === 'beta_ip_whitelist') setIpWhitelist(Array.isArray(s.value) ? s.value : []);
+        });
+      }
     } catch (err) {
       console.error('Erreur lecture statut global beta:', err);
     }
@@ -127,24 +135,38 @@ export default function BetaManagementView() {
         }
       });
 
-      if (authError) throw authError;
+      let userId = authData.user?.id;
+
+      if (authError) {
+        if (authError.message.includes('already registered') || authError.status === 400) {
+          // User already exists, fetch their ID
+          const { data: existingUser } = await supabase.from('profiles').select('id').eq('email', request.email).single();
+          if (existingUser) {
+            userId = existingUser.id;
+          } else {
+             throw authError;
+          }
+        } else {
+          throw authError;
+        }
+      }
 
       // 3. Update profile to be beta (Trigger should have created the profile)
-      // We might need to wait a second for the trigger
-      await new Promise(r => setTimeout(r, 1000));
+      // We might need to wait a second for the trigger if just created
+      if (!authError) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
       
-      const userId = authData.user?.id;
       if (userId) {
         await supabase.from('profiles').update({
           is_beta: true,
           beta_end_date: new Date(betaEndDate).toISOString(),
-          full_name: request.pseudo,
-          role: 'beta'
+          // Don't overwrite role if they are already seller/buyer, just set is_beta to true
         }).eq('id', userId);
       }
 
       // 4. Update request status
-      await supabase.from('beta_applications').update({ status: 'approved' }).eq('id', request.id);
+      await supabase.from('beta_applications').update({ status: 'accepted' }).eq('id', request.id);
 
       // 5. Send Email
       await sendBetaAcceptedEmail(request.email, request.pseudo, tempPassword, betaEndDate);
@@ -282,6 +304,46 @@ export default function BetaManagementView() {
     }
   };
 
+  const handleAddIp = async () => {
+    if (!newIp.trim()) return;
+    setIpLoading(true);
+    try {
+      const updatedList = [...ipWhitelist, newIp.trim()];
+      
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'beta_ip_whitelist', value: updatedList }, { onConflict: 'key' });
+        
+      if (error) throw error;
+      setIpWhitelist(updatedList);
+      setNewIp('');
+    } catch (err) {
+      console.error('Error adding IP:', err);
+      alert("Erreur lors de l'ajout de l'IP");
+    } finally {
+      setIpLoading(false);
+    }
+  };
+
+  const handleRemoveIp = async (ipToRemove: string) => {
+    setIpLoading(true);
+    try {
+      const updatedList = ipWhitelist.filter(ip => ip !== ipToRemove);
+      
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'beta_ip_whitelist', value: updatedList }, { onConflict: 'key' });
+        
+      if (error) throw error;
+      setIpWhitelist(updatedList);
+    } catch (err) {
+      console.error('Error removing IP:', err);
+      alert("Erreur lors de la suppression de l'IP");
+    } finally {
+      setIpLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Tabs */}
@@ -328,8 +390,8 @@ export default function BetaManagementView() {
                       <td className="p-4 text-sm text-slate-600 max-w-xs truncate" title={req.motivation}>{req.motivation}</td>
                       <td className="p-4 text-sm text-slate-500">{new Date(req.created_at).toLocaleDateString('fr-FR')}</td>
                       <td className="p-4">
-                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : req.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {req.status}
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : req.status === 'accepted' || req.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {req.status === 'accepted' ? 'approuvé' : req.status}
                         </span>
                       </td>
                       <td className="p-4 text-right">
@@ -509,6 +571,52 @@ export default function BetaManagementView() {
                       }`}
                     />
                   </button>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 mb-6">Liste Blanche IP (Whitelist)</h2>
+                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <p className="text-sm text-slate-600 mb-4">
+                    Les adresses IP ajoutées ici pourront soumettre plusieurs demandes de Bêta sans être bloquées par la limite d'une demande par IP.
+                  </p>
+                  
+                  <div className="flex gap-2 mb-6">
+                    <input
+                      type="text"
+                      value={newIp}
+                      onChange={e => setNewIp(e.target.value)}
+                      placeholder="Ex: 192.168.1.1"
+                      className="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-frilya-600 focus:ring-1 focus:ring-frilya-600"
+                    />
+                    <button
+                      onClick={handleAddIp}
+                      disabled={ipLoading || !newIp.trim()}
+                      className="px-4 py-2 bg-frilya-900 hover:bg-frilya-800 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {ipLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      Ajouter
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {ipWhitelist.length === 0 ? (
+                      <p className="text-sm text-slate-500 italic">Aucune adresse IP sur liste blanche.</p>
+                    ) : (
+                      ipWhitelist.map((ip, index) => (
+                        <div key={index} className="flex items-center justify-between bg-white p-3 border border-slate-200 rounded-lg">
+                          <span className="font-mono text-sm text-slate-700">{ip}</span>
+                          <button
+                            onClick={() => handleRemoveIp(ip)}
+                            disabled={ipLoading}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 

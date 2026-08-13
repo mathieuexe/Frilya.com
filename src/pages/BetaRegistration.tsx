@@ -38,18 +38,27 @@ export default function BetaRegistration() {
           const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
           setUserProfile(profile);
         }
-        // 1. Check if Beta is active globally
+        // 1. Check if Beta is active globally + get whitelist
         const { data: settingsData } = await supabase
           .from('settings')
-          .select('value')
-          .eq('key', 'beta_mode_active')
-          .single();
+          .select('key, value')
+          .in('key', ['beta_mode_active', 'beta_ip_whitelist']);
+          
+        let isGlobalActive = false;
+        let whitelist: string[] = [];
+
+        if (settingsData) {
+          settingsData.forEach(s => {
+            if (s.key === 'beta_mode_active') isGlobalActive = (s.value === 'true' || s.value === true);
+            if (s.key === 'beta_ip_whitelist') whitelist = Array.isArray(s.value) ? s.value : [];
+          });
+        }
         
         // If preview is requested, force beta active
         if (isPreview) {
           setIsBetaActive(true);
         } else {
-          setIsBetaActive(settingsData?.value === 'true' || settingsData?.value === true);
+          setIsBetaActive(isGlobalActive);
         }
 
         // 2. Check if IP already submitted
@@ -58,16 +67,19 @@ export default function BetaRegistration() {
         const ip = ipData.ip;
         setUserIp(ip);
 
-        const { data: appData } = await supabase
-          .from('beta_applications')
-          .select('created_at, status')
-          .eq('ip_address', ip)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+        // Bypass check if IP is whitelisted
+        if (!whitelist.includes(ip)) {
+          const { data: appData } = await supabase
+            .from('beta_applications')
+            .select('created_at, status')
+            .eq('ip_address', ip)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
 
-        if (appData) {
-          setExistingRequest(appData);
+          if (appData) {
+            setExistingRequest(appData);
+          }
         }
       } catch (err) {
         if (isBetaActive === null) {
