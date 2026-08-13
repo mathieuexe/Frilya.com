@@ -57,7 +57,7 @@ export default function Home() {
           .from('services')
           .select(`
             *,
-            seller:profiles!services_seller_id_fkey(full_name, avatar_url)
+            profiles (full_name, avatar_url)
           `)
           .eq('status', 'active')
           .order('created_at', { ascending: false })
@@ -262,15 +262,15 @@ export default function Home() {
                   <div className="p-6 flex flex-col flex-1">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
-                        {service.seller?.avatar_url ? (
-                          <img src={service.seller.avatar_url} alt={service.seller.full_name} className="w-full h-full object-cover" />
+                        {service.profiles?.avatar_url ? (
+                          <img src={service.profiles.avatar_url} alt={service.profiles.full_name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-frilya-100 flex items-center justify-center text-frilya-700 font-bold text-xs">
-                            {service.seller?.full_name?.charAt(0) || 'U'}
+                            {service.profiles?.full_name?.charAt(0) || 'U'}
                           </div>
                         )}
                       </div>
-                      <span className="font-medium text-slate-700 text-sm truncate">{service.seller?.full_name || 'Utilisateur'}</span>
+                      <span className="font-medium text-slate-700 text-sm truncate">{service.profiles?.full_name || 'Utilisateur'}</span>
                     </div>
                     <h3 className="font-bold text-lg text-slate-900 mb-4 line-clamp-2 group-hover:text-frilya-600 transition-colors">
                       {service.title}
