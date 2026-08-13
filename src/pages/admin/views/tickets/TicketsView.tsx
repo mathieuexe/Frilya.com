@@ -29,16 +29,39 @@ export default function TicketsView() {
 
   const fetchTickets = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: ticketsData, error: ticketsError } = await supabase
         .from('report_tickets')
-        .select(`
-          *,
-          profiles:reporter_id (full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: true }); // Du plus ancien au plus récent
 
-      if (error) throw error;
-      setTickets(data || []);
+      if (ticketsError) throw ticketsError;
+
+      // Fetch profiles manually to avoid PostgREST foreign key issues
+      const reporterIds = [...new Set(ticketsData?.map(t => t.reporter_id).filter(Boolean))];
+      
+      if (reporterIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', reporterIds);
+          
+        if (!profilesError && profilesData) {
+          const profileMap = profilesData.reduce((acc: any, p: any) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+          
+          const ticketsWithProfiles = ticketsData?.map(t => ({
+            ...t,
+            profiles: t.reporter_id ? profileMap[t.reporter_id] : null
+          }));
+          
+          setTickets(ticketsWithProfiles || []);
+          return;
+        }
+      }
+
+      setTickets(ticketsData || []);
     } catch (err) {
       console.error('Erreur lors de la récupération des tickets:', err);
     } finally {
