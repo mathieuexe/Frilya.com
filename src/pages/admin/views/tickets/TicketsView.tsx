@@ -513,7 +513,14 @@ export default function TicketsView() {
                             </div>
                           )}
                           <div>
-                            <p className="font-bold text-slate-900 text-sm">{senderName}</p>
+                            <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                              {senderName}
+                              {isSupport && (
+                                <span className="text-[10px] font-normal text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">
+                                  Envoyé par {msg.sender?.full_name}
+                                </span>
+                              )}
+                            </p>
                             <p className="text-xs text-slate-500">
                               {new Date(msg.created_at).toLocaleString('fr-FR', {
                                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
