@@ -18,22 +18,12 @@ export default function FaqArticle() {
   const [loading, setLoading] = useState(true);
 
   const [feedback, setFeedback] = useState<'yes' | 'no' | null>(null);
-  const [isStartingChat, setIsStartingChat] = useState(false);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     if (slug) {
       fetchArticle(slug);
     }
-    checkUser();
   }, [slug]);
-
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setUser(user);
-    }
-  };
 
   const fetchArticle = async (articleSlug: string) => {
     try {
@@ -80,33 +70,8 @@ export default function FaqArticle() {
     }
   };
 
-  const startChat = async () => {
-    if (!user) {
-      // Rediriger vers la connexion si non connecté
-      navigate('/connexion');
-      return;
-    }
-    
-    setIsStartingChat(true);
-    try {
-      // Send a contextual message from the Support account to the user to initiate the chat
-      // This ensures the user is not blocked by the "Support Frilya" restrictions
-      const ADMIN_ID = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
-      const welcomeContent = `Bonjour,\n\nVous avez indiqué avoir besoin d'aide suite à la lecture de l'article FAQ : "${article?.title}".\n\nComment pouvons-nous vous aider ?`;
-      
-      await supabase.rpc('send_support_message', {
-        p_receiver_id: user.id,
-        p_content: welcomeContent
-      });
-
-      // Redirect to the private messages with Support Frilya
-      navigate(`/tableau-de-bord/messages?contact=${ADMIN_ID}`);
-
-    } catch (err) {
-      console.error('Error starting chat:', err);
-      alert('Une erreur est survenue lors de l\'ouverture de la discussion.');
-      setIsStartingChat(false);
-    }
+  const startChat = () => {
+    navigate(`/signaler-probleme?ref=${encodeURIComponent(window.location.href)}`);
   };
 
   if (loading) {
@@ -187,11 +152,10 @@ export default function FaqArticle() {
               <p className="text-slate-600 mb-6">Désolé que cet article n'ait pas répondu à votre question.</p>
               <button
                 onClick={startChat}
-                disabled={isStartingChat}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-frilya-600 hover:bg-frilya-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-frilya-600 hover:bg-frilya-700 text-white rounded-xl font-medium transition-colors"
               >
-                {isStartingChat ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageSquare className="w-5 h-5" />}
-                Discuter avec le support
+                <MessageSquare className="w-5 h-5" />
+                Ouvrir un ticket
               </button>
             </div>
           )}

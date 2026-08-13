@@ -604,7 +604,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             <div className="text-center p-4 bg-blue-50 text-blue-800 text-sm rounded-xl border border-blue-200">
               <p className="font-bold mb-2">Vous ne pouvez pas envoyer de message privé à ce compte.</p>
               <p className="mb-1">Si vous souhaitez ouvrir un litige concernant une commande, rendez-vous dans : « Litiges »</p>
-              <p>Pour obtenir de l’aide et contacter l’assistance, merci de vous rendre sur : <a href="https://frilya.com/faq" target="_blank" rel="noopener noreferrer" className="underline font-bold">https://frilya.com/faq</a></p>
+              <p>Pour obtenir de l’aide et contacter l’assistance, merci de vous rendre sur : <Link to="/signaler-probleme" className="underline font-bold">Le support</Link> ou la <Link to="/faq" className="underline font-bold">FAQ</Link></p>
             </div>
           ) : (
             <form onSubmit={handleSendMessage} className="flex flex-col gap-2">

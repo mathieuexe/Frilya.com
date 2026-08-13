@@ -157,7 +157,7 @@ export default function FaqHome() {
                   <div className="px-6 py-8 text-center text-slate-500">
                     <p className="mb-4">Aucun résultat trouvé pour "{searchQuery}"</p>
                     <button 
-                      onClick={() => navigate('/faq/contact')} // Route à gérer si besoin, ou scroll
+                      onClick={() => navigate('/signaler-probleme')}
                       className="text-frilya-600 font-medium hover:underline"
                     >
                       Contacter le support

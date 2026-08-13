@@ -30,7 +30,7 @@ export default function Footer() {
             <h3 className="font-bold text-slate-900 mb-4">Support</h3>
             <ul className="space-y-2 text-sm text-slate-500">
               <li><Link to="/faq" className="hover:text-frilya-600 transition-colors">Centre d'aide (FAQ)</Link></li>
-              <li><Link to="/signaler-probleme" className="hover:text-frilya-600 transition-colors">Signaler un problème</Link></li>
+              <li><Link to="/signaler-probleme" className="hover:text-frilya-600 transition-colors">Support & Signalement</Link></li>
             </ul>
           </div>
           

@@ -82,30 +82,23 @@ export default function ReportIssue() {
       const ticketNumber = generateTicketNumber();
       const uploadedUrls = files.length > 0 ? await uploadFiles() : [];
 
-      const ticketData = {
-        ticketNumber: ticketNumber,
-        email: email,
-        firstName: user?.user_metadata?.full_name?.split(' ')[0] || '',
-        lastName: user?.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
-        category,
-        subData: subData,
-        title,
-        description,
-        incidentDate: incidentDate || null,
-        attachments: uploadedUrls,
-        referenceLink: referenceLink
-      };
+      const { error: insertError } = await supabase
+        .from('report_tickets')
+        .insert([{
+          ticket_number: ticketNumber,
+          reporter_id: user ? user.id : null,
+          email: email,
+          is_anonymous: isAnonymous,
+          category,
+          sub_data: subData,
+          title,
+          description,
+          incident_date: incidentDate || null,
+          attachments: uploadedUrls,
+          reference_link: referenceLink
+        }]);
 
-      const response = await fetch('/api/freescout?action=createTicket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ticketData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la création du ticket sur FreeScout');
-      }
+      if (insertError) throw insertError;
 
       setSuccessTicketId(ticketNumber);
     } catch (err: any) {
@@ -143,12 +136,12 @@ export default function ReportIssue() {
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-frilya-100 text-frilya-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Signaler un problème</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Support & Signalement</h1>
           <p className="mt-2 text-slate-600">
-            Aidez-nous à maintenir un environnement sûr et de qualité sur Frilya.
+            Aidez-nous à maintenir un environnement sûr ou posez-nous vos questions.
           </p>
         </div>
 
@@ -162,7 +155,7 @@ export default function ReportIssue() {
           {/* 1. Catégorie */}
           <div className="mb-8">
             <label className="block text-sm font-bold text-slate-900 mb-3">
-              Catégorie du problème <span className="text-red-500">*</span>
+              Objet de la demande <span className="text-red-500">*</span>
             </label>
             <select
               value={category}
@@ -174,6 +167,7 @@ export default function ReportIssue() {
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
             >
               <option value="">Sélectionnez une catégorie...</option>
+              <option value="renseignement">Demande de renseignement / Question</option>
               <option value="annonce">Problème avec une annonce/mission (contenu trompeur, prix suspect...)</option>
               <option value="user">Problème avec un utilisateur (comportement, arnaque, harcèlement...)</option>
               <option value="security">Problème de sécurité (faille, compte piraté, phishing...)</option>
@@ -316,13 +310,13 @@ export default function ReportIssue() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">
-                Titre court du problème <span className="text-red-500">*</span>
+                Sujet de votre demande <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex: Message injurieux de la part d'un acheteur"
+                placeholder="Ex: Question sur la facturation, ou problème avec un utilisateur"
                 required
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
               />
@@ -335,7 +329,7 @@ export default function ReportIssue() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Veuillez décrire le problème avec le plus de détails possible..."
+                placeholder="Veuillez décrire votre demande ou problème avec le plus de détails possible..."
                 required
                 minLength={20}
                 rows={6}
