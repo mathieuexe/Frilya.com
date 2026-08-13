@@ -8,7 +8,7 @@ export default async function handler(req: any, res: any) {
   }
 
   const API_KEY = 'd533cacf017b1ca93a88799e7b8cabc2';
-  const BASE_URL = 'https://scout.frilya.com/api';
+  const BASE_URL = 'https://scrout.frilya.com/api';
   const MAILBOX_ID = 1;
 
   const headers = {

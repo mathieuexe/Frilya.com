@@ -115,6 +115,22 @@ export default function UserTickets() {
     }
   };
 
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return 'Date inconnue';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Date invalide';
+    return d.toLocaleDateString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  const formatShortDate = (dateStr: string | undefined) => {
+    if (!dateStr) return 'Date inconnue';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Date invalide';
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active': return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Actif</span>;
@@ -132,10 +148,10 @@ export default function UserTickets() {
   if (selectedTicket) {
     const isClosed = selectedTicket.status === 'closed';
 
-    // Extraction du numéro et du titre depuis le sujet [SNL-XXXX] Titre
-    const subjectMatch = selectedTicket.subject.match(/^\[(.*?)\]\s*(.*)$/);
+    const safeSubject = selectedTicket.subject || '';
+    const subjectMatch = safeSubject.match(/^\[(.*?)\]\s*(.*)$/);
     const ticketNumber = subjectMatch ? subjectMatch[1] : `Ticket #${selectedTicket.number}`;
-    const ticketTitle = subjectMatch ? subjectMatch[2] : selectedTicket.subject;
+    const ticketTitle = subjectMatch ? subjectMatch[2] : safeSubject;
 
     return (
       <div className="space-y-6">
@@ -186,9 +202,7 @@ export default function UserTickets() {
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Créé le</p>
               <p className="font-bold text-slate-800 text-sm">
-                {new Date(selectedTicket.createdAt).toLocaleString('fr-FR', {
-                  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                })}
+                {formatDate(selectedTicket.createdAt)}
               </p>
             </div>
 
@@ -196,9 +210,7 @@ export default function UserTickets() {
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Modifié le</p>
                 <p className="font-bold text-slate-800 text-sm">
-                  {new Date(selectedTicket.updatedAt).toLocaleString('fr-FR', {
-                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                  })}
+                  {formatDate(selectedTicket.updatedAt)}
                 </p>
               </div>
             )}
@@ -243,13 +255,11 @@ export default function UserTickets() {
                           {isAdmin && <span className="px-2 py-0.5 bg-frilya-100 text-frilya-700 rounded-full text-[10px] uppercase tracking-wider">Admin</span>}
                         </p>
                         <p className="text-xs text-slate-500">
-                          {new Date(msg.createdAt).toLocaleString('fr-FR', {
-                            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                          })}
+                          {formatDate(msg.createdAt)}
                         </p>
                       </div>
                     </div>
-                    <div className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: msg.body }} />
+                    <div className="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: msg.body || '' }} />
                   </div>
                 );
               })}
@@ -314,9 +324,10 @@ export default function UserTickets() {
         ) : (
           <div className="divide-y divide-slate-100">
             {tickets.map(ticket => {
-              const subjectMatch = ticket.subject.match(/^\[(.*?)\]\s*(.*)$/);
+              const safeSubject = ticket.subject || '';
+              const subjectMatch = safeSubject.match(/^\[(.*?)\]\s*(.*)$/);
               const tNumber = subjectMatch ? subjectMatch[1] : `Ticket #${ticket.number}`;
-              const tTitle = subjectMatch ? subjectMatch[2] : ticket.subject;
+              const tTitle = subjectMatch ? subjectMatch[2] : safeSubject;
 
               return (
                 <div 
@@ -336,7 +347,7 @@ export default function UserTickets() {
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
                         <span className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          {new Date(ticket.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          {formatShortDate(ticket.createdAt)}
                         </span>
                       </div>
                     </div>
