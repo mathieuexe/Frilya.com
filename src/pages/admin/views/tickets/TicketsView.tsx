@@ -365,7 +365,7 @@ export default function TicketsView() {
                     </div>
                     <h4 className="font-bold text-slate-900 text-sm line-clamp-2 leading-tight">{ticket.title}</h4>
                     <p className="text-xs text-slate-500 truncate">
-                      {getCategoryLabel(ticket.category)} • {ticket.is_anonymous ? 'Anonyme' : (ticket.profiles?.full_name || ticket.email)}
+                      {getCategoryLabel(ticket.category)} • {ticket.is_anonymous ? 'Anonyme' : (ticket.profiles?.full_name || 'Utilisateur')}
                     </p>
                   </div>
                 ))}
@@ -432,10 +432,7 @@ export default function TicketsView() {
                     <p className="text-sm font-bold text-slate-900 mb-1">Déclarant</p>
                     <p className="text-slate-600 text-sm">
                       {selectedTicket.is_anonymous ? 'Anonyme' : (
-                        <>
-                          <span className="font-medium text-slate-900 block">{selectedTicket.profiles?.full_name}</span>
-                          {selectedTicket.email}
-                        </>
+                        <span className="font-medium text-slate-900 block">{selectedTicket.profiles?.full_name || 'Utilisateur'}</span>
                       )}
                     </p>
                   </div>

@@ -76,7 +76,13 @@ export default function UserTickets() {
   const getCurrentUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-      setCurrentUser(session.user);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', session.user.id)
+        .single();
+        
+      setCurrentUser({ ...session.user, ...profile });
     }
   };
 
@@ -326,11 +332,15 @@ export default function UserTickets() {
               {/* Message initial (Description du ticket) */}
               <div className="p-6 border-b border-slate-100">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
-                    {selectedTicket.email ? selectedTicket.email.charAt(0).toUpperCase() : 'A'}
+                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold overflow-hidden">
+                    {currentUser?.avatar_url ? (
+                      <img src={currentUser.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      currentUser?.full_name ? currentUser.full_name.charAt(0).toUpperCase() : 'U'
+                    )}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">{selectedTicket.is_anonymous ? 'Anonyme' : selectedTicket.email}</p>
+                    <p className="font-bold text-slate-900">{selectedTicket.is_anonymous ? 'Anonyme' : (currentUser?.full_name || 'Utilisateur')}</p>
                     <p className="text-xs text-slate-500">
                       {new Date(selectedTicket.created_at).toLocaleString('fr-FR', {
                         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
