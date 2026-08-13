@@ -190,7 +190,7 @@ export default function Admin() {
     }
   ];
 
-  const isHorizontal = adminProfile?.admin_layout === 'horizontal';
+  const isHorizontal = adminProfile?.admin_layout !== 'vertical';
 
   return (
     <div className={`min-h-screen bg-slate-100 flex ${isHorizontal ? 'flex-col' : 'flex-col md:flex-row'}`}>
@@ -296,21 +296,64 @@ export default function Admin() {
           </div>
           
           {/* Horizontal Nav Items */}
-          <div className="bg-slate-950 px-6 py-2 overflow-x-auto hide-scrollbar flex items-center gap-2">
-            {navCategories.flatMap(c => c.items).map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as Tab)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === item.id 
-                    ? 'bg-frilya-600 text-white' 
-                    : 'hover:bg-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-white' : 'text-slate-400'}`} />
-                {item.name}
-              </button>
-            ))}
+          <div className="bg-slate-950 px-6 py-2 overflow-visible flex items-center gap-4">
+            {navCategories.map((cat, idx) => {
+              // Si la catégorie n'a qu'un seul élément, on l'affiche directement
+              if (cat.items.length === 1) {
+                const item = cat.items[0];
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id as Tab)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                      activeTab === item.id 
+                        ? 'bg-frilya-600 text-white' 
+                        : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-white' : 'text-slate-400'}`} />
+                    {item.name}
+                  </button>
+                );
+              }
+
+              // Sinon, on crée un menu déroulant
+              const isActiveCategory = cat.items.some(item => item.id === activeTab);
+              return (
+                <div key={idx} className="relative group">
+                  <button
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                      isActiveCategory 
+                        ? 'bg-slate-800 text-white' 
+                        : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {cat.title}
+                    <ChevronDown className="w-3 h-3 opacity-50" />
+                  </button>
+                  
+                  {/* Menu déroulant */}
+                  <div className="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="bg-white rounded-xl shadow-xl border border-slate-200 py-2 min-w-[200px]">
+                      {cat.items.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id as Tab)}
+                          className={`w-full flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors ${
+                            activeTab === item.id 
+                              ? 'bg-frilya-50 text-frilya-600' 
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          }`}
+                        >
+                          <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-frilya-600' : 'text-slate-400'}`} />
+                          {item.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </header>
       ) : (
