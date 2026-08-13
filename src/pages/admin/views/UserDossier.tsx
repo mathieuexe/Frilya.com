@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn } from 'lucide-react';
+import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 
 interface UserDossierProps {
@@ -8,7 +8,7 @@ interface UserDossierProps {
   onClose: () => void;
 }
 
-type Tab = 'info' | 'orders' | 'sales' | 'messages' | 'disputes' | 'tickets' | 'logs';
+type Tab = 'info' | 'orders' | 'sales' | 'messages' | 'disputes' | 'tickets' | 'logs' | 'reviews';
 
 export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [activeTab, setActiveTab] = useState<Tab>('info');
@@ -22,6 +22,13 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   // const [disputes, setDisputes] = useState<any[]>([]);
   // const [tickets, setTickets] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [userServices, setUserServices] = useState<any[]>([]);
+
+  // Reviews forms
+  const [showAddReview, setShowAddReview] = useState(false);
+  const [newReview, setNewReview] = useState({ service_id: '', rating: 5, comment: '' });
+  const [editingReview, setEditingReview] = useState<any>(null);
 
   // Form states for info
   const [editForm, setEditForm] = useState<any>({});
@@ -49,6 +56,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         { data: ordersData },
         { data: salesData },
         { data: messagesRawData },
+        { data: reviewsData },
+        { data: servicesData },
         // { data: disputesData },
         // { data: ticketsData },
         { data: logsData }
@@ -56,6 +65,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         supabase.from('orders').select('*, service:services(title)').eq('buyer_id', userId).order('created_at', { ascending: false }),
         supabase.from('orders').select('*, service:services(title)').eq('seller_id', userId).order('created_at', { ascending: false }),
         supabase.from('messages').select('*').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order('created_at', { ascending: false }),
+        supabase.from('reviews').select('*, buyer:profiles!reviews_buyer_id_fkey(id, full_name, avatar_url), service:services(id, title)').or(`seller_id.eq.${userId},buyer_id.eq.${userId}`).order('created_at', { ascending: false }),
+        supabase.from('services').select('id, title').eq('seller_id', userId).eq('status', 'active'),
         // supabase.from('disputes').select('*, order:orders(id)').eq('opened_by', userId).order('created_at', { ascending: false }),
         // supabase.from('tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
         supabase.from('connection_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
@@ -87,6 +98,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       setOrders(ordersData || []);
       setSales(salesData || []);
       setMessages(finalMessages);
+      setReviews(reviewsData || []);
+      setUserServices(servicesData || []);
       // setDisputes(disputesData || []);
       // setTickets(ticketsData || []);
       setLogs(logsData || []);
@@ -199,6 +212,67 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
     }
   };
 
+  const handleAddReview = async () => {
+    if (!newReview.service_id || !newReview.comment) {
+      alert("Veuillez sélectionner un service et écrire un commentaire.");
+      return;
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Non autorisé");
+      
+      const { error } = await supabase.from('reviews').insert([{
+        service_id: newReview.service_id,
+        seller_id: userId,
+        buyer_id: session.user.id,
+        rating: newReview.rating,
+        comment: newReview.comment
+      }]);
+      
+      if (error) throw error;
+      
+      alert("Avis ajouté avec succès !");
+      setShowAddReview(false);
+      setNewReview({ service_id: '', rating: 5, comment: '' });
+      fetchUserData();
+    } catch (err) {
+      console.error("Erreur ajout avis:", err);
+      alert("Erreur lors de l'ajout de l'avis.");
+    }
+  };
+
+  const handleUpdateReview = async () => {
+    if (!editingReview) return;
+    try {
+      const { error } = await supabase.from('reviews').update({
+        rating: editingReview.rating,
+        comment: editingReview.comment
+      }).eq('id', editingReview.id);
+      
+      if (error) throw error;
+      
+      alert("Avis modifié avec succès !");
+      setEditingReview(null);
+      fetchUserData();
+    } catch (err) {
+      console.error("Erreur modification avis:", err);
+      alert("Erreur lors de la modification de l'avis.");
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm("Voulez-vous vraiment supprimer cet avis ?")) return;
+    try {
+      const { error } = await supabase.from('reviews').delete().eq('id', reviewId);
+      if (error) throw error;
+      alert("Avis supprimé avec succès !");
+      fetchUserData();
+    } catch (err) {
+      console.error("Erreur suppression avis:", err);
+      alert("Erreur lors de la suppression de l'avis.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white rounded-3xl w-full flex items-center justify-center shadow-sm border border-slate-200 h-[calc(100vh-8rem)]">
@@ -212,6 +286,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
     { id: 'orders', name: 'Commandes', icon: ShoppingBag },
     { id: 'sales', name: 'Ventes', icon: Store, hidden: !profile?.is_seller },
     { id: 'messages', name: 'Messages', icon: MessageSquare },
+    { id: 'reviews', name: 'Avis', icon: Star },
     { id: 'disputes', name: 'Litiges', icon: AlertTriangle },
     { id: 'tickets', name: 'SAV', icon: LifeBuoy },
     { id: 'logs', name: 'Connexions', icon: History }
@@ -478,6 +553,125 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                     <div className="text-xs text-slate-400">{new Date(m.created_at).toLocaleString()}</div>
                   </div>
                   <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">{m.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB: REVIEWS */}
+          {activeTab === 'reviews' && (
+            <div className="space-y-6">
+              {profile?.is_seller && (
+                <div className="flex justify-end">
+                  <button 
+                    onClick={() => setShowAddReview(!showAddReview)}
+                    className="flex items-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Ajouter un avis (Support Frilya)
+                  </button>
+                </div>
+              )}
+
+              {showAddReview && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-4">
+                  <h3 className="font-bold text-lg text-slate-900">Nouvel avis</h3>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Service concerné</label>
+                    <select 
+                      value={newReview.service_id} 
+                      onChange={e => setNewReview({...newReview, service_id: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-frilya-600"
+                    >
+                      <option value="">Sélectionner un service...</option>
+                      {userServices.map(s => (
+                        <option key={s.id} value={s.id}>{s.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Note ({newReview.rating}/5)</label>
+                    <input 
+                      type="range" min="1" max="5" 
+                      value={newReview.rating} 
+                      onChange={e => setNewReview({...newReview, rating: Number(e.target.value)})}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Commentaire</label>
+                    <textarea 
+                      value={newReview.comment} 
+                      onChange={e => setNewReview({...newReview, comment: e.target.value})}
+                      rows={3} 
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-frilya-600" 
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setShowAddReview(false)} className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700">Annuler</button>
+                    <button onClick={handleAddReview} className="px-4 py-2 text-sm font-bold bg-frilya-600 hover:bg-frilya-500 text-white rounded-lg">Ajouter</button>
+                  </div>
+                </div>
+              )}
+
+              {reviews.length === 0 ? <p className="text-center text-slate-500 py-8">Aucun avis trouvé</p> : reviews.map(r => (
+                <div key={r.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                  {editingReview?.id === r.id ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Note ({editingReview.rating}/5)</label>
+                        <input 
+                          type="range" min="1" max="5" 
+                          value={editingReview.rating} 
+                          onChange={e => setEditingReview({...editingReview, rating: Number(e.target.value)})}
+                          className="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Commentaire</label>
+                        <textarea 
+                          value={editingReview.comment} 
+                          onChange={e => setEditingReview({...editingReview, comment: e.target.value})}
+                          rows={3} 
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-frilya-600" 
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => setEditingReview(null)} className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700">Annuler</button>
+                        <button onClick={handleUpdateReview} className="px-4 py-2 text-sm font-bold bg-frilya-600 hover:bg-frilya-500 text-white rounded-lg">Enregistrer</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <img src={r.buyer?.avatar_url || catAvatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                          <div>
+                            <div className="font-bold text-slate-900">{r.buyer?.full_name || 'Utilisateur inconnu'}</div>
+                            <div className="text-xs text-slate-500">{new Date(r.created_at).toLocaleString()} • {r.service?.title}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg">
+                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                            <span className="font-bold text-amber-700">{r.rating}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setEditingReview(r)} className="p-1.5 text-slate-400 hover:text-frilya-600 hover:bg-slate-50 rounded-lg transition-colors" title="Modifier">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDeleteReview(r.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl">{r.comment}</p>
+                      <div className="mt-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        {r.seller_id === userId ? 'Avis reçu' : 'Avis laissé'}
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
