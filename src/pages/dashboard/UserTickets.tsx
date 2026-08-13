@@ -54,22 +54,22 @@ export default function UserTickets() {
         
       if (!error && data) {
         if (data.length === 0) {
-          setWaitTime("moins de 15 minutes");
+          setWaitTime("Aucun ticket en attente");
         } else {
-            const now = Date.now();
-            const totalWaitMs = data.reduce((acc, t) => acc + (now - new Date(t.created_at).getTime()), 0);
-            const avgWaitMs = totalWaitMs / data.length;
-            
-            const hours = Math.floor(avgWaitMs / (1000 * 60 * 60));
-            const minutes = Math.floor((avgWaitMs % (1000 * 60 * 60)) / (1000 * 60));
-            
-            if (hours > 24) {
-               setWaitTime(`environ ${Math.floor(hours/24)} jour(s)`);
-            } else if (hours > 0) {
-               setWaitTime(`environ ${hours} heure(s)`);
-            } else {
-               setWaitTime(`environ ${Math.max(15, minutes)} minutes`);
-            }
+          const now = Date.now();
+          const totalWaitMs = data.reduce((acc, t) => acc + (now - new Date(t.created_at).getTime()), 0);
+          const avgWaitMs = totalWaitMs / data.length;
+          
+          const days = Math.floor(avgWaitMs / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((avgWaitMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((avgWaitMs % (1000 * 60 * 60)) / (1000 * 60));
+          
+          const parts = [];
+          if (days > 0) parts.push(`${days} j`);
+          if (hours > 0) parts.push(`${hours} h`);
+          if (minutes > 0 || parts.length === 0) parts.push(`${minutes} min`);
+          
+          setWaitTime(parts.join(' '));
         }
       }
     } catch(err) {
@@ -484,7 +484,7 @@ export default function UserTickets() {
             
             <div className="text-center mb-8">
               <p className="text-sm font-medium text-slate-700">Le délai moyen de réponse est</p>
-              <p className="text-sm font-medium text-slate-700">actuellement de <span className="font-bold text-frilya-600">{waitTime}</span>.</p>
+              <p className="text-sm font-medium text-slate-700">actuellement de <span className="font-bold text-frilya-600">{waitTime}</span></p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-6">

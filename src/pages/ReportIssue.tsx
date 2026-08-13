@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { AlertCircle, Upload, CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertCircle, Upload, CheckCircle2, Loader2, Store, ShoppingBag } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 export default function ReportIssue() {
@@ -8,6 +8,7 @@ export default function ReportIssue() {
   const [user, setUser] = useState<any>(null);
   
   // States
+  const [userType, setUserType] = useState<'vendeur' | 'acheteur' | null>(null);
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -178,37 +179,84 @@ export default function ReportIssue() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-          {error && (
-            <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100">
-              {error}
-            </div>
-          )}
-
-          {/* 1. Catégorie */}
-          <div className="mb-8">
-            <label className="block text-sm font-bold text-slate-900 mb-3">
-              Objet de la demande <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setSubData({});
-              }}
-              required
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
+        {!userType ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <button
+              type="button"
+              onClick={() => setUserType('vendeur')}
+              className="p-8 bg-white border-2 border-slate-200 rounded-3xl hover:border-frilya-600 hover:shadow-md transition-all group text-left"
             >
-              <option value="">Sélectionnez une catégorie...</option>
-              <option value="renseignement">Demande de renseignement / Question</option>
-              <option value="annonce">Problème avec une annonce/mission (contenu trompeur, prix suspect...)</option>
-              <option value="user">Problème avec un utilisateur (comportement, arnaque, harcèlement...)</option>
-              <option value="security">Problème de sécurité (faille, compte piraté, phishing...)</option>
-              <option value="payment">Problème de paiement/transaction</option>
-              <option value="bug">Problème technique/bug du site</option>
-              <option value="other">Autre</option>
-            </select>
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 group-hover:bg-frilya-600 group-hover:text-white transition-colors">
+                <Store className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Je suis vendeur</h3>
+              <p className="text-slate-600 text-sm">J'ai un problème avec un client, une de mes annonces, ou une question sur mes ventes.</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setUserType('acheteur')}
+              className="p-8 bg-white border-2 border-slate-200 rounded-3xl hover:border-frilya-600 hover:shadow-md transition-all group text-left"
+            >
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 group-hover:bg-frilya-600 group-hover:text-white transition-colors">
+                <ShoppingBag className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Je suis acheteur</h3>
+              <p className="text-slate-600 text-sm">J'ai un problème avec une commande, un vendeur, ou une question générale.</p>
+            </button>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+            <button 
+              type="button" 
+              onClick={() => { setUserType(null); setCategory(''); }} 
+              className="text-sm font-bold text-frilya-600 mb-6 flex items-center gap-2 hover:underline"
+            >
+              &larr; Retour
+            </button>
+
+            {error && (
+              <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100">
+                {error}
+              </div>
+            )}
+
+            {/* 1. Catégorie */}
+            <div className="mb-8">
+              <label className="block text-sm font-bold text-slate-900 mb-3">
+                Objet de la demande <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                  setSubData({});
+                }}
+                required
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
+              >
+                <option value="">Sélectionnez une catégorie...</option>
+                {userType === 'vendeur' ? (
+                  <>
+                    <option value="user">Problème avec un acheteur (Signalement)</option>
+                    <option value="annonce">Problème avec une de mes annonces</option>
+                    <option value="payment">Paiement / Facturation</option>
+                    <option value="renseignement">Demande de renseignement / Question technique</option>
+                    <option value="bug">Bug technique</option>
+                    <option value="other">Autre</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="user">Problème avec un vendeur / service (Signalement)</option>
+                    <option value="payment">Problème de paiement / Remboursement</option>
+                    <option value="renseignement">Demande de renseignement / Question</option>
+                    <option value="security">Problème de sécurité</option>
+                    <option value="bug">Bug technique</option>
+                    <option value="other">Autre</option>
+                  </>
+                )}
+              </select>
+            </div>
 
           {/* 2. Champs spécifiques dynamiques */}
           {category === 'annonce' && (
@@ -464,8 +512,9 @@ export default function ReportIssue() {
                 'Envoyer le signalement'
               )}
             </button>
-          </div>
-        </form>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
