@@ -13,6 +13,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
 
   useEffect(() => {
     if (slug) {
@@ -38,15 +39,22 @@ export default function Profile() {
       setProfile(profileData);
 
       if (profileData?.is_seller) {
-        const { data: servicesData } = await supabase
-          .from('services')
-          .select('*, categories(name), reviews(rating)')
-          .eq('seller_id', profileData.id)
-          .eq('status', 'active');
+        const [servicesRes, reviewsRes] = await Promise.all([
+          supabase
+            .from('services')
+            .select('*, categories(name), reviews(rating)')
+            .eq('seller_id', profileData.id)
+            .eq('status', 'active'),
+          supabase
+            .from('reviews')
+            .select('*, buyer:profiles!reviews_buyer_id_fkey(full_name, avatar_url, is_verified, is_beta), service:services(title)')
+            .eq('seller_id', profileData.id)
+            .order('created_at', { ascending: false })
+        ]);
         
-        if (servicesData) {
+        if (servicesRes.data) {
           // Compute average ratings
-          const processedServices = servicesData.map(service => {
+          const processedServices = servicesRes.data.map(service => {
             const revs = service.reviews || [];
             const avg = revs.length > 0 
               ? revs.reduce((acc: number, curr: any) => acc + curr.rating, 0) / revs.length 
@@ -54,6 +62,10 @@ export default function Profile() {
             return { ...service, averageRating: Math.round(avg * 10) / 10, reviewCount: revs.length };
           });
           setServices(processedServices);
+        }
+
+        if (reviewsRes.data) {
+          setReviews(reviewsRes.data);
         }
       }
     } catch (err) {
@@ -146,53 +158,104 @@ export default function Profile() {
       </div>
 
       {profile.is_seller && (
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Les services de {profile.full_name?.split(' ')[0]}</h2>
-          
-          {services.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {services.map((service) => (
-                <Link key={service.id} to={`/service/${service.id}`} className="group bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full">
-                  <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
-                    {service.cover_image_url ? (
-                      <img 
-                        src={service.cover_image_url} 
-                        alt={service.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-400">
-                        Aucune image
+        <div className="space-y-12">
+          {/* Section Services */}
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Les services de {profile.full_name?.split(' ')[0]}</h2>
+            
+            {services.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {services.map((service) => (
+                  <Link key={service.id} to={`/service/${service.id}`} className="group bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+                    <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
+                      {service.cover_image_url ? (
+                        <img 
+                          src={service.cover_image_url} 
+                          alt={service.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400">
+                          Aucune image
+                        </div>
+                      )}
+                      {service.categories?.name && (
+                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg">
+                          {service.categories.name}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col">
+                      <h3 className="font-bold text-slate-900 text-lg mb-2 line-clamp-2 group-hover:text-frilya-600 transition-colors">
+                        {service.title}
+                      </h3>
+                      <div className="flex items-center gap-1 text-sm text-slate-500 mb-4">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span className="font-bold text-slate-700">{service.averageRating?.toFixed(1) || '5.0'}</span>
+                        <span>({service.reviewCount || 0} avis)</span>
                       </div>
-                    )}
-                    {service.categories?.name && (
-                      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg">
-                        {service.categories.name}
+                      <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-xs text-slate-500 uppercase tracking-wider font-bold">À partir de</span>
+                        <span className="text-lg font-bold text-slate-900">{service.price_basic} €</span>
                       </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center">
+                <p className="text-slate-500">Aucun service actif pour le moment.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Section Avis */}
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Avis des acheteurs ({reviews.length})</h2>
+            
+            {reviews.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {reviews.map((review) => (
+                  <div key={review.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={review.buyer?.avatar_url || catAvatar} 
+                          alt="Avatar" 
+                          className="w-12 h-12 rounded-full object-cover border border-slate-200"
+                        />
+                        <div>
+                          <div className="flex items-center gap-1 font-bold text-slate-900">
+                            {review.buyer?.full_name || 'Utilisateur anonyme'}
+                            {review.buyer?.is_verified && (
+                              <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 ml-1" />
+                            )}
+                            {review.buyer?.is_beta && <div className="ml-1 scale-75 origin-left"><BetaBadge /></div>}
+                          </div>
+                          <div className="text-xs text-slate-500 flex items-center gap-2">
+                            <span>{new Date(review.created_at).toLocaleDateString('fr-FR')}</span>
+                            <span>•</span>
+                            <span className="italic truncate max-w-[150px] sm:max-w-[200px]">{review.service?.title}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span className="font-bold text-amber-700">{review.rating}</span>
+                      </div>
+                    </div>
+                    {review.comment && (
+                      <p className="text-slate-700 text-sm whitespace-pre-wrap flex-1">{review.comment}</p>
                     )}
                   </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <h3 className="font-bold text-slate-900 text-lg mb-2 line-clamp-2 group-hover:text-frilya-600 transition-colors">
-                      {service.title}
-                    </h3>
-                    <div className="flex items-center gap-1 text-sm text-slate-500 mb-4">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="font-bold text-slate-700">{service.averageRating?.toFixed(1) || '5.0'}</span>
-                      <span>({service.reviewCount || 0} avis)</span>
-                    </div>
-                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-xs text-slate-500 uppercase tracking-wider font-bold">À partir de</span>
-                      <span className="text-lg font-bold text-slate-900">{service.price_basic} €</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center">
-              <p className="text-slate-500">Aucun service actif pour le moment.</p>
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center">
+                <p className="text-slate-500">Cet utilisateur n'a pas encore reçu d'avis.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
