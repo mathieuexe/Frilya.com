@@ -216,8 +216,7 @@ export default function TicketsView() {
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Colonne Gauche : Détails et Actions */}
           <div className="w-full lg:w-1/3 xl:w-1/4 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
-              <div className="w-6 h-4 bg-frilya-600 rounded-sm"></div>
+            <div className="border-b border-slate-100 pb-4">
               <h2 className="font-bold text-slate-900 text-lg">Détails</h2>
             </div>
 
