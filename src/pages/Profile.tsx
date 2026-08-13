@@ -6,6 +6,8 @@ import catAvatar from '../assets/cat.png';
 import verifiedIcon from '../assets/verified.png';
 import messengerIcon from '../assets/messenger.png';
 
+import { BetaBadge } from '../components/BetaBadge';
+
 export default function Profile() {
   const { slug } = useParams();
   const [loading, setLoading] = useState(true);
@@ -111,6 +113,7 @@ export default function Profile() {
                     </div>
                   </div>
                 )}
+                {profile.is_beta && <div className="ml-1"><BetaBadge /></div>}
               </div>
               <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
                 <span className="flex items-center gap-1">

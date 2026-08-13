@@ -6,6 +6,8 @@ import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
 import seenIcon from '../../assets/seen.png';
 
+import { BetaBadge } from '../../components/BetaBadge';
+
 export default function BuyerDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -86,6 +88,7 @@ export default function BuyerDashboard() {
                     </div>
                   </div>
                 )}
+                {profile?.is_beta && <BetaBadge />}
               </div>
               <span className="text-sm font-medium px-3 py-1 bg-slate-100 text-slate-700 rounded-full mt-2">
                 Espace Acheteur

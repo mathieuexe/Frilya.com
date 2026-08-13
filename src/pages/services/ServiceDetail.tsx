@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 import { Star, Clock, CheckCircle, ShieldCheck, Heart, Share2, Loader2 } from 'lucide-react';
 import verifiedIcon from '../../assets/verified.png';
 
+import { BetaBadge } from '../../components/BetaBadge';
+
 export default function ServiceDetail() {
   const { id } = useParams();
   const [service, setService] = useState<any>(null);
@@ -36,7 +38,7 @@ export default function ServiceDetail() {
 
       let query = supabase
         .from('services')
-        .select('*, profiles(full_name, avatar_url, bio, created_at, is_verified, slug)');
+        .select('*, profiles(full_name, avatar_url, bio, created_at, is_verified, slug, is_beta)');
         
       if (isUuid) {
         query = query.eq('id', id);
@@ -154,6 +156,7 @@ export default function ServiceDetail() {
                           </div>
                         </div>
                       )}
+                      {service.profiles?.is_beta && <BetaBadge />}
                     </div>
                     <div className="flex items-center gap-1 text-sm text-slate-500">
                       <Star className="w-4 h-4 text-amber-500 fill-current" />
@@ -264,6 +267,7 @@ export default function ServiceDetail() {
                         </div>
                       </div>
                     )}
+                    {service.profiles?.is_beta && <BetaBadge />}
                   </div>
                   <p className="text-sm text-slate-500 mb-4">Membre depuis {new Date(service.profiles?.created_at).getFullYear()}</p>
                   <p className="text-slate-600 mb-4">

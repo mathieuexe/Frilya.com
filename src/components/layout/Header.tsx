@@ -9,6 +9,7 @@ import userIcon from '../../assets/user.png';
 import { supabase } from '../../lib/supabase';
 import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
+import { BetaBadge } from '../BetaBadge';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,6 +18,8 @@ export default function Header() {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [searchResults, setSearchResults] = useState<{services: any[], users: any[]}>({ services: [], users: [] });
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -24,8 +27,43 @@ export default function Header() {
     if (searchQuery.trim()) {
       navigate(`/recherche?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsMenuOpen(false);
+      setShowSearchResults(false);
     }
   };
+
+  useEffect(() => {
+    const fetchSearchResults = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults({ services: [], users: [] });
+        setShowSearchResults(false);
+        return;
+      }
+
+      const q = searchQuery.trim();
+      
+      const { data: servicesData } = await supabase
+        .from('services')
+        .select('id, title, price_basic, cover_image_url')
+        .eq('status', 'active')
+        .ilike('title', `%${q}%`)
+        .limit(3);
+        
+      const { data: usersData } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, slug, is_verified, is_beta')
+        .ilike('full_name', `%${q}%`)
+        .limit(3);
+        
+      setSearchResults({
+        services: servicesData || [],
+        users: usersData || []
+      });
+      setShowSearchResults(true);
+    };
+
+    const timeoutId = setTimeout(fetchSearchResults, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   useEffect(() => {
     let messageChannel: any;
@@ -35,7 +73,7 @@ export default function Header() {
       if (session) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name, avatar_url, role, is_verified')
+          .select('full_name, avatar_url, role, is_verified, is_beta')
           .eq('id', session.user.id)
           .single();
         if (profile) {
@@ -73,7 +111,7 @@ export default function Header() {
       if (session) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name, avatar_url, role, is_verified')
+          .select('full_name, avatar_url, role, is_verified, is_beta')
           .eq('id', session.user.id)
           .single();
         setUserProfile(profile || null);
@@ -114,12 +152,72 @@ export default function Header() {
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => {
+                if (searchQuery.trim()) setShowSearchResults(true);
+              }}
+              onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
               placeholder="Rechercher un service, un utilisateur..." 
               className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-full pl-4 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-frilya-600/20 focus:border-frilya-600 transition-all"
             />
             <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-frilya-600 transition-colors">
               <Search className="w-4 h-4" />
             </button>
+            
+            {/* Autocomplete Dropdown */}
+            {showSearchResults && (searchResults.services.length > 0 || searchResults.users.length > 0) && (
+              <div className="absolute top-full mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50">
+                {searchResults.services.length > 0 && (
+                  <div className="p-2">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2 mt-1">Services</div>
+                    {searchResults.services.map(service => (
+                      <Link 
+                        key={service.id} 
+                        to={`/service/${service.id}`}
+                        className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors"
+                        onClick={() => setShowSearchResults(false)}
+                      >
+                        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-100">
+                          {service.cover_image_url ? (
+                            <img src={service.cover_image_url} alt={service.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                              <Search className="w-4 h-4" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-slate-900 text-sm truncate">{service.title}</div>
+                          <div className="text-xs text-frilya-600 font-bold">{service.price_basic} €</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                
+                {searchResults.users.length > 0 && (
+                  <div className="p-2 border-t border-slate-100">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2 mt-1">Utilisateurs</div>
+                    {searchResults.users.map(user => (
+                      <Link 
+                        key={user.id} 
+                        to={`/profil/${user.slug || user.id}`}
+                        className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors"
+                        onClick={() => setShowSearchResults(false)}
+                      >
+                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-slate-200">
+                          <img src={user.avatar_url || catAvatar} alt={user.full_name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <span className="font-bold text-slate-900 text-sm truncate">{user.full_name}</span>
+                          {user.is_verified && <img src={verifiedIcon} alt="Vérifié" className="w-3.5 h-3.5" />}
+                          {user.is_beta && <BetaBadge />}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </form>
         </div>
 
@@ -152,6 +250,9 @@ export default function Header() {
                     <span className="text-sm font-bold text-slate-700 max-w-[100px] truncate">
                       {userProfile.full_name}
                     </span>
+                    {userProfile.is_beta && (
+                      <div className="-ml-1"><BetaBadge /></div>
+                    )}
                   </button>
 
                   {/* Dropdown Menu */}
@@ -247,7 +348,10 @@ export default function Header() {
                 ) : (
                   <img src={userIcon} alt="Compte" className="w-4 h-4 opacity-70" /> 
                 )}
-                <span className="truncate max-w-[100px]">{userProfile ? userProfile.full_name : 'Compte'}</span>
+                <div className="flex items-center gap-1">
+                  <span className="truncate max-w-[100px]">{userProfile ? userProfile.full_name : 'Compte'}</span>
+                  {userProfile?.is_beta && <BetaBadge />}
+                </div>
               </Link>
               <Link to="/messages" className="flex items-center justify-center gap-2 bg-slate-50 py-2.5 rounded-xl text-sm font-bold text-slate-700 border border-slate-100">
                 <img src={chatIcon} alt="Messages" className="w-4 h-4 opacity-70" /> Messages

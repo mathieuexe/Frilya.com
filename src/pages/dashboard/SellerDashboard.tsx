@@ -12,6 +12,8 @@ import checkoutIcon from '../../assets/checkout.png';
 import chatIcon from '../../assets/chat.png';
 import moneyIcon from '../../assets/money.png';
 
+import { BetaBadge } from '../../components/BetaBadge';
+
 export default function SellerDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -104,6 +106,7 @@ export default function SellerDashboard() {
                     </div>
                   </div>
                 )}
+                {profile?.is_beta && <BetaBadge />}
               </div>
               <span className="text-sm font-medium px-3 py-1 bg-frilya-100 text-frilya-700 rounded-full mt-2">
                 Espace Vendeur
