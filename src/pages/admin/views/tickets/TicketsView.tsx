@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
 import { Filter, AlertTriangle, CheckCircle, Clock, ExternalLink, Paperclip, Hourglass, Activity, Send, Search } from 'lucide-react';
+import supportAvatar from '../../../../assets/support-avatar.png';
 
 export default function TicketsView() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -84,7 +85,7 @@ export default function TicketsView() {
       if (senderIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, role')
+          .select('id, full_name, avatar_url, role, ticket_reply_identity')
           .in('id', senderIds);
           
         if (!profilesError && profilesData) {
@@ -497,14 +498,22 @@ export default function TicketsView() {
                 <div className="space-y-6 mb-6">
                   {messages.map((msg) => {
                     const isAdmin = msg.sender?.role === 'admin';
+                    const isSupport = isAdmin && msg.sender?.ticket_reply_identity === 'support';
+                    const senderName = isSupport ? 'Support Frilya' : (msg.sender?.full_name || 'Utilisateur');
+                    const senderAvatar = isSupport ? supportAvatar : msg.sender?.avatar_url;
+
                     return (
                       <div key={msg.id} className={`p-4 rounded-xl ${isAdmin ? 'bg-frilya-50 border border-frilya-100 ml-8' : 'bg-slate-50 border border-slate-100 mr-8'}`}>
                         <div className="flex items-center gap-3 mb-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${isAdmin ? 'bg-frilya-600' : 'bg-slate-400'}`}>
-                            {isAdmin ? 'A' : 'U'}
-                          </div>
+                          {senderAvatar ? (
+                            <img src={senderAvatar} alt={senderName} className="w-8 h-8 rounded-full object-cover" />
+                          ) : (
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${isAdmin ? 'bg-frilya-600' : 'bg-slate-400'}`}>
+                              {isAdmin ? 'A' : 'U'}
+                            </div>
+                          )}
                           <div>
-                            <p className="font-bold text-slate-900 text-sm">{isAdmin ? 'Équipe Support' : (msg.sender?.full_name || 'Utilisateur')}</p>
+                            <p className="font-bold text-slate-900 text-sm">{senderName}</p>
                             <p className="text-xs text-slate-500">
                               {new Date(msg.created_at).toLocaleString('fr-FR', {
                                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'

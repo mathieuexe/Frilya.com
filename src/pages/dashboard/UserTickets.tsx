@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { AlertCircle, Clock, ExternalLink, ArrowLeft, Send, RefreshCw, Paperclip, Mail, Phone, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import supportAvatar from '../../assets/support-avatar.png';
 
 export default function UserTickets() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -114,7 +115,7 @@ export default function UserTickets() {
       if (senderIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, role')
+          .select('id, full_name, avatar_url, role, ticket_reply_identity')
           .in('id', senderIds);
           
         if (!profilesError && profilesData) {
@@ -358,11 +359,15 @@ export default function UserTickets() {
               {/* Réponses */}
               {messages.map((msg) => {
                 const isAdmin = msg.sender?.role === 'admin';
+                const isSupport = isAdmin && msg.sender?.ticket_reply_identity === 'support';
+                const senderName = isSupport ? 'Support Frilya' : (msg.sender?.full_name || (isAdmin ? 'Support Frilya' : 'Utilisateur'));
+                const senderAvatar = isSupport ? supportAvatar : msg.sender?.avatar_url;
+
                 return (
                   <div key={msg.id} className={`p-6 border-b border-slate-100 ${isAdmin ? 'bg-blue-50/30' : ''}`}>
                     <div className="flex items-center gap-3 mb-4">
-                      {msg.sender?.avatar_url ? (
-                        <img src={msg.sender.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                      {senderAvatar ? (
+                        <img src={senderAvatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
                       ) : (
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isAdmin ? 'bg-frilya-600' : 'bg-slate-400'}`}>
                           {isAdmin ? 'S' : (msg.sender?.full_name ? msg.sender.full_name.charAt(0) : 'U')}
@@ -370,7 +375,7 @@ export default function UserTickets() {
                       )}
                       <div>
                         <p className="font-bold text-slate-900 flex items-center gap-2">
-                          {isAdmin ? 'Support Frilya' : (msg.sender?.full_name || 'Utilisateur')}
+                          {senderName}
                           {isAdmin && <span className="px-2 py-0.5 bg-frilya-100 text-frilya-700 rounded-full text-[10px] uppercase tracking-wider">Admin</span>}
                         </p>
                         <p className="text-xs text-slate-500">
