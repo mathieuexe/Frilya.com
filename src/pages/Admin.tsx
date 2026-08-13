@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   LogOut, LayoutDashboard, Users, ShoppingBag, 
   MessageSquare, AlertTriangle, Settings, ShieldAlert, Loader2, ArrowLeft, Store, Beaker,
-  ChevronDown, LayoutPanelLeft, LayoutPanelTop
+  ChevronDown, LayoutPanelLeft, LayoutPanelTop, Activity, LifeBuoy
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
@@ -153,12 +153,14 @@ export default function Admin() {
   const navCategories = [
     {
       title: 'Principal',
+      icon: LayoutDashboard,
       items: [
         { id: 'dashboard', name: 'Tableau de bord', icon: LayoutDashboard }
       ]
     },
     {
       title: 'Utilisateurs',
+      icon: Users,
       items: [
         { id: 'buyers', name: 'Acheteurs', icon: Users },
         { id: 'sellers', name: 'Vendeurs', icon: Store }
@@ -166,6 +168,7 @@ export default function Admin() {
     },
     {
       title: 'Activité',
+      icon: Activity,
       items: [
         { id: 'services', name: 'Services', icon: Store },
         { id: 'messages', name: 'Messages', icon: MessageSquare },
@@ -175,6 +178,7 @@ export default function Admin() {
     },
     {
       title: 'Système',
+      icon: Settings,
       items: [
         { id: 'settings', name: 'Paramètres', icon: Settings },
         { id: 'beta', name: 'Gestion Bêta', icon: Beaker }
@@ -182,6 +186,7 @@ export default function Admin() {
     },
     {
       title: 'Support & SAV',
+      icon: LifeBuoy,
       items: [
         { id: 'tickets', name: 'Tickets', icon: AlertTriangle },
         { id: 'faq_categories', name: 'Catégories FAQ', icon: LayoutDashboard },
@@ -296,7 +301,7 @@ export default function Admin() {
           </div>
           
           {/* Horizontal Nav Items */}
-          <div className="bg-slate-950 px-6 py-2 overflow-visible flex items-center gap-4">
+          <div className="bg-slate-950 px-6 py-3 overflow-visible flex items-center gap-6">
             {navCategories.map((cat, idx) => {
               // Si la catégorie n'a qu'un seul élément, on l'affiche directement
               if (cat.items.length === 1) {
@@ -305,14 +310,14 @@ export default function Admin() {
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id as Tab)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                       activeTab === item.id 
                         ? 'bg-frilya-600 text-white' 
                         : 'hover:bg-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
-                    <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-white' : 'text-slate-400'}`} />
-                    {item.name}
+                    {cat.icon && <cat.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-white' : 'text-slate-400'}`} />}
+                    {cat.title}
                   </button>
                 );
               }
@@ -322,14 +327,15 @@ export default function Admin() {
               return (
                 <div key={idx} className="relative group">
                   <button
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                       isActiveCategory 
                         ? 'bg-slate-800 text-white' 
                         : 'hover:bg-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
+                    {cat.icon && <cat.icon className={`w-4 h-4 ${isActiveCategory ? 'text-white' : 'text-slate-400'}`} />}
                     {cat.title}
-                    <ChevronDown className="w-3 h-3 opacity-50" />
+                    <ChevronDown className="w-3 h-3 opacity-50 ml-1" />
                   </button>
                   
                   {/* Menu déroulant */}

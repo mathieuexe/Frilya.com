@@ -17,8 +17,7 @@ export default function ServicesView() {
     try {
       let query = supabase.from('services').select(`
         *,
-        seller:profiles(full_name, email),
-        category:categories(name)
+        profiles (full_name, email)
       `);
       
       if (statusFilter !== 'all') {
@@ -52,7 +51,7 @@ export default function ServicesView() {
 
   const filteredServices = services.filter(s => 
     s.title?.toLowerCase().includes(search.toLowerCase()) ||
-    s.seller?.full_name?.toLowerCase().includes(search.toLowerCase())
+    s.profiles?.full_name?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -118,8 +117,8 @@ export default function ServicesView() {
                     <div className="font-bold text-slate-900 line-clamp-1">{service.title}</div>
                     <div className="text-xs text-slate-500">{new Date(service.created_at).toLocaleDateString('fr-FR')}</div>
                   </td>
-                  <td className="p-4 text-slate-600 text-sm">{service.seller?.full_name || 'Inconnu'}</td>
-                  <td className="p-4 text-slate-600 text-sm">{service.category?.name || '-'}</td>
+                  <td className="p-4 text-slate-600 text-sm">{service.profiles?.full_name || 'Inconnu'}</td>
+                  <td className="p-4 text-slate-600 text-sm">{service.category?.name || service.sub_category || '-'}</td>
                   <td className="p-4 font-bold text-frilya-600">{service.price_basic} €</td>
                   <td className="p-4">
                     {service.status === 'active' && <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Actif</span>}

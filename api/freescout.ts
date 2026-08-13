@@ -23,15 +23,17 @@ export default async function handler(req: any, res: any) {
       const { action, email, id, status } = req.query;
 
       if (action === 'listUserTickets' && email) {
-        const response = await fetch(`${BASE_URL}/conversations?mailboxId=${MAILBOX_ID}&customerEmail=${encodeURIComponent(email)}&sort=-updatedAt`, { headers });
+        const response = await fetch(`${BASE_URL}/conversations?mailboxId=${MAILBOX_ID}&customerEmail=${encodeURIComponent(email)}&sort=-updatedAt&status=active,pending,closed&size=100`, { headers });
         const data = await response.json();
         return res.status(200).json(data);
       }
 
       if (action === 'listAllTickets') {
-        let url = `${BASE_URL}/conversations?mailboxId=${MAILBOX_ID}&sort=-updatedAt`;
+        let url = `${BASE_URL}/conversations?mailboxId=${MAILBOX_ID}&sort=-updatedAt&size=100`;
         if (status && status !== 'all') {
           url += `&status=${status}`;
+        } else {
+          url += `&status=active,pending,closed`;
         }
         const response = await fetch(url, { headers });
         const data = await response.json();
