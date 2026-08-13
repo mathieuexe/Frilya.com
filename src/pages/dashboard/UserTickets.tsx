@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { AlertCircle, Clock, ExternalLink, ArrowLeft, Send, RefreshCw, Paperclip } from 'lucide-react';
+import { AlertCircle, Clock, ExternalLink, ArrowLeft, Send, RefreshCw, Paperclip, Mail, Phone, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function UserTickets() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // States pour la vue équipe/infos
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [waitTime, setWaitTime] = useState<string>("Calcul en cours...");
   
   // States pour la vue détail
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
@@ -17,7 +21,56 @@ export default function UserTickets() {
   useEffect(() => {
     fetchTickets();
     getCurrentUser();
+    fetchAdmins();
+    fetchStats();
   }, []);
+
+  const fetchAdmins = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .eq('role', 'admin');
+        
+      if (!error && data) {
+        setAdmins(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('report_tickets')
+        .select('created_at')
+        .in('status', ['nouveau', 'en_attente']);
+        
+      if (!error && data) {
+        if (data.length === 0) {
+          setWaitTime("moins de 15 minutes");
+        } else {
+            const now = Date.now();
+            const totalWaitMs = data.reduce((acc, t) => acc + (now - new Date(t.created_at).getTime()), 0);
+            const avgWaitMs = totalWaitMs / data.length;
+            
+            const hours = Math.floor(avgWaitMs / (1000 * 60 * 60));
+            const minutes = Math.floor((avgWaitMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 24) {
+               setWaitTime(`environ ${Math.floor(hours/24)} jour(s)`);
+            } else if (hours > 0) {
+               setWaitTime(`environ ${hours} heure(s)`);
+            } else {
+               setWaitTime(`environ ${Math.max(15, minutes)} minutes`);
+            }
+        }
+      }
+    } catch(err) {
+      console.error(err);
+    }
+  };
 
   const getCurrentUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -345,59 +398,132 @@ export default function UserTickets() {
     );
   }
 
-  // --- VUE LISTE DES TICKETS ---
+  // --- VUE LISTE DES TICKETS ET CONTACT ---
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Mes tickets</h1>
-          <p className="text-slate-500">Suivez l'état d'avancement de vos signalements.</p>
+    <div className="space-y-8">
+      {/* Header Info vs Team */}
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row">
+        {/* Colonne Gauche : Mes informations */}
+        <div className="w-full md:w-1/2 p-8 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 mb-6 text-center">Mes informations</h2>
+            <div className="text-center mb-6">
+              <h3 className="font-bold text-lg text-slate-800">{currentUser?.user_metadata?.full_name || 'Utilisateur'}</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="font-bold text-slate-900">Vos coordonnées de contact</h4>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-3 text-slate-600">
+                  <Mail className="w-4 h-4" />
+                  {currentUser?.email}
+                </div>
+                <Link to="/tableau-de-bord/parametres" className="text-frilya-600 font-medium hover:underline text-xs">Modifier</Link>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-3 text-slate-600">
+                  <Phone className="w-4 h-4" />
+                  {currentUser?.user_metadata?.phone || 'Non renseigné'}
+                </div>
+                <Link to="/tableau-de-bord/parametres" className="text-frilya-600 font-medium hover:underline text-xs">Modifier</Link>
+              </div>
+            </div>
+          </div>
+          <div className="mt-8">
+            <Link to="/tableau-de-bord/parametres" className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+              <Settings className="w-4 h-4" />
+              Préférences de compte
+            </Link>
+          </div>
         </div>
-        <Link 
-          to="/signaler-probleme" 
-          className="px-4 py-2 bg-frilya-900 text-white rounded-xl text-sm font-bold hover:bg-frilya-800 transition-colors inline-flex items-center gap-2"
-        >
-          <AlertCircle className="w-4 h-4" />
-          Nouveau signalement
-        </Link>
+
+        {/* Colonne Droite : Mon Équipe */}
+        <div className="w-full md:w-1/2 p-8 flex flex-col justify-between bg-slate-50/50">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 mb-6 text-center">Mon Équipe Frilya</h2>
+            
+            <div className="text-center mb-8">
+              <p className="text-sm font-medium text-slate-700">Le délai moyen de réponse est</p>
+              <p className="text-sm font-medium text-slate-700">actuellement de <span className="font-bold text-frilya-600">{waitTime}</span>.</p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-6">
+              {admins.length > 0 ? (
+                admins.slice(0, 6).map((admin) => (
+                  <div key={admin.id} className="flex flex-col items-center gap-2">
+                    <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                      <img 
+                        src={admin.avatar_url || `https://ui-avatars.com/api/?name=${admin.full_name || 'Admin'}&background=random`} 
+                        alt={admin.full_name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-slate-700">
+                      {admin.full_name ? admin.full_name.split(' ')[0] : 'Admin'}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-slate-500 italic">Équipe non disponible</div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-        {tickets.length === 0 ? (
-          <div className="p-12 text-center flex flex-col items-center">
-            <AlertCircle className="w-12 h-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Aucun ticket</h3>
-            <p className="text-slate-500 mb-6">Vous n'avez effectué aucun signalement.</p>
+      {/* Bouton de contact principal */}
+      <Link 
+        to="/signaler-probleme" 
+        className="block w-full bg-frilya-900 hover:bg-frilya-800 text-white text-center py-4 rounded-2xl font-bold text-lg transition-colors shadow-sm"
+      >
+        Contacter l'équipe
+      </Link>
+
+      <div className="mt-12 pt-8 border-t border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Historique de mes demandes</h2>
+            <p className="text-slate-500 text-sm">Suivez l'état d'avancement de vos requêtes.</p>
           </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {tickets.map(ticket => (
-              <div 
-                key={ticket.id} 
-                onClick={() => handleTicketClick(ticket)}
-                className="p-6 hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="font-mono text-sm font-bold text-slate-500">{ticket.ticket_number}</span>
-                      {getStatusBadge(ticket.status)}
-                    </div>
-                    <h3 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-frilya-600 transition-colors">{ticket.title}</h3>
-                    <p className="text-slate-600 text-sm mb-4 whitespace-pre-wrap line-clamp-2">{ticket.description}</p>
-                    
-                    <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {new Date(ticket.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </span>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          {tickets.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center">
+              <AlertCircle className="w-12 h-12 text-slate-300 mb-4" />
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Aucune demande</h3>
+              <p className="text-slate-500 mb-6">Vous n'avez effectué aucune demande ou signalement.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {tickets.map(ticket => (
+                <div 
+                  key={ticket.id} 
+                  onClick={() => handleTicketClick(ticket)}
+                  className="p-6 hover:bg-slate-50 transition-colors cursor-pointer group"
+                >
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-mono text-sm font-bold text-slate-500">{ticket.ticket_number}</span>
+                        {getStatusBadge(ticket.status)}
+                      </div>
+                      <h3 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-frilya-600 transition-colors">{ticket.title}</h3>
+                      <p className="text-slate-600 text-sm mb-4 whitespace-pre-wrap line-clamp-2">{ticket.description}</p>
+                      
+                      <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {new Date(ticket.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

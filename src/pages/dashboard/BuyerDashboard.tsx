@@ -39,7 +39,7 @@ export default function BuyerDashboard() {
     { name: 'Messages', path: '/tableau-de-bord/messages', icon: MessageSquare },
     { name: 'Favoris', path: '/tableau-de-bord/favoris', icon: Heart },
     { name: 'Litiges', path: '/tableau-de-bord/litiges', icon: AlertTriangle, hideForBeta: true },
-    { name: 'Mes tickets', path: '/tableau-de-bord/tickets', icon: LifeBuoy, hideForBeta: true },
+    { name: 'Service Client', path: '/tableau-de-bord/tickets', icon: LifeBuoy, hideForBeta: true },
     { name: 'Paramètres', path: '/tableau-de-bord/parametres', icon: Settings, hideForBeta: true },
   ];
 

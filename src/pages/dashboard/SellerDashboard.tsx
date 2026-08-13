@@ -50,7 +50,7 @@ export default function SellerDashboard() {
     { name: 'Commandes reçues', path: '/tableau-de-bord/vendeur/commandes', customIcon: checkoutIcon, hideForBeta: true },
     { name: 'Messages', path: '/tableau-de-bord/vendeur/messages', customIcon: chatIcon },
     { name: 'Litiges', path: '/tableau-de-bord/vendeur/litiges', icon: AlertTriangle, hideForBeta: true },
-    { name: 'Mes tickets', path: '/tableau-de-bord/vendeur/tickets', icon: LifeBuoy, hideForBeta: true },
+    { name: 'Service Client', path: '/tableau-de-bord/vendeur/tickets', icon: LifeBuoy, hideForBeta: true },
     { name: 'Paramètres pro', path: '/tableau-de-bord/vendeur/parametres', icon: Settings, hideForBeta: true },
   ];
 
