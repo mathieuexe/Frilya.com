@@ -13,7 +13,6 @@ export default function ServiceDetail() {
   const [media, setMedia] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [averageRating, setAverageRating] = useState<number>(5);
-  const [activePackage, setActivePackage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isBetaActive, setIsBetaActive] = useState(false);
 
@@ -60,15 +59,17 @@ export default function ServiceDetail() {
         
       if (pkgs && pkgs.length > 0) {
         setPackages(pkgs);
-        setActivePackage(pkgs[0]);
       } else {
         // Fallback for older services without packages
-        setActivePackage({
+        const fallbackPkg = {
+          id: 'basic',
           name: 'Formule Basique',
           description: "La prestation de base décrite dans l'annonce.",
           price: data.price_basic,
-          delivery_days: data.delivery_time_days
-        });
+          delivery_days: data.delivery_time_days,
+          revisions_included: 0
+        };
+        setPackages([fallbackPkg]);
       }
 
       // Fetch media
@@ -282,74 +283,58 @@ export default function ServiceDetail() {
           </div>
 
           {/* Colonne Latérale (Droite) - Pricing & CTA */}
-          <div className="w-full lg:w-80 shrink-0">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 sticky top-24">
-              
-              {packages.length > 1 && (
-                <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
-                  {packages.map(pkg => (
-                    <button
-                      key={pkg.id}
-                      onClick={() => setActivePackage(pkg)}
-                      className={`flex-1 text-sm font-bold py-2 px-3 rounded-lg transition-all ${
-                        activePackage?.id === pkg.id 
-                          ? 'bg-white text-frilya-600 shadow-sm' 
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      {pkg.name || pkg.package_type}
-                    </button>
-                  ))}
+          <div className="w-full lg:w-80 shrink-0 space-y-6">
+            {packages.map((pkg, index) => (
+              <div key={pkg.id || index} className={`bg-white p-6 rounded-3xl border ${index === 1 ? 'border-frilya-600 shadow-xl shadow-frilya-200/50' : 'border-slate-200 shadow-sm'}`}>
+                {index === 1 && (
+                  <div className="bg-frilya-600 text-white text-xs font-bold uppercase tracking-wider text-center py-1.5 -mt-6 -mx-6 mb-6 rounded-t-3xl">
+                    Recommandé
+                  </div>
+                )}
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-xl font-bold text-slate-900">{pkg.name || pkg.package_type}</h3>
+                  <span className="text-2xl font-bold text-frilya-600">{pkg.price} €</span>
                 </div>
-              )}
 
-              {activePackage && (
-                <>
-                  <div className="flex justify-between items-start mb-6">
-                    <h3 className="text-xl font-bold text-slate-900">{activePackage.name}</h3>
-                    <span className="text-2xl font-bold text-frilya-600">{activePackage.price} €</span>
+                <p className="text-sm text-slate-600 mb-6 font-medium">
+                  {pkg.description}
+                </p>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
+                    <Clock className="w-4 h-4 text-slate-400" />
+                    Livraison en {pkg.delivery_days} jour(s)
                   </div>
-
-                  <p className="text-sm text-slate-600 mb-6 font-medium">
-                    {activePackage.description}
-                  </p>
-
-                  <div className="space-y-3 mb-6">
+                  {pkg.revisions_included > 0 && (
                     <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
-                      <Clock className="w-4 h-4 text-slate-400" />
-                      Livraison en {activePackage.delivery_days} jour(s)
+                      <CheckCircle className="w-4 h-4 text-slate-400" />
+                      {pkg.revisions_included} Révision(s) incluse(s)
                     </div>
-                    {activePackage.revisions_included > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
-                        <CheckCircle className="w-4 h-4 text-slate-400" />
-                        {activePackage.revisions_included} Révision(s) incluse(s)
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 text-sm text-slate-700">
-                      <ShieldCheck className="w-4 h-4 text-green-500" />
-                      Paiement sécurisé
-                    </div>
-                  </div>
-
-                  {isBetaActive ? (
-                    <div className="w-full bg-slate-100 text-slate-500 text-center font-bold py-4 px-4 rounded-xl cursor-not-allowed">
-                      Commandes désactivées en mode Bêta
-                    </div>
-                  ) : (
-                    <Link 
-                      to={`/paiement/${service.id}?pkg=${activePackage.id || 'basic'}`}
-                      className="w-full flex justify-center items-center bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md"
-                    >
-                      Commander ({activePackage.price} €)
-                    </Link>
                   )}
-                </>
-              )}
-              
-              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium">
-                <ShieldCheck className="w-4 h-4 text-green-500" />
-                L'argent est bloqué jusqu'à livraison
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <ShieldCheck className="w-4 h-4 text-green-500" />
+                    Paiement sécurisé
+                  </div>
+                </div>
+
+                {isBetaActive ? (
+                  <div className="w-full bg-slate-100 text-slate-500 text-center font-bold py-4 px-4 rounded-xl cursor-not-allowed">
+                    Commandes désactivées en mode Bêta
+                  </div>
+                ) : (
+                  <Link 
+                    to={`/paiement/${service.id}?pkg=${pkg.id || 'basic'}`}
+                    className={`w-full flex justify-center items-center ${index === 1 ? 'bg-frilya-600 hover:bg-frilya-500' : 'bg-frilya-900 hover:bg-frilya-800'} text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md`}
+                  >
+                    Commander ({pkg.price} €)
+                  </Link>
+                )}
               </div>
+            ))}
+            
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium">
+              <ShieldCheck className="w-4 h-4 text-green-500" />
+              L'argent est bloqué jusqu'à livraison
             </div>
           </div>
 

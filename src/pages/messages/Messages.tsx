@@ -473,10 +473,10 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
   const isSupportBlocked = selectedContact?.id === ADMIN_ID && profile?.role !== 'admin' && !hasAdminInitiated;
 
   return (
-    <div className={inDashboard ? "h-[calc(100vh-200px)] flex gap-6" : "container mx-auto px-4 py-8 h-[calc(100vh-140px)] flex gap-6"}>
+    <div className={inDashboard ? "h-[calc(100vh-200px)] flex flex-col lg:flex-row gap-6" : "container mx-auto px-4 py-8 h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-6"}>
       
       {/* Liste des conversations (Sidebar) */}
-      <div className="w-1/3 bg-white rounded-3xl border border-slate-200 shadow-sm hidden md:flex flex-col overflow-hidden">
+      <div className={`w-full lg:w-1/3 bg-white rounded-3xl border border-slate-200 shadow-sm flex-col overflow-hidden ${selectedContact ? 'hidden lg:flex' : 'flex'}`}>
         <div className="p-4 border-b border-slate-100 font-bold text-slate-900">
           Conversations
         </div>
@@ -513,24 +513,32 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       </div>
 
       {/* Zone de chat */}
-      <div className="flex-1 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+      <div className={`w-full lg:flex-1 bg-white rounded-3xl border border-slate-200 shadow-sm flex-col overflow-hidden ${!selectedContact ? 'hidden lg:flex' : 'flex'}`}>
         <div className="p-4 border-b border-slate-100 font-bold text-slate-900 flex items-center justify-between gap-3">
           {selectedContact ? (
             <>
-              <Link 
-                to={`/profil/${selectedContact.slug || selectedContact.id}`} 
-                className="flex items-center gap-3 hover:bg-slate-50 p-1.5 -ml-1.5 rounded-2xl transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200">
-                  <img src={selectedContact.avatar_url || catAvatar} alt={selectedContact.full_name} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex items-center gap-1">
-                  {selectedContact.full_name}
-                  {selectedContact.is_verified && (
-                    <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 shrink-0" />
-                  )}
-                </div>
-              </Link>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setSelectedContact(null)}
+                  className="lg:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <Link 
+                  to={`/profil/${selectedContact.slug || selectedContact.id}`} 
+                  className="flex items-center gap-3 hover:bg-slate-50 p-1.5 -ml-1.5 rounded-2xl transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200">
+                    <img src={selectedContact.avatar_url || catAvatar} alt={selectedContact.full_name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="truncate">{selectedContact.full_name}</span>
+                    {selectedContact.is_verified && (
+                      <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 shrink-0" />
+                    )}
+                  </div>
+                </Link>
+              </div>
               {profile?.role === 'admin' && (
                 <button
                   onClick={toggleConversationStatus}

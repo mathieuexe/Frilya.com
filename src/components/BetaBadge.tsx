@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import betaBadgeIcon from '../assets/beta-badge.png';
+import betaBadgeIcon from '../assets/lab-flask.png';
 
 export function BetaBadge() {
   const [showTooltip, setShowTooltip] = useState(false);

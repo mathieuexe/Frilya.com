@@ -14,6 +14,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [averageRating, setAverageRating] = useState<number>(5);
 
   useEffect(() => {
     if (slug) {
@@ -66,6 +67,10 @@ export default function Profile() {
 
         if (reviewsRes.data) {
           setReviews(reviewsRes.data);
+          if (reviewsRes.data.length > 0) {
+            const avg = reviewsRes.data.reduce((acc: number, curr: any) => acc + curr.rating, 0) / reviewsRes.data.length;
+            setAverageRating(Math.round(avg * 10) / 10);
+          }
         }
       }
     } catch (err) {
@@ -136,6 +141,13 @@ export default function Profile() {
                   <Calendar className="w-4 h-4" />
                   Membre depuis {joinDate}
                 </span>
+                {profile.is_seller && reviews.length > 0 && (
+                  <a href="#reviews-section" className="flex items-center gap-1 hover:bg-slate-50 px-2 py-1 -ml-2 rounded-lg transition-colors group/rating">
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-400 group-hover/rating:scale-110 transition-transform" />
+                    <span className="font-bold text-slate-900">{averageRating.toFixed(1)}</span>
+                    <span className="text-slate-500">({reviews.length} avis)</span>
+                  </a>
+                )}
               </div>
             </div>
             <div className="w-full md:w-auto shrink-0 pt-2 md:pt-4">
@@ -210,7 +222,7 @@ export default function Profile() {
           </div>
 
           {/* Section Avis */}
-          <div>
+          <div id="reviews-section" className="scroll-mt-24">
             <h2 className="text-2xl font-bold text-slate-900 mb-6">Avis des acheteurs ({reviews.length})</h2>
             
             {reviews.length > 0 ? (
