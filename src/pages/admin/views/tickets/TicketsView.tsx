@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
-import { Filter, AlertTriangle, CheckCircle, Clock, ExternalLink, Paperclip, Hourglass, Activity, Send } from 'lucide-react';
+import { Filter, AlertTriangle, CheckCircle, Clock, ExternalLink, Paperclip, Hourglass, Activity, Send, Search } from 'lucide-react';
 
 export default function TicketsView() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   
   // Nouveau state pour les messages
@@ -30,7 +31,10 @@ export default function TicketsView() {
     try {
       const { data, error } = await supabase
         .from('report_tickets')
-        .select('*')
+        .select(`
+          *,
+          profiles:reporter_id (full_name)
+        `)
         .order('created_at', { ascending: true }); // Du plus ancien au plus récent
 
       if (error) throw error;
@@ -129,9 +133,19 @@ export default function TicketsView() {
     }
   };
 
-  const filteredTickets = tickets.filter(t => 
-    filterStatus === 'all' ? true : t.status === filterStatus
-  );
+  const filteredTickets = tickets.filter(t => {
+    const matchStatus = filterStatus === 'all' ? true : t.status === filterStatus;
+    const searchLower = searchQuery.toLowerCase();
+    const matchSearch = !searchQuery ? true : (
+      t.ticket_number?.toLowerCase().includes(searchLower) ||
+      t.email?.toLowerCase().includes(searchLower) ||
+      t.profiles?.full_name?.toLowerCase().includes(searchLower) ||
+      t.title?.toLowerCase().includes(searchLower) ||
+      t.description?.toLowerCase().includes(searchLower) ||
+      new Date(t.created_at).toLocaleDateString('fr-FR').includes(searchLower)
+    );
+    return matchStatus && matchSearch;
+  });
 
   // Statistiques
   const pendingTickets = tickets.filter(t => ['nouveau', 'en_attente'].includes(t.status));
@@ -236,23 +250,33 @@ export default function TicketsView() {
         
         {/* Left Column: Tickets List */}
         <div className="w-full lg:w-1/3 xl:w-1/4 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
-          {/* Filters */}
-          <div className="p-4 border-b border-slate-200 flex items-center gap-4 bg-slate-50 shrink-0">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-              <Filter className="w-4 h-4" />
+          {/* Filters & Search */}
+          <div className="p-4 border-b border-slate-200 flex flex-col gap-3 bg-slate-50 shrink-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Rechercher par référence, email, date..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-frilya-600 bg-white"
+              />
             </div>
-            <select 
-              value={filterStatus} 
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-frilya-600"
-            >
-              <option value="all">Tous les tickets</option>
-              <option value="nouveau">Nouveaux</option>
-              <option value="en_cours">En cours</option>
-              <option value="en_attente">En attente</option>
-              <option value="escalade">Escaladés</option>
-              <option value="cloture">Clôturés</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <select 
+                value={filterStatus} 
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-frilya-600 bg-white"
+              >
+                <option value="all">Tous les statuts</option>
+                <option value="nouveau">Nouveaux</option>
+                <option value="en_cours">En cours</option>
+                <option value="en_attente">En attente</option>
+                <option value="escalade">Escaladés</option>
+                <option value="cloture">Clôturés</option>
+              </select>
+            </div>
           </div>
 
           {/* Tickets List */}
@@ -287,7 +311,9 @@ export default function TicketsView() {
                       {getPriorityBadge(ticket.priority)}
                     </div>
                     <h4 className="font-bold text-slate-900 text-sm line-clamp-2 leading-tight">{ticket.title}</h4>
-                    <p className="text-xs text-slate-500 truncate">{getCategoryLabel(ticket.category)} • {ticket.is_anonymous ? 'Anonyme' : ticket.email}</p>
+                    <p className="text-xs text-slate-500 truncate">
+                      {getCategoryLabel(ticket.category)} • {ticket.is_anonymous ? 'Anonyme' : (ticket.profiles?.full_name || ticket.email)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -352,7 +378,12 @@ export default function TicketsView() {
                   <div>
                     <p className="text-sm font-bold text-slate-900 mb-1">Déclarant</p>
                     <p className="text-slate-600 text-sm">
-                      {selectedTicket.is_anonymous ? 'Anonyme' : selectedTicket.email}
+                      {selectedTicket.is_anonymous ? 'Anonyme' : (
+                        <>
+                          <span className="font-medium text-slate-900 block">{selectedTicket.profiles?.full_name}</span>
+                          {selectedTicket.email}
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
