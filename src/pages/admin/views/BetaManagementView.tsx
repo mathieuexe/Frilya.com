@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { sendBetaAcceptedEmail, sendBetaRejectedEmail } from '../../../lib/email';
-import { Loader2, Check, X, RefreshCw, MessageSquare, Trash2, ShieldAlert } from 'lucide-react';
+import { Loader2, Check, X, RefreshCw, MessageSquare, Trash2, ShieldAlert, ExternalLink } from 'lucide-react';
 
 export default function BetaManagementView() {
   const [activeTab, setActiveTab] = useState<'requests' | 'testers' | 'feedbacks' | 'settings'>('requests');
@@ -419,6 +419,27 @@ export default function BetaManagementView() {
                       }`}
                     />
                   </button>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 mb-6">Prévisualisation</h2>
+                <div className="p-6 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-blue-900 text-lg">Tester le mode Bêta</h3>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Visualisez la page d'accueil de la bêta exactement comme la verraient les utilisateurs.
+                    </p>
+                  </div>
+                  <a 
+                    href="/beta?preview=true" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm flex items-center gap-2 transition-colors shrink-0"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Ouvrir la prévisualisation
+                  </a>
                 </div>
               </div>
 

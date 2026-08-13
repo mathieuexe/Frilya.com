@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { sendBetaConfirmationEmail } from '../lib/email';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
@@ -24,6 +25,8 @@ export default function BetaRegistration() {
   const [userIp, setUserIp] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.get('preview') === 'true';
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -35,13 +38,19 @@ export default function BetaRegistration() {
           const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
           setUserProfile(profile);
         }
-        // 1. Check if Beta is active
+        // 1. Check if Beta is active globally
         const { data: settingsData } = await supabase
           .from('settings')
           .select('value')
           .eq('key', 'beta_mode_active')
           .single();
-        setIsBetaActive(settingsData?.value === 'true' || settingsData?.value === true);
+        
+        // If preview is requested, force beta active
+        if (isPreview) {
+          setIsBetaActive(true);
+        } else {
+          setIsBetaActive(settingsData?.value === 'true' || settingsData?.value === true);
+        }
 
         // 2. Check if IP already submitted
         const ipRes = await fetch('https://api.ipify.org?format=json');
@@ -61,7 +70,9 @@ export default function BetaRegistration() {
           setExistingRequest(appData);
         }
       } catch (err) {
-        if (isBetaActive === null) setIsBetaActive(false);
+        if (isBetaActive === null) {
+          setIsBetaActive(isPreview ? true : false);
+        }
       } finally {
         setCheckingIp(false);
       }
@@ -243,6 +254,11 @@ export default function BetaRegistration() {
         </div>
       ) : (
         <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl max-w-xl w-full relative z-10">
+          {isPreview && (
+            <div className="absolute -top-4 -right-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse">
+              Mode Prévisualisation Admin
+            </div>
+          )}
           <div className="text-center mb-8">
             <span className="inline-block px-3 py-1 bg-frilya-100 text-frilya-700 font-bold text-xs rounded-full uppercase tracking-wider mb-4">Programme Bêta</span>
             <h1 className="text-3xl font-bold text-slate-900 mb-3">Rejoignez la Bêta</h1>
