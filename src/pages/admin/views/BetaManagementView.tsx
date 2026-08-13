@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { sendBetaAcceptedEmail, sendBetaRejectedEmail } from '../../../lib/email';
-import { Loader2, Check, X, RefreshCw, MessageSquare, Trash2, ShieldAlert, ExternalLink } from 'lucide-react';
+import { Loader2, Check, X, Mail, ShieldAlert, Trash2, MessageSquare, ExternalLink } from 'lucide-react';
 
 export default function BetaManagementView() {
   const [activeTab, setActiveTab] = useState<'requests' | 'testers' | 'feedbacks' | 'settings'>('requests');
@@ -10,6 +10,7 @@ export default function BetaManagementView() {
   const [requests, setRequests] = useState<any[]>([]);
   const [testers, setTesters] = useState<any[]>([]);
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   
   // UI states
   const [loading, setLoading] = useState(true);
@@ -89,8 +90,11 @@ export default function BetaManagementView() {
         const { data } = await supabase.from('beta_applications').select('*').order('created_at', { ascending: false });
         setRequests(data || []);
       } else if (activeTab === 'testers') {
-        const { data } = await supabase.from('profiles').select('*').eq('is_beta', true).order('created_at', { ascending: false });
-        setTesters(data || []);
+        const { data: testersData } = await supabase.from('profiles').select('*').eq('is_beta', true).order('created_at', { ascending: false });
+        setTesters(testersData || []);
+        
+        const { data: usersData } = await supabase.from('profiles').select('id, full_name, email, role, is_beta').order('full_name', { ascending: true });
+        setAllUsers(usersData || []);
       } else if (activeTab === 'feedbacks') {
         const { data } = await supabase.from('beta_feedbacks').select('*, user:profiles(full_name, email)').order('created_at', { ascending: false });
         setFeedbacks(data || []);
@@ -243,6 +247,41 @@ export default function BetaManagementView() {
     }
   };
 
+  const handleToggleBetaStatus = async (userId: string, isCurrentlyBeta: boolean) => {
+    try {
+      setActionLoading(userId);
+      if (isCurrentlyBeta) {
+        // Remove beta status but keep the user role as is (acheteur/vendeur)
+        // Only if their role was explicitly 'beta', change it back to 'acheteur' as fallback
+        const user = allUsers.find(u => u.id === userId);
+        const newRole = user?.role === 'beta' ? 'acheteur' : user?.role;
+        
+        await supabase.from('profiles').update({
+          is_beta: false,
+          beta_end_date: null,
+          role: newRole
+        }).eq('id', userId);
+        alert("Accès Bêta retiré avec succès. Le compte reste actif.");
+      } else {
+        // Grant beta status
+        const defaultEndDate = new Date();
+        defaultEndDate.setMonth(defaultEndDate.getMonth() + 1); // +1 month by default
+        
+        await supabase.from('profiles').update({
+          is_beta: true,
+          beta_end_date: defaultEndDate.toISOString()
+        }).eq('id', userId);
+        alert("Accès Bêta accordé avec succès !");
+      }
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la modification de l'accès Bêta.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Tabs */}
@@ -314,37 +353,88 @@ export default function BetaManagementView() {
 
           {/* TAB: TESTERS */}
           {activeTab === 'testers' && (
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-100"><h2 className="text-xl font-bold text-slate-900">Comptes Bêta Actifs</h2></div>
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                    <th className="p-4 font-semibold">Testeur</th>
-                    <th className="p-4 font-semibold">Rôle actuel</th>
-                    <th className="p-4 font-semibold">Date de fin</th>
-                    <th className="p-4 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {testers.length === 0 ? (
-                    <tr><td colSpan={4} className="p-8 text-center text-slate-500">Aucun testeur.</td></tr>
-                  ) : testers.map(tester => (
-                    <tr key={tester.id}>
-                      <td className="p-4">
-                        <div className="font-bold text-slate-900">{tester.full_name}</div>
-                        <div className="text-sm text-slate-500">{tester.email}</div>
-                      </td>
-                      <td className="p-4"><span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">{tester.role}</span></td>
-                      <td className="p-4 text-sm text-slate-600">{tester.beta_end_date ? new Date(tester.beta_end_date).toLocaleDateString('fr-FR') : '-'}</td>
-                      <td className="p-4 text-right">
-                        <button className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-frilya-50 rounded-lg transition-colors" title="Renvoyer les accès">
-                          <RefreshCw className="w-4 h-4" />
-                        </button>
-                      </td>
+            <div className="space-y-8">
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-6 border-b border-slate-100"><h2 className="text-xl font-bold text-slate-900">Comptes Bêta Actifs</h2></div>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                      <th className="p-4 font-semibold">Testeur</th>
+                      <th className="p-4 font-semibold">Rôle actuel</th>
+                      <th className="p-4 font-semibold">Date de fin</th>
+                      <th className="p-4 font-semibold text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {testers.length === 0 ? (
+                      <tr><td colSpan={4} className="p-8 text-center text-slate-500">Aucun testeur.</td></tr>
+                    ) : testers.map(tester => (
+                      <tr key={tester.id}>
+                        <td className="p-4">
+                          <div className="font-bold text-slate-900">{tester.full_name}</div>
+                          <div className="text-sm text-slate-500">{tester.email}</div>
+                        </td>
+                        <td className="p-4"><span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">{tester.role}</span></td>
+                        <td className="p-4 text-sm text-slate-600">{tester.beta_end_date ? new Date(tester.beta_end_date).toLocaleDateString('fr-FR') : '-'}</td>
+                        <td className="p-4 text-right">
+                          <button 
+                            onClick={() => handleToggleBetaStatus(tester.id, true)}
+                            disabled={actionLoading === tester.id}
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium flex items-center gap-1 ml-auto" 
+                            title="Retirer l'accès Bêta"
+                          >
+                            {actionLoading === tester.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                            Retirer l'accès
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* All Users section to add to Beta */}
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-6 border-b border-slate-100">
+                  <h2 className="text-xl font-bold text-slate-900">Ajouter un compte existant à la Bêta</h2>
+                  <p className="text-sm text-slate-500 mt-1">Vous pouvez accorder l'accès bêta à des acheteurs ou vendeurs existants.</p>
+                </div>
+                <div className="max-h-[400px] overflow-y-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider sticky top-0 shadow-sm">
+                        <th className="p-4 font-semibold">Utilisateur</th>
+                        <th className="p-4 font-semibold">Rôle</th>
+                        <th className="p-4 font-semibold text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {allUsers.filter(u => !u.is_beta).map(user => (
+                        <tr key={user.id} className="hover:bg-slate-50">
+                          <td className="p-4">
+                            <div className="font-bold text-slate-900">{user.full_name}</div>
+                            <div className="text-sm text-slate-500">{user.email}</div>
+                          </td>
+                          <td className="p-4"><span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full capitalize">{user.role}</span></td>
+                          <td className="p-4 text-right">
+                            <button 
+                              onClick={() => handleToggleBetaStatus(user.id, false)}
+                              disabled={actionLoading === user.id}
+                              className="px-3 py-1.5 bg-frilya-900 hover:bg-frilya-800 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1 ml-auto"
+                            >
+                              {actionLoading === user.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                              Accorder Accès Bêta
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {allUsers.filter(u => !u.is_beta).length === 0 && (
+                        <tr><td colSpan={3} className="p-8 text-center text-slate-500">Tous les utilisateurs sont déjà dans la Bêta.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
