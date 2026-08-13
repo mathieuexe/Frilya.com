@@ -117,14 +117,13 @@ export default function BetaManagementView() {
   const handleAcceptRequest = async (request: any) => {
     setActionLoading(request.id);
     try {
+      // 0. Sauvegarder la session admin actuelle
+      const { data: { session: adminSession } } = await supabase.auth.getSession();
+
       // 1. Generate random password
       const tempPassword = Math.random().toString(36).slice(-10) + 'A1!';
       
       // 2. Create user auth account
-      // Note: We need a backend to bypass email confirmation or sign up directly.
-      // Since we don't have one, we'll try to sign up and maybe the email will be sent.
-      // Alternatively, we use Supabase Admin API, but since we are client-side...
-      // Actually, standard `signUp` will create the user.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: request.email,
         password: tempPassword,
@@ -135,10 +134,18 @@ export default function BetaManagementView() {
         }
       });
 
+      // Restaurer la session admin immédiatement après le signUp pour éviter d'être connecté en tant que le nouvel utilisateur
+      if (adminSession) {
+        await supabase.auth.setSession({
+          access_token: adminSession.access_token,
+          refresh_token: adminSession.refresh_token
+        });
+      }
+
       let userId = authData.user?.id;
 
       if (authError) {
-        if (authError.message.includes('already registered') || authError.status === 400) {
+        if (authError.message.includes('already registered') || authError.status === 400 || authError.status === 422) {
           // User already exists, fetch their ID
           const { data: existingUser } = await supabase.from('profiles').select('id').eq('email', request.email).single();
           if (existingUser) {
@@ -152,7 +159,6 @@ export default function BetaManagementView() {
       }
 
       // 3. Update profile to be beta (Trigger should have created the profile)
-      // We might need to wait a second for the trigger if just created
       if (!authError) {
         await new Promise(r => setTimeout(r, 1000));
       }
@@ -161,12 +167,12 @@ export default function BetaManagementView() {
         await supabase.from('profiles').update({
           is_beta: true,
           beta_end_date: new Date(betaEndDate).toISOString(),
-          // Don't overwrite role if they are already seller/buyer, just set is_beta to true
         }).eq('id', userId);
       }
 
       // 4. Update request status
-      await supabase.from('beta_applications').update({ status: 'accepted' }).eq('id', request.id);
+      const { error: updateError } = await supabase.from('beta_applications').update({ status: 'accepted' }).eq('id', request.id);
+      if (updateError) throw updateError;
 
       // 5. Send Email
       await sendBetaAcceptedEmail(request.email, request.pseudo, tempPassword, betaEndDate);
