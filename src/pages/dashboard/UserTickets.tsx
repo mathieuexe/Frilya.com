@@ -34,9 +34,11 @@ export default function UserTickets() {
         .eq('role', 'admin');
         
       if (!error && data) {
-        // Ne pas afficher les admins qui utilisent l'identité générique "Support Frilya" ou dont le nom est "Support Frilya"
+        // Ne pas afficher le compte spécifique et les admins qui utilisent l'identité générique "Support Frilya"
         const visibleAdmins = data.filter(admin => 
-          admin.ticket_reply_identity !== 'support' && admin.full_name !== 'Support Frilya'
+          admin.id !== 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb' &&
+          admin.ticket_reply_identity !== 'support' && 
+          admin.full_name !== 'Support Frilya'
         );
         setAdmins(visibleAdmins);
       }
