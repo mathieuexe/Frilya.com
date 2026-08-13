@@ -35,12 +35,16 @@ export default function ReportIssue() {
         setEmail(session.user.email || '');
         
         // Fetch services if user is logged in
-        const { data: services } = await supabase
+        const { data: services, error } = await supabase
           .from('services')
-          .select('id, title, price, cover_image, created_at')
+          .select('id, title, price_basic, cover_image_url, created_at')
           .eq('seller_id', session.user.id)
           .eq('status', 'active')
           .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error("Error fetching services:", error);
+        }
           
         if (services) {
           setUserServices(services);
@@ -296,8 +300,8 @@ export default function ReportIssue() {
                           className="mt-1 w-4 h-4 text-frilya-600 border-slate-300 focus:ring-frilya-600"
                         />
                         <div className="flex-1 flex items-start gap-4">
-                          {service.cover_image ? (
-                            <img src={service.cover_image} alt={service.title} className="w-20 h-16 object-cover rounded-lg" />
+                          {service.cover_image_url ? (
+                            <img src={service.cover_image_url} alt={service.title} className="w-20 h-16 object-cover rounded-lg" />
                           ) : (
                             <div className="w-20 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
                               <Store className="w-6 h-6 text-slate-400" />
@@ -306,7 +310,7 @@ export default function ReportIssue() {
                           <div className="flex-1">
                             <h4 className="font-bold text-slate-900 line-clamp-1">{service.title}</h4>
                             <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
-                              <span className="font-bold text-frilya-600">{service.price} €</span>
+                              <span className="font-bold text-frilya-600">{service.price_basic} €</span>
                               <span>•</span>
                               <span>{new Date(service.created_at).toLocaleDateString('fr-FR')}</span>
                             </div>
