@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import betaBadgeIcon from '../assets/beta-badge.png';
 
 export function BetaBadge() {
