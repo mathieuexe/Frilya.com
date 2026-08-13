@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Star, Clock, CheckCircle, ShieldCheck, Heart, Share2, Loader2 } from 'lucide-react';
+import verifiedIcon from '../../assets/verified.png';
 
 export default function ServiceDetail() {
   const { id } = useParams();
@@ -24,7 +25,7 @@ export default function ServiceDetail() {
 
       let query = supabase
         .from('services')
-        .select('*, profiles(full_name, avatar_url, bio, created_at)');
+        .select('*, profiles(full_name, avatar_url, bio, created_at, is_verified, slug)');
         
       if (isUuid) {
         query = query.eq('id', id);
@@ -121,11 +122,28 @@ export default function ServiceDetail() {
               
               <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-frilya-100 rounded-full flex items-center justify-center font-bold text-frilya-600">
-                    {service.profiles?.full_name?.charAt(0) || 'V'}
-                  </div>
+                  <Link to={`/profil/${service.profiles?.slug || service.seller_id}`} className="w-10 h-10 bg-frilya-100 rounded-full flex items-center justify-center font-bold text-frilya-600 shrink-0 hover:ring-2 hover:ring-frilya-400 transition-all overflow-hidden">
+                    {service.profiles?.avatar_url ? (
+                      <img src={service.profiles.avatar_url} alt={service.profiles.full_name} className="w-full h-full object-cover" />
+                    ) : (
+                      service.profiles?.full_name?.charAt(0) || 'V'
+                    )}
+                  </Link>
                   <div>
-                    <p className="font-bold text-slate-900">{service.profiles?.full_name || 'Vendeur Mystère'}</p>
+                    <div className="flex items-center gap-2">
+                      <Link to={`/profil/${service.profiles?.slug || service.seller_id}`} className="font-bold text-slate-900 hover:text-frilya-600 transition-colors">
+                        {service.profiles?.full_name || 'Vendeur Mystère'}
+                      </Link>
+                      {service.profiles?.is_verified && (
+                        <div className="relative group cursor-pointer flex items-center">
+                          <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" />
+                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center">
+                            Compte vérifié. Frilya certifie que ce compte est authentique.
+                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1 text-sm text-slate-500">
                       <Star className="w-4 h-4 text-amber-500 fill-current" />
                       <span className="font-bold text-amber-500">{averageRating.toFixed(1)}</span>
@@ -214,11 +232,28 @@ export default function ServiceDetail() {
             <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
               <h2 className="text-xl font-bold text-slate-900 mb-6">À propos du vendeur</h2>
               <div className="flex flex-col md:flex-row gap-6 items-start">
-                <div className="w-24 h-24 bg-frilya-100 rounded-full flex items-center justify-center font-bold text-3xl text-frilya-600 shrink-0">
-                  {service.profiles?.full_name?.charAt(0) || 'V'}
-                </div>
+                <Link to={`/profil/${service.profiles?.slug || service.seller_id}`} className="w-24 h-24 bg-frilya-100 rounded-full flex items-center justify-center font-bold text-3xl text-frilya-600 shrink-0 hover:ring-4 hover:ring-frilya-100 transition-all overflow-hidden">
+                  {service.profiles?.avatar_url ? (
+                    <img src={service.profiles.avatar_url} alt={service.profiles.full_name} className="w-full h-full object-cover" />
+                  ) : (
+                    service.profiles?.full_name?.charAt(0) || 'V'
+                  )}
+                </Link>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-slate-900">{service.profiles?.full_name || 'Vendeur Mystère'}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Link to={`/profil/${service.profiles?.slug || service.seller_id}`} className="text-lg font-bold text-slate-900 hover:text-frilya-600 transition-colors">
+                      {service.profiles?.full_name || 'Vendeur Mystère'}
+                    </Link>
+                    {service.profiles?.is_verified && (
+                      <div className="relative group cursor-pointer flex items-center">
+                        <img src={verifiedIcon} alt="Vérifié" className="w-5 h-5" />
+                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center">
+                          Compte vérifié. Frilya certifie que ce compte est authentique.
+                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-sm text-slate-500 mb-4">Membre depuis {new Date(service.profiles?.created_at).getFullYear()}</p>
                   <p className="text-slate-600 mb-4">
                     {service.profiles?.bio || "Ce vendeur n'a pas encore rédigé de description."}
