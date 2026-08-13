@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { sendBetaAcceptedEmail, sendBetaRejectedEmail } from '../../../lib/email';
-import { Loader2, Check, X, Mail, ShieldAlert, Trash2, MessageSquare, ExternalLink } from 'lucide-react';
+import { Loader2, Check, X, ShieldAlert, Trash2, MessageSquare, ExternalLink } from 'lucide-react';
 
 export default function BetaManagementView() {
   const [activeTab, setActiveTab] = useState<'requests' | 'testers' | 'feedbacks' | 'settings'>('requests');
