@@ -30,11 +30,15 @@ export default function UserTickets() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url')
+        .select('id, full_name, avatar_url, ticket_reply_identity')
         .eq('role', 'admin');
         
       if (!error && data) {
-        setAdmins(data);
+        // Ne pas afficher les admins qui utilisent l'identité générique "Support Frilya" ou dont le nom est "Support Frilya"
+        const visibleAdmins = data.filter(admin => 
+          admin.ticket_reply_identity !== 'support' && admin.full_name !== 'Support Frilya'
+        );
+        setAdmins(visibleAdmins);
       }
     } catch (err) {
       console.error(err);
