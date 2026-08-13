@@ -20,6 +20,7 @@ export default function ReportIssue() {
   
   // Dynamic Category States
   const [subData, setSubData] = useState<any>({});
+  const [userServices, setUserServices] = useState<any[]>([]);
 
   // Loading & Success
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,6 +33,17 @@ export default function ReportIssue() {
       if (session?.user) {
         setUser(session.user);
         setEmail(session.user.email || '');
+        
+        // Fetch services if user is logged in
+        const { data: services } = await supabase
+          .from('services')
+          .select('id, title')
+          .eq('seller_id', session.user.id)
+          .eq('status', 'active');
+          
+        if (services) {
+          setUserServices(services);
+        }
       }
     };
     checkUser();
@@ -261,6 +273,21 @@ export default function ReportIssue() {
           {/* 2. Champs spécifiques dynamiques */}
           {category === 'annonce' && (
             <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+              {userType === 'vendeur' && userServices.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Service concerné</label>
+                  <select 
+                    onChange={(e) => handleSubDataChange('service_id', e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  >
+                    <option value="">Sélectionnez un service...</option>
+                    {userServices.map(service => (
+                      <option key={service.id} value={service.id}>{service.title}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Type de problème</label>
                 <select 
