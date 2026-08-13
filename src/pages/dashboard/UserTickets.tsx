@@ -101,17 +101,39 @@ export default function UserTickets() {
 
   const fetchMessages = async (ticketId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: messagesData, error: messagesError } = await supabase
         .from('ticket_messages')
-        .select(`
-          *,
-          sender:profiles(full_name, avatar_url, role)
-        `)
+        .select('*')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setMessages(data || []);
+      if (messagesError) throw messagesError;
+
+      const senderIds = [...new Set(messagesData?.map(m => m.sender_id).filter(Boolean))];
+      
+      if (senderIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url, role')
+          .in('id', senderIds);
+          
+        if (!profilesError && profilesData) {
+          const profileMap = profilesData.reduce((acc: any, p: any) => {
+            acc[p.id] = p;
+            return acc;
+          }, {});
+          
+          const messagesWithProfiles = messagesData?.map(m => ({
+            ...m,
+            sender: m.sender_id ? profileMap[m.sender_id] : null
+          }));
+          
+          setMessages(messagesWithProfiles || []);
+          return;
+        }
+      }
+
+      setMessages(messagesData || []);
     } catch (err) {
       console.error('Erreur messages:', err);
     }
