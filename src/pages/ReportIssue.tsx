@@ -48,7 +48,19 @@ export default function ReportIssue() {
 
   const generateTicketNumber = () => {
     const randomDigits = Math.floor(100000 + Math.random() * 900000);
-    return `SNL-${randomDigits}`;
+    let prefix = 'SNL'; // Défaut (Signalement)
+    
+    switch (category) {
+      case 'renseignement': prefix = 'REQ'; break; // Requête/Question
+      case 'annonce': prefix = 'ANN'; break;
+      case 'user': prefix = 'USR'; break;
+      case 'security': prefix = 'SEC'; break;
+      case 'payment': prefix = 'PAY'; break;
+      case 'bug': prefix = 'BUG'; break;
+      default: prefix = 'SNL'; break;
+    }
+    
+    return `${prefix}-${randomDigits}`;
   };
 
   const uploadFiles = async () => {
@@ -109,16 +121,37 @@ export default function ReportIssue() {
     }
   };
 
+  const getSuccessContent = () => {
+    if (category === 'renseignement') {
+      return {
+        title: "Demande envoyée",
+        message: "Merci pour votre message. Notre équipe va l'étudier et vous répondre dans les plus brefs délais."
+      };
+    }
+    if (category === 'bug') {
+      return {
+        title: "Rapport de bug envoyé",
+        message: "Merci pour votre aide ! Notre équipe technique a bien reçu votre rapport et va l'analyser."
+      };
+    }
+    return {
+      title: "Signalement envoyé",
+      message: "Merci pour votre retour. Notre équipe a bien reçu votre signalement et va le traiter dans les plus brefs délais."
+    };
+  };
+
   if (successTicketId) {
+    const successContent = getSuccessContent();
+
     return (
       <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-sm border border-slate-200 text-center">
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Signalement envoyé</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">{successContent.title}</h2>
           <p className="text-slate-600 mb-6">
-            Merci pour votre retour. Notre équipe a bien reçu votre signalement et va le traiter dans les plus brefs délais.
+            {successContent.message}
           </p>
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-8">
             <p className="text-sm text-slate-500 mb-1">Votre numéro de suivi :</p>
