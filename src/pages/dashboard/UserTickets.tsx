@@ -376,7 +376,6 @@ export default function UserTickets() {
                       <div>
                         <p className="font-bold text-slate-900 flex items-center gap-2">
                           {senderName}
-                          {isAdmin && <span className="px-2 py-0.5 bg-frilya-100 text-frilya-700 rounded-full text-[10px] uppercase tracking-wider">Admin</span>}
                         </p>
                         <p className="text-xs text-slate-500">
                           {new Date(msg.created_at).toLocaleString('fr-FR', {
