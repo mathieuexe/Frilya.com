@@ -132,7 +132,9 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
           is_seller: editForm.is_seller,
           role: editForm.role,
           avatar_url: avatarUrl,
-          banner_url: bannerUrl
+          banner_url: bannerUrl,
+          is_beta: editForm.is_beta,
+          is_verified: editForm.is_verified
         })
         .eq('id', userId);
         
@@ -348,6 +350,45 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Bio</label>
                   <textarea value={editForm.bio || ''} onChange={e => setEditForm({...editForm, bio: e.target.value})} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-frilya-600" />
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="font-bold text-sm text-slate-900 mb-3 uppercase tracking-wider">Badges & Certifications</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={editForm.is_verified || false} 
+                      onChange={e => setEditForm({...editForm, is_verified: e.target.checked})}
+                      className="w-5 h-5 text-frilya-600 rounded border-slate-300 focus:ring-frilya-600"
+                    />
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm flex items-center gap-1">
+                        Compte Vérifié
+                        <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.9 14.7L6 12.6l1.5-1.5 2.6 2.6 6.4-6.4 1.5 1.5-7.9 7.9z"/>
+                        </svg>
+                      </div>
+                      <div className="text-xs text-slate-500">Affiche le badge bleu certifié</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={editForm.is_beta || false} 
+                      onChange={e => setEditForm({...editForm, is_beta: e.target.checked})}
+                      className="w-5 h-5 text-frilya-600 rounded border-slate-300 focus:ring-frilya-600"
+                    />
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm flex items-center gap-1">
+                        Bêta-testeur
+                        <div className="w-4 h-4 bg-frilya-900 text-white rounded-full flex items-center justify-center text-[8px] font-bold">β</div>
+                      </div>
+                      <div className="text-xs text-slate-500">Affiche le badge de participation à la Bêta</div>
+                    </div>
+                  </label>
                 </div>
               </div>
               
