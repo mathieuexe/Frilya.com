@@ -37,9 +37,10 @@ export default function ReportIssue() {
         // Fetch services if user is logged in
         const { data: services } = await supabase
           .from('services')
-          .select('id, title')
+          .select('id, title, price, cover_image, created_at')
           .eq('seller_id', session.user.id)
-          .eq('status', 'active');
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
           
         if (services) {
           setUserServices(services);
@@ -272,27 +273,56 @@ export default function ReportIssue() {
 
           {/* 2. Champs spécifiques dynamiques */}
           {category === 'annonce' && (
-            <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+            <div className="mb-8 space-y-6">
               {userType === 'vendeur' && userServices.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Service concerné</label>
-                  <select 
-                    onChange={(e) => handleSubDataChange('service_id', e.target.value)}
-                    className="w-full px-4 py-2 rounded-xl border border-slate-200"
-                  >
-                    <option value="">Sélectionnez un service...</option>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">Service concerné</label>
+                  <div className="space-y-3">
                     {userServices.map(service => (
-                      <option key={service.id} value={service.id}>{service.title}</option>
+                      <label 
+                        key={service.id} 
+                        className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          subData.service_id === service.id 
+                            ? 'border-frilya-600 bg-frilya-50/50' 
+                            : 'border-slate-200 hover:border-frilya-300'
+                        }`}
+                      >
+                        <input 
+                          type="radio" 
+                          name="service_id" 
+                          value={service.id}
+                          checked={subData.service_id === service.id}
+                          onChange={(e) => handleSubDataChange('service_id', e.target.value)}
+                          className="mt-1 w-4 h-4 text-frilya-600 border-slate-300 focus:ring-frilya-600"
+                        />
+                        <div className="flex-1 flex items-start gap-4">
+                          {service.cover_image ? (
+                            <img src={service.cover_image} alt={service.title} className="w-20 h-16 object-cover rounded-lg" />
+                          ) : (
+                            <div className="w-20 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
+                              <Store className="w-6 h-6 text-slate-400" />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-bold text-slate-900 line-clamp-1">{service.title}</h4>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+                              <span className="font-bold text-frilya-600">{service.price} €</span>
+                              <span>•</span>
+                              <span>{new Date(service.created_at).toLocaleDateString('fr-FR')}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
               )}
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Type de problème</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Type de problème</label>
                 <select 
                   onChange={(e) => handleSubDataChange('type', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
                 >
                   <option value="">Sélectionnez...</option>
                   <option value="inapproprie">Contenu inapproprié</option>
@@ -306,20 +336,20 @@ export default function ReportIssue() {
           )}
 
           {category === 'user' && (
-            <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+            <div className="mb-8 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Pseudo / ID de l'utilisateur concerné</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Pseudo / ID de l'utilisateur concerné</label>
                 <input 
                   type="text" 
                   onChange={(e) => handleSubDataChange('user_pseudo', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Nature du problème</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Nature du problème</label>
                 <select 
                   onChange={(e) => handleSubDataChange('nature', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
                 >
                   <option value="">Sélectionnez...</option>
                   <option value="arnaque">Arnaque suspectée</option>
@@ -334,7 +364,7 @@ export default function ReportIssue() {
                   type="checkbox" 
                   id="has_transaction"
                   onChange={(e) => handleSubDataChange('has_transaction', e.target.checked ? 'oui' : 'non')}
-                  className="w-4 h-4 text-frilya-600 rounded border-slate-300"
+                  className="w-5 h-5 text-frilya-600 rounded border-slate-300 focus:ring-frilya-600"
                 />
                 <label htmlFor="has_transaction" className="text-sm font-medium text-slate-700">J'ai eu une transaction avec cette personne</label>
               </div>
@@ -342,13 +372,13 @@ export default function ReportIssue() {
           )}
 
           {category === 'security' && (
-            <div className="mb-8 p-6 bg-red-50 rounded-2xl border border-red-100 space-y-4">
-              <p className="text-xs text-red-600 font-bold uppercase mb-2">Canal prioritaire de sécurité</p>
+            <div className="mb-8 space-y-6">
+              <p className="text-xs text-red-600 font-bold uppercase mb-2 bg-red-50 inline-block px-3 py-1 rounded-lg">Canal prioritaire de sécurité</p>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Type de faille</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Type de faille</label>
                 <select 
                   onChange={(e) => handleSubDataChange('type', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
                 >
                   <option value="">Sélectionnez...</option>
                   <option value="faille_tech">Faille technique</option>
@@ -358,10 +388,10 @@ export default function ReportIssue() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Niveau de gravité perçu</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Niveau de gravité perçu</label>
                 <select 
                   onChange={(e) => handleSubDataChange('severity', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
                 >
                   <option value="faible">Faible</option>
                   <option value="moyen">Moyen</option>
@@ -372,43 +402,43 @@ export default function ReportIssue() {
           )}
 
           {category === 'payment' && (
-            <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+            <div className="mb-8 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Référence de la transaction (si applicable)</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Référence de la transaction (si applicable)</label>
                 <input 
                   type="text" 
                   onChange={(e) => handleSubDataChange('transaction_ref', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Montant concerné (€)</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Montant concerné (€)</label>
                 <input 
                   type="number" 
                   onChange={(e) => handleSubDataChange('amount', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
                 />
               </div>
             </div>
           )}
 
           {category === 'bug' && (
-            <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+            <div className="mb-8 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Navigateur / Appareil utilisé</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Navigateur / Appareil utilisé</label>
                 <input 
                   type="text" 
                   placeholder="Ex: Chrome sur Windows 10, ou Safari sur iPhone"
                   onChange={(e) => handleSubDataChange('browser', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Étapes pour reproduire le bug</label>
+                <label className="block text-sm font-bold text-slate-900 mb-2">Étapes pour reproduire le bug</label>
                 <textarea 
                   rows={3}
                   onChange={(e) => handleSubDataChange('steps', e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-frilya-600 resize-none"
                 />
               </div>
             </div>
