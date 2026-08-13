@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { Loader2, ArrowLeft, CheckCircle2, X, Plus, Trash2, UploadCloud, Image as ImageIcon, Video } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, X, Plus, Trash2, UploadCloud, Image as ImageIcon, Video, AlertCircle } from 'lucide-react';
 import { CATEGORY_HIERARCHY } from '../../../lib/categories';
 
 type PackageType = {
@@ -59,11 +59,23 @@ export default function CreateService() {
     { num: 6, label: 'Publication' }
   ];
 
+  const [isBetaActive, setIsBetaActive] = useState(false);
+
   useEffect(() => {
     fetchInitialData();
   }, [id]);
 
   const fetchInitialData = async () => {
+    // Check Beta status
+    const { data: settingsData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'beta_mode_active')
+      .single();
+    if (settingsData?.value === 'true' || settingsData?.value === true) {
+      setIsBetaActive(true);
+    }
+
     try {
       // Fetch categories
       const { data: cats } = await supabase.from('categories').select('*').order('name');
@@ -460,6 +472,19 @@ export default function CreateService() {
 
   if (loading) {
     return <div className="py-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-frilya-600" /></div>;
+  }
+
+  if (isBetaActive) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 bg-amber-50 rounded-3xl border border-amber-200 p-8 text-center">
+        <AlertCircle className="w-12 h-12 text-amber-500 mb-4" />
+        <h2 className="text-xl font-bold text-amber-800 mb-2">Création / Édition désactivée</h2>
+        <p className="text-amber-700">En mode Bêta, il n'est pas possible de créer ou de modifier des annonces.</p>
+        <button onClick={() => navigate('/dashboard/vendeur')} className="mt-6 px-6 py-2 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-colors">
+          Retour au tableau de bord
+        </button>
+      </div>
+    );
   }
 
   const selectedCategoryName = categories.find(c => c.id.toString() === formData.category_id)?.name;

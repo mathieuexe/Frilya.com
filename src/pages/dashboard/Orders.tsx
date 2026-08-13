@@ -11,12 +11,23 @@ export default function Orders() {
   const [comment, setComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isBetaActive, setIsBetaActive] = useState(false);
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
   const fetchOrders = async () => {
+    // Check Beta status
+    const { data: settingsData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'beta_mode_active')
+      .single();
+    if (settingsData?.value === 'true' || settingsData?.value === true) {
+      setIsBetaActive(true);
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -141,6 +152,10 @@ export default function Orders() {
                           <div className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium flex items-center gap-2">
                             <Star className="w-4 h-4 text-amber-500 fill-current" /> Avis publié ({order.reviews[0].rating}/5)
                           </div>
+                        ) : isBetaActive ? (
+                          <button disabled className="px-4 py-2 bg-slate-100 text-slate-400 rounded-xl font-bold text-sm cursor-not-allowed flex items-center gap-2">
+                            <Star className="w-4 h-4" /> Avis désactivés en Bêta
+                          </button>
                         ) : (
                           <button 
                             onClick={() => setReviewingOrder(reviewingOrder === order.id ? null : order.id)}

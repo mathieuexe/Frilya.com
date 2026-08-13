@@ -13,12 +13,23 @@ export default function ServiceDetail() {
   const [averageRating, setAverageRating] = useState<number>(5);
   const [activePackage, setActivePackage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isBetaActive, setIsBetaActive] = useState(false);
 
   useEffect(() => {
     fetchService();
   }, [id]);
 
   const fetchService = async () => {
+    // Check Beta status
+    const { data: settingsData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'beta_mode_active')
+      .single();
+    if (settingsData?.value === 'true' || settingsData?.value === true) {
+      setIsBetaActive(true);
+    }
+
     try {
       // Check if id is a UUID
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
@@ -316,12 +327,18 @@ export default function ServiceDetail() {
                     </div>
                   </div>
 
-                  <Link 
-                    to={`/paiement/${service.id}?pkg=${activePackage.id || 'basic'}`}
-                    className="w-full flex justify-center items-center bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md"
-                  >
-                    Commander ({activePackage.price} €)
-                  </Link>
+                  {isBetaActive ? (
+                    <div className="w-full bg-slate-100 text-slate-500 text-center font-bold py-4 px-4 rounded-xl cursor-not-allowed">
+                      Commandes désactivées en mode Bêta
+                    </div>
+                  ) : (
+                    <Link 
+                      to={`/paiement/${service.id}?pkg=${activePackage.id || 'basic'}`}
+                      className="w-full flex justify-center items-center bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md"
+                    >
+                      Commander ({activePackage.price} €)
+                    </Link>
+                  )}
                 </>
               )}
               

@@ -14,12 +14,23 @@ export default function Checkout() {
   const [paying, setPaying] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [feePercentage, setFeePercentage] = useState<number>(20);
+  const [isBetaActive, setIsBetaActive] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, [id]);
 
   const fetchData = async () => {
+    // Check Beta status
+    const { data: settingsData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'beta_mode_active')
+      .single();
+    if (settingsData?.value === 'true' || settingsData?.value === true) {
+      setIsBetaActive(true);
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -71,6 +82,10 @@ export default function Checkout() {
   };
 
   const handlePayment = async () => {
+    if (isBetaActive) {
+      alert("Les commandes sont désactivées en mode Bêta.");
+      return;
+    }
     if (!service || !user) return;
     setPaying(true);
 
@@ -190,14 +205,23 @@ export default function Checkout() {
                 </div>
               </div>
 
-              <button
-                onClick={handlePayment}
-                disabled={paying}
-                className="w-full flex items-center justify-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-all shadow-md disabled:opacity-50"
-              >
-                {paying ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
-                Payer {prices.total.toFixed(2)} €
-              </button>
+              {isBetaActive ? (
+                <button
+                  disabled
+                  className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-500 font-bold py-4 px-4 rounded-xl cursor-not-allowed"
+                >
+                  Paiement désactivé en Bêta
+                </button>
+              ) : (
+                <button
+                  onClick={handlePayment}
+                  disabled={paying}
+                  className="w-full flex items-center justify-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white font-bold py-4 px-4 rounded-xl transition-all shadow-md disabled:opacity-50"
+                >
+                  {paying ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
+                  Payer {prices.total.toFixed(2)} €
+                </button>
+              )}
             </div>
           </div>
         </div>

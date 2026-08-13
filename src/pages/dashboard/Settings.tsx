@@ -35,12 +35,23 @@ export default function Settings() {
   const [bankAddress, setBankAddress] = useState('');
   const [ribFile, setRibFile] = useState<File | null>(null);
   const [validatingIban, setValidatingIban] = useState(false);
+  const [isBetaActive, setIsBetaActive] = useState(false);
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
   const fetchProfile = async () => {
+    // Check Beta status
+    const { data: settingsData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'beta_mode_active')
+      .single();
+    if (settingsData?.value === 'true' || settingsData?.value === true) {
+      setIsBetaActive(true);
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
@@ -60,6 +71,10 @@ export default function Settings() {
 
   const handleSavePersonalInfo = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isBetaActive) {
+      setPersonalInfoError("Les modifications sont désactivées en mode Bêta.");
+      return;
+    }
     setSavingPersonalInfo(true);
     setPersonalInfoError('');
     setPersonalInfoMessage('');
@@ -183,6 +198,10 @@ export default function Settings() {
 
   const handleSaveBank = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isBetaActive) {
+      setError("Les modifications sont désactivées en mode Bêta.");
+      return;
+    }
     setSaving(true);
     setError('');
     setMessage('');
@@ -233,6 +252,11 @@ export default function Settings() {
   };
 
   const handleCloseSellerAccount = async () => {
+    if (isBetaActive) {
+      alert("La fermeture de compte est désactivée en mode Bêta.");
+      return;
+    }
+
     if ((profile?.balance || 0) > 0) {
       alert(`Impossible de clôturer votre compte vendeur : vous avez un solde de ${profile.balance.toFixed(2)} €. Veuillez demander un retrait avant de procéder à la clôture.`);
       return;
@@ -286,6 +310,16 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-900">Paramètres du compte</h1>
+
+      {isBetaActive && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
+          <div>
+            <h3 className="font-bold">Mode Bêta Actif</h3>
+            <p className="text-sm">En mode Bêta, vos paramètres de compte sont en lecture seule. Les modifications sont temporairement désactivées.</p>
+          </div>
+        </div>
+      )}
       
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 max-w-2xl">
         <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
