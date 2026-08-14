@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 
 export default function ServicesList() {
   const [services, setServices] = useState<any[]>([]);
@@ -118,13 +118,31 @@ export default function ServicesList() {
                         service.status === 'active' ? 'bg-green-100 text-green-700' :
                         service.status === 'draft' ? 'bg-slate-100 text-slate-700' :
                         service.status === 'pending_moderation' ? 'bg-amber-100 text-amber-700' :
+                        service.status === 'hidden' ? 'bg-orange-100 text-orange-700' :
+                        service.status === 'paused' ? 'bg-amber-100 text-amber-700' :
+                        service.status === 'banned' ? 'bg-red-100 text-red-700' :
                         'bg-blue-100 text-blue-700'
                       }`}>
                         {service.status === 'active' ? 'Publié' :
                          service.status === 'draft' ? 'Brouillon' :
                          service.status === 'pending_moderation' ? 'En modération' :
+                         service.status === 'hidden' ? 'Masqué par la modération' :
+                         service.status === 'paused' ? 'En pause' :
+                         service.status === 'banned' ? 'Suspendu' :
                          service.status}
                       </span>
+                      {service.status === 'hidden' && service.moderation_reason && (
+                        <div className="mt-2 flex items-start gap-2 max-w-xs bg-orange-50 border border-orange-200 rounded-xl p-2.5">
+                          <EyeOff className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
+                          <div className="text-[11px] text-orange-900">
+                            <p className="font-bold">Motif de la modération</p>
+                            <p className="mt-0.5">{service.moderation_reason}</p>
+                            <p className="mt-1 text-orange-700">
+                              Corrigez votre annonce puis répondez au message de Support Frilya pour demander une nouvelle vérification.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td className="p-4 font-medium text-slate-900">
                       {service.price_basic ? `${service.price_basic} €` : '-'}

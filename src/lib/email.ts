@@ -263,6 +263,79 @@ export const sendDisputeOpenedEmail = async (email: string, pseudo: string, serv
   return sendEmail(email, 'Information : Litige ouvert sur une commande', html);
 };
 
+export const sendServiceHiddenEmail = async (email: string, pseudo: string, serviceTitle: string, reason: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #92400e; margin-top: 0;">Votre annonce a été masquée par la modération</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>Après vérification, notre équipe de modération a masqué votre annonce <strong>${serviceTitle}</strong>. Elle n'est donc plus visible par les acheteurs sur la plateforme.</p>
+        <div style="background-color: white; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+          <p style="margin: 0; color: #475569;"><strong>Motif :</strong> ${reason}</p>
+        </div>
+        <p>Vous pouvez modifier votre annonce depuis votre espace vendeur pour la mettre en conformité, puis répondre à ce message pour demander une nouvelle vérification.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/tableau-de-bord/vendeur/services" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Gérer mes annonces</a>
+        </div>
+      </div>
+      <p>Cordialement,<br>L'équipe Support Frilya</p>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, `Votre annonce « ${serviceTitle} » a été masquée`, html);
+};
+
+export const sendServiceRestoredEmail = async (email: string, pseudo: string, serviceTitle: string, comment?: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #166534; margin-top: 0;">Votre annonce est de nouveau en ligne ! 🎉</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>Bonne nouvelle : votre annonce <strong>${serviceTitle}</strong> a été réactivée par notre équipe de modération. Elle est à nouveau visible par les acheteurs.</p>
+        ${comment ? `<div style="background-color: white; padding: 15px; border-left: 4px solid #22c55e; margin: 20px 0;"><p style="margin: 0; color: #475569;">${comment}</p></div>` : ''}
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/tableau-de-bord/vendeur/services" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Voir mes annonces</a>
+        </div>
+      </div>
+      <p>Cordialement,<br>L'équipe Support Frilya</p>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, `Votre annonce « ${serviceTitle} » est de nouveau en ligne`, html);
+};
+
+export const sendServiceDeletedEmail = async (email: string, pseudo: string, serviceTitle: string, reason: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #991b1b; margin-top: 0;">Votre annonce a été supprimée</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>Notre équipe de modération a supprimé votre annonce <strong>${serviceTitle}</strong> de la plateforme.</p>
+        ${reason ? `<div style="background-color: white; padding: 15px; border-left: 4px solid #ef4444; margin: 20px 0;"><p style="margin: 0; color: #475569;"><strong>Motif :</strong> ${reason}</p></div>` : ''}
+        <p>Si vous pensez qu'il s'agit d'une erreur, répondez à ce message : notre équipe support réexaminera votre situation.</p>
+      </div>
+      <p>Cordialement,<br>L'équipe Support Frilya</p>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, `Votre annonce « ${serviceTitle} » a été supprimée`, html);
+};
+
 export const sendDisputeClosedEmail = async (email: string, pseudo: string, serviceTitle: string) => {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
