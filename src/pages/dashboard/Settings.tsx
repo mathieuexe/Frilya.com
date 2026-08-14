@@ -171,18 +171,24 @@ export default function Settings() {
     setValidatingIban(true);
     setError('');
     try {
-      const apiKey = import.meta.env.VITE_IBANAPI_KEY;
-      if (!apiKey) {
-        throw new Error("Clé API ibanapi manquante (VITE_IBANAPI_KEY)");
-      }
+      const apiKey = 'MJAkRnw2lK8ZzVc2GsfWo0ZbtDmiB0MpTavKLd39';
       
-      const response = await fetch(`https://api.ibanapi.com/v1/validate/${formattedIban}?api_key=${apiKey}`);
+      const response = await fetch(`https://api.api-ninjas.com/v1/iban?iban=${formattedIban}`, {
+        headers: {
+          'X-Api-Key': apiKey
+        }
+      });
       const data = await response.json();
       
-      if (data.result === 200 && data.validations.some((v: any) => v.message.includes('Valid IBAN Checksum'))) {
-        setBankName(data.data?.bank?.bank_name || '');
-        setBankAddress(`${data.data?.bank?.address || ''}, ${data.data?.bank?.city || ''}`.trim());
-        if (!bic) setBic(data.data?.bank?.bic || '');
+      if (data && data.iban) {
+        const bName = data.bank_name === 'This field is for premium subscribers only.' ? '' : data.bank_name;
+        const bAddress = data.bank_address === 'This field is for premium subscribers only.' ? '' : data.bank_address;
+        const bBic = data.swift_code === 'This field is for premium subscribers only.' ? '' : data.swift_code;
+        
+        if (bName) setBankName(bName);
+        if (bAddress) setBankAddress(bAddress);
+        if (!bic && bBic) setBic(bBic);
+        
         // On met à jour le state de l'IBAN avec la version formatée (sans espaces)
         setIban(formattedIban);
       } else {

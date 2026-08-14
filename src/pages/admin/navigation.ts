@@ -43,7 +43,8 @@ export const ADMIN_NAV: AdminNavCategory[] = [
     icon: Users,
     items: [
       { id: 'buyers', name: 'Acheteurs', icon: Users, description: 'Comptes acheteurs' },
-      { id: 'sellers', name: 'Vendeurs', icon: Store, description: 'Comptes vendeurs' }
+      { id: 'sellers', name: 'Vendeurs', icon: Store, description: 'Comptes vendeurs' },
+      { id: 'ibans', name: 'Vérification IBAN', icon: FileText, badge: 'ibans', description: 'Validation des RIB/IBAN' }
     ]
   },
   {

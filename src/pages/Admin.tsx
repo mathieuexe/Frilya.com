@@ -24,6 +24,7 @@ import SettingsView from './admin/views/SettingsView';
 import BetaManagementView from './admin/views/BetaManagementView';
 import SupportInboxView from './admin/views/SupportInboxView';
 import AnalyticsView from './admin/views/AnalyticsView';
+import IbansView from './admin/views/IbansView';
 
 // FAQ & Support Views
 import TicketsView from './admin/views/tickets/TicketsView';
@@ -445,6 +446,7 @@ function AdminShell({
               <Route path="/stats" element={<AnalyticsView />} />
               <Route path="/buyers" element={<UsersView type="acheteur" />} />
               <Route path="/sellers" element={<UsersView type="vendeur" />} />
+              <Route path="/ibans" element={<IbansView />} />
               <Route path="/services" element={<ServicesView />} />
               <Route path="/messages" element={<MessagesView />} />
               <Route path="/orders" element={<OrdersView />} />

@@ -11,6 +11,8 @@ export type AdminCounts = {
   support: number;
   /** Litiges ouverts */
   disputes: number;
+  /** IBAN en attente de validation */
+  ibans: number;
 };
 
 type AdminNotificationsValue = {
@@ -20,7 +22,7 @@ type AdminNotificationsValue = {
   refresh: () => Promise<void>;
 };
 
-const EMPTY_COUNTS: AdminCounts = { tickets: 0, beta: 0, support: 0, disputes: 0 };
+const EMPTY_COUNTS: AdminCounts = { tickets: 0, beta: 0, support: 0, disputes: 0, ibans: 0 };
 
 const AdminNotificationsContext = createContext<AdminNotificationsValue>({
   counts: EMPTY_COUNTS,
@@ -39,7 +41,7 @@ export function AdminNotificationsProvider({ children }: { children: React.React
 
   const refresh = useCallback(async () => {
     try {
-      const [ticketsRes, betaRes, supportRes, disputesRes] = await Promise.all([
+      const [ticketsRes, betaRes, supportRes, disputesRes, ibansRes] = await Promise.all([
         supabase
           .from('report_tickets')
           .select('id', { count: 'exact', head: true })
@@ -56,14 +58,19 @@ export function AdminNotificationsProvider({ children }: { children: React.React
         supabase
           .from('disputes')
           .select('id', { count: 'exact', head: true })
-          .in('status', ['open', 'reviewing'])
+          .in('status', ['open', 'reviewing']),
+        supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('rib_status', 'pending')
       ]);
 
       setCounts({
         tickets: ticketsRes.count || 0,
         beta: betaRes.count || 0,
         support: supportRes.count || 0,
-        disputes: disputesRes.count || 0
+        disputes: disputesRes.count || 0,
+        ibans: ibansRes.count || 0
       });
     } catch (err) {
       console.error('Erreur lors du calcul des notifications admin :', err);
@@ -82,6 +89,7 @@ export function AdminNotificationsProvider({ children }: { children: React.React
       .on('postgres_changes', { event: '*', schema: 'public', table: 'report_tickets' }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'beta_applications' }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'disputes' }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: 'rib_status=eq.pending' }, () => refresh())
       .subscribe();
 
     // Filet de sécurité si le temps réel n'est pas activé sur une table
@@ -95,7 +103,7 @@ export function AdminNotificationsProvider({ children }: { children: React.React
 
   const value = useMemo(() => ({
     counts,
-    total: counts.tickets + counts.beta + counts.support + counts.disputes,
+    total: counts.tickets + counts.beta + counts.support + counts.disputes + counts.ibans,
     loading,
     refresh
   }), [counts, loading, refresh]);

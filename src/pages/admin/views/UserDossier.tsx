@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus } from 'lucide-react';
+import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, ExternalLink } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 
 interface UserDossierProps {
@@ -464,6 +464,51 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                       <div className="text-xs text-slate-500">Affiche le badge de participation à la Bêta</div>
                     </div>
                   </label>
+                </div>
+              </div>
+
+              {/* Informations Bancaires */}
+              <div className="mt-6 border-t border-slate-100 pt-6">
+                <h4 className="font-bold text-sm text-slate-900 mb-3 uppercase tracking-wider">Informations Bancaires</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nom du bénéficiaire</label>
+                    <input type="text" value={editForm.beneficiary_name || ''} readOnly className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Banque</label>
+                    <input type="text" value={editForm.bank_name || ''} readOnly className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none cursor-not-allowed" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">IBAN</label>
+                    <input type="text" value={editForm.iban || ''} readOnly className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-700 font-mono outline-none cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">BIC</label>
+                    <input type="text" value={editForm.bic || ''} readOnly className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-700 font-mono outline-none cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Statut RIB</label>
+                    <div className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium">
+                      {editForm.rib_status === 'approved' ? (
+                        <span className="text-green-600">Validé</span>
+                      ) : editForm.rib_status === 'pending' ? (
+                        <span className="text-amber-600">En attente</span>
+                      ) : editForm.rib_status === 'rejected' ? (
+                        <span className="text-red-600">Refusé</span>
+                      ) : (
+                        <span className="text-slate-500">Aucun</span>
+                      )}
+                    </div>
+                  </div>
+                  {editForm.rib_file_url && (
+                    <div className="md:col-span-2 mt-2">
+                      <a href={editForm.rib_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-frilya-600 hover:text-frilya-700 font-medium">
+                        <ExternalLink className="w-4 h-4" />
+                        Voir le document RIB en pièce jointe
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
               
