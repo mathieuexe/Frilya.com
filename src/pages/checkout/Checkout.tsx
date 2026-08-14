@@ -171,7 +171,7 @@ export default function Checkout() {
 
       // Paiement par le solde : déjà encaissé par le serveur, rien à confirmer
       trackOrderCreated(service, total, platformFee);
-      navigate(`/commande/confirmation?order_id=${payload.order_id}`);
+      navigate('/tableau-de-bord/commandes');
     } catch (err: any) {
       console.error('Erreur paiement:', err);
       setError(err.message || "Erreur lors de l'initialisation du paiement.");

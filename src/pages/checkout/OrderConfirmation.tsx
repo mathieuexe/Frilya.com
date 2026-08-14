@@ -55,6 +55,14 @@ export default function OrderConfirmation() {
       };
 
       let orderData = await loadOrder();
+      
+      if (!orderData) {
+        setStatus('error');
+        setMessage('Commande introuvable.');
+        setLoading(false);
+        return;
+      }
+
       let payload: any = {};
       let verifyOk = true;
 
@@ -76,8 +84,9 @@ export default function OrderConfirmation() {
 
       setOrder(orderData);
 
+      const isBalance = orderData?.payment_method === 'balance';
       const paid = !!orderData && orderData.status !== 'pending';
-      setStatus(paid ? 'paid' : verifyOk ? 'pending' : 'error');
+      setStatus(paid ? 'paid' : (verifyOk && !isBalance) ? 'pending' : 'error');
 
       if (!paid) {
         setMessage(
