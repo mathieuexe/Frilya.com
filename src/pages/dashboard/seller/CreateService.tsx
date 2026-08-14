@@ -13,10 +13,13 @@ type PackageType = {
   revisions_included: number;
 };
 
+/**
+ * Un service ne peut avoir qu'un seul plan tarifaire (package_type = 'basic').
+ * "legacyIds" contient les éventuels forfaits Standard / Premium créés avant
+ * cette règle : ils sont supprimés à la première sauvegarde.
+ */
 type PackagesState = {
   basic: PackageType;
-  standard: PackageType;
-  premium: PackageType;
 };
 
 export default function CreateService() {
@@ -38,27 +41,12 @@ export default function CreateService() {
     description: '',
   });
 
-  const [pricingMode, setPricingMode] = useState<'single' | 'packages'>('single');
-
   const [packages, setPackages] = useState<PackagesState>({
-    basic: { id: null, name: 'Tarif unique', description: '', price: 5, delivery_days: 1, revisions_included: 1 },
-    standard: { id: null, name: 'Standard', description: '', price: 15, delivery_days: 3, revisions_included: 2 },
-    premium: { id: null, name: 'Premium', description: '', price: 30, delivery_days: 5, revisions_included: 3 }
+    basic: { id: null, name: 'Tarif unique', description: '', price: 5, delivery_days: 1, revisions_included: 1 }
   });
 
-  const switchPricingMode = (mode: 'single' | 'packages') => {
-    setPricingMode(mode);
-    // Adapter le libellé de la formule de base au mode choisi
-    setPackages(prev => {
-      if (mode === 'single' && (!prev.basic.name || prev.basic.name === 'Basique')) {
-        return { ...prev, basic: { ...prev.basic, name: 'Tarif unique' } };
-      }
-      if (mode === 'packages' && (!prev.basic.name || prev.basic.name === 'Tarif unique')) {
-        return { ...prev, basic: { ...prev.basic, name: 'Basique' } };
-      }
-      return prev;
-    });
-  };
+  /** Forfaits multiples hérités d'anciens services : supprimés à la sauvegarde */
+  const [legacyPackageIds, setLegacyPackageIds] = useState<string[]>([]);
 
   const [extras, setExtras] = useState<any[]>([]);
   const [faqs, setFaqs] = useState<any[]>([]);
@@ -110,28 +98,22 @@ export default function CreateService() {
           description: s.description || '',
         });
 
-        // Fetch packages
+        // Fetch packages : on ne conserve que le plan tarifaire unique ('basic'),
+        // le premier forfait enregistré servant de repli pour les anciens services.
         const { data: p } = await supabase.from('service_packages').select('*').eq('service_id', id);
         if (p && p.length > 0) {
-          const newPackages = { ...packages };
-          let savedCount = 0;
-          p.forEach(pkg => {
-            if (pkg.package_type === 'basic' || pkg.package_type === 'standard' || pkg.package_type === 'premium') {
-              const type = pkg.package_type as keyof PackagesState;
-              savedCount++;
-              newPackages[type] = {
-                id: pkg.id,
-                name: pkg.name || '',
-                description: pkg.description || '',
-                price: pkg.price || 5,
-                delivery_days: pkg.delivery_days || 1,
-                revisions_included: pkg.revisions_included || 0
-              };
+          const main = p.find(pkg => pkg.package_type === 'basic') || p[0];
+          setPackages({
+            basic: {
+              id: main.id,
+              name: main.name || 'Tarif unique',
+              description: main.description || '',
+              price: main.price || 5,
+              delivery_days: main.delivery_days || 1,
+              revisions_included: main.revisions_included || 0
             }
           });
-          setPackages(newPackages);
-          // Un seul forfait enregistré = tarif unique, sinon formules multiples
-          setPricingMode(savedCount > 1 ? 'packages' : 'single');
+          setLegacyPackageIds(p.filter(pkg => pkg.id !== main.id).map(pkg => pkg.id));
         }
 
         // Fetch extras
@@ -222,45 +204,45 @@ export default function CreateService() {
         window.history.replaceState(null, '', `/tableau-de-bord/vendeur/services/edition/${currentServiceId}`);
       }
 
-      // Sauvegarder les Packages (uniquement si l'étape 2 a été atteinte ou si on a un ID)
+      // Sauvegarder le plan tarifaire unique (uniquement si l'étape 2 a été atteinte ou si on a un ID)
       if (currentStep >= 2 || currentServiceId) {
-        const packagesToSave = pricingMode === 'single'
-          ? [{ ...packages.basic, service_id: currentServiceId, package_type: 'basic' }]
-          : [
-              { ...packages.basic, service_id: currentServiceId, package_type: 'basic' },
-              { ...packages.standard, service_id: currentServiceId, package_type: 'standard' },
-              { ...packages.premium, service_id: currentServiceId, package_type: 'premium' }
-            ];
-
-        // En mode tarif unique, on supprime les formules Standard/Premium déjà enregistrées
-        if (pricingMode === 'single') {
-          const idsToDelete = [packages.standard.id, packages.premium.id].filter(Boolean);
-          if (idsToDelete.length > 0) {
-            await supabase.from('service_packages').delete().in('id', idsToDelete as string[]);
-            setPackages(prev => ({
-              ...prev,
-              standard: { ...prev.standard, id: null },
-              premium: { ...prev.premium, id: null }
-            }));
-          }
+        // Nettoyage des forfaits multiples éventuellement créés avant la règle du tarif unique
+        if (legacyPackageIds.length > 0) {
+          const { error } = await supabase.from('service_packages').delete().in('id', legacyPackageIds);
+          if (error) console.error('Erreur suppression des anciens forfaits :', error);
+          else setLegacyPackageIds([]);
         }
 
-        for (const pkg of packagesToSave) {
-          // On n'envoie jamais "id" dans le payload : NULL sur la clé primaire fait échouer l'insertion
-          const { id: pkgId, ...pkgPayload } = pkg;
+        // On n'envoie jamais "id" dans le payload : NULL sur la clé primaire fait échouer l'insertion
+        const { id: pkgId, ...pkgPayload } = {
+          ...packages.basic,
+          service_id: currentServiceId,
+          package_type: 'basic'
+        };
 
-          if (pkgId) {
-            const { error } = await supabase.from('service_packages').update(pkgPayload).eq('id', pkgId);
-            if (error) console.error("Erreur MAJ forfait :", error);
-          } else {
-            const { data, error } = await supabase.from('service_packages').insert([pkgPayload]).select().single();
-            if (error) console.error("Erreur création forfait :", error);
-            if (data) {
-              setPackages(prev => ({
-                ...prev,
-                [pkg.package_type]: { ...prev[pkg.package_type as keyof typeof packages], id: data.id }
-              }));
-            }
+        // Le wizard enregistre à chaque étape : on réutilise la ligne existante
+        // plutôt que d'en créer une seconde (un service = un seul tarif).
+        let targetPackageId = pkgId;
+        if (!targetPackageId && currentServiceId) {
+          const { data: existing } = await supabase
+            .from('service_packages')
+            .select('id')
+            .eq('service_id', currentServiceId)
+            .eq('package_type', 'basic')
+            .limit(1)
+            .maybeSingle();
+          if (existing) targetPackageId = existing.id;
+        }
+
+        if (targetPackageId) {
+          const { error } = await supabase.from('service_packages').update(pkgPayload).eq('id', targetPackageId);
+          if (error) console.error('Erreur MAJ du tarif :', error);
+          else setPackages(prev => ({ basic: { ...prev.basic, id: targetPackageId } }));
+        } else {
+          const { data, error } = await supabase.from('service_packages').insert([pkgPayload]).select().single();
+          if (error) console.error('Erreur création du tarif :', error);
+          if (data) {
+            setPackages(prev => ({ basic: { ...prev.basic, id: data.id } }));
           }
         }
 
@@ -527,10 +509,6 @@ export default function CreateService() {
     );
   }
 
-  const editablePackageTypes: (keyof PackagesState)[] = pricingMode === 'single'
-    ? ['basic']
-    : ['basic', 'standard', 'premium'];
-
   const selectedCategoryName = categories.find(c => c.id.toString() === formData.category_id)?.name;
   const availableSubCategories = selectedCategoryName ? CATEGORY_HIERARCHY[selectedCategoryName] || [] : [];
 
@@ -660,97 +638,81 @@ export default function CreateService() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-1">Tarification</h2>
-              <p className="text-sm text-slate-500 mb-6">Choisissez un tarif unique ou proposez 3 formules pour s'adapter à tous les budgets.</p>
+              <h2 className="text-xl font-bold text-slate-900 mb-1">Tarif de la prestation</h2>
+              <p className="text-sm text-slate-500 mb-6">
+                Un service ne comporte qu'un seul tarif. Pour proposer une prestation plus complète
+                à un autre prix, créez une seconde annonce ou ajoutez des options payantes ci-dessous.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              {([
-                { mode: 'single' as const, title: 'Tarif unique', desc: 'Un seul prix pour votre prestation.' },
-                { mode: 'packages' as const, title: '3 forfaits', desc: 'Basique, Standard et Premium.' }
-              ]).map(option => (
-                <button
-                  key={option.mode}
-                  type="button"
-                  onClick={() => switchPricingMode(option.mode)}
-                  className={`text-left border-2 rounded-2xl p-4 transition-colors ${pricingMode === option.mode ? 'border-frilya-600 bg-frilya-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${pricingMode === option.mode ? 'border-frilya-600' : 'border-slate-300'}`}>
-                      {pricingMode === option.mode && <div className="w-2 h-2 rounded-full bg-frilya-600" />}
-                    </div>
-                    <span className="font-bold text-slate-900">{option.title}</span>
+            <div className="max-w-md">
+              <div className="border border-slate-200 bg-slate-50 rounded-2xl p-5">
+                <h3 className="font-bold text-lg mb-4 text-slate-900 border-b border-slate-200 pb-3">
+                  Votre tarif unique
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Nom de la prestation</label>
+                    <input
+                      type="text"
+                      value={packages.basic.name}
+                      onChange={(e) => setPackages({ basic: { ...packages.basic, name: e.target.value } })}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600"
+                      placeholder="Ex: Tarif unique"
+                    />
                   </div>
-                  <p className="text-xs text-slate-500 pl-6">{option.desc}</p>
-                </button>
-              ))}
-            </div>
-
-            <div className={pricingMode === 'single' ? 'max-w-md' : 'grid grid-cols-1 lg:grid-cols-3 gap-6'}>
-              {editablePackageTypes.map((type) => (
-                <div key={type} className={`border rounded-2xl p-5 ${type === 'premium' ? 'border-frilya-200 bg-frilya-50/30' : 'border-slate-200 bg-slate-50'}`}>
-                  <h3 className="font-bold text-lg capitalize mb-4 text-slate-900 border-b border-slate-200 pb-3">
-                    {pricingMode === 'single' ? 'Votre tarif' : type === 'basic' ? 'Basique' : type === 'standard' ? 'Standard' : 'Premium'}
-                  </h3>
-
-                  <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Description courte</label>
+                    <textarea
+                      value={packages.basic.description}
+                      onChange={(e) => setPackages({ basic: { ...packages.basic, description: e.target.value } })}
+                      rows={3}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600 resize-none"
+                      placeholder="Que contient votre prestation ?"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        {pricingMode === 'single' ? 'Nom de la prestation' : 'Nom de la formule'}
-                      </label>
-                      <input
-                        type="text"
-                        value={packages[type].name}
-                        onChange={(e) => setPackages({...packages, [type]: {...packages[type], name: e.target.value}})}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600"
-                        placeholder={pricingMode === 'single' ? 'Ex: Tarif unique' : `Ex: Pack ${type}`}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Description courte</label>
-                      <textarea
-                        value={packages[type].description}
-                        onChange={(e) => setPackages({...packages, [type]: {...packages[type], description: e.target.value}})}
-                        rows={3}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600 resize-none"
-                        placeholder="Que contient cette formule ?"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Prix (€)</label>
-                        <input
-                          type="number"
-                          min="5"
-                          value={packages[type].price}
-                          onChange={(e) => setPackages({...packages, [type]: {...packages[type], price: Number(e.target.value)}})}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Délai (Jours)</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={packages[type].delivery_days}
-                          onChange={(e) => setPackages({...packages, [type]: {...packages[type], delivery_days: Number(e.target.value)}})}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Révisions incluses</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Prix (€)</label>
                       <input
                         type="number"
-                        min="0"
-                        value={packages[type].revisions_included}
-                        onChange={(e) => setPackages({...packages, [type]: {...packages[type], revisions_included: Number(e.target.value)}})}
+                        min="5"
+                        value={packages.basic.price}
+                        onChange={(e) => setPackages({ basic: { ...packages.basic, price: Number(e.target.value) } })}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Délai (Jours)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={packages.basic.delivery_days}
+                        onChange={(e) => setPackages({ basic: { ...packages.basic, delivery_days: Number(e.target.value) } })}
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600"
                       />
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Révisions incluses</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={packages.basic.revisions_included}
+                      onChange={(e) => setPackages({ basic: { ...packages.basic, revisions_included: Number(e.target.value) } })}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600"
+                    />
+                  </div>
                 </div>
-              ))}
+              </div>
+
+              {legacyPackageIds.length > 0 && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4">
+                  Cette annonce contient {legacyPackageIds.length} ancien(s) forfait(s) supplémentaire(s).
+                  Ils seront supprimés à l'enregistrement : seul le tarif ci-dessus sera conservé.
+                </p>
+              )}
             </div>
           </div>
 
@@ -1090,8 +1052,7 @@ export default function CreateService() {
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
                   <span>
-                    <strong>{pricingMode === 'single' ? 'Tarif unique :' : 'Prix de départ :'}</strong> {packages.basic.price} €
-                    {pricingMode === 'packages' && ` (3 forfaits : ${packages.basic.price} € / ${packages.standard.price} € / ${packages.premium.price} €)`}
+                    <strong>Tarif unique :</strong> {packages.basic.price} € · Livraison en {packages.basic.delivery_days} jour(s)
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
