@@ -15,6 +15,7 @@ export type InvoiceData = {
   sellerName: string;
   buyerName: string;
   buyerEmail?: string;
+  isDuplicate?: boolean;
 };
 
 const NAVY = { r: 1, g: 17, b: 66 };       // frilya-900
@@ -38,12 +39,24 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function buildInvoice(data: InvoiceData, logoDataUrl?: string): jsPDF {
-  const { order, serviceTitle, sellerName, buyerName, buyerEmail } = data;
+  const { order, serviceTitle, sellerName, buyerName, buyerEmail, isDuplicate } = data;
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageWidth = 210;
   const margin = 16;
   const contentWidth = pageWidth - margin * 2;
+
+  if (isDuplicate) {
+    // Filigrane "DUPLICATA" en diagonale au centre
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.2 }));
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(80);
+    doc.setFont('helvetica', 'bold');
+    // Rotate text by 45 degrees
+    doc.text('DUPLICATA', pageWidth / 2, 140, { align: 'center', angle: 45 });
+    doc.restoreGraphicsState();
+  }
 
   const total = Number(order?.amount || 0);
   const fee = Number(order?.platform_fee || 0);
@@ -278,7 +291,21 @@ export async function downloadInvoice(data: InvoiceData) {
   }
 
   const doc = buildInvoice(data, logoDataUrl);
-  doc.save(`${invoiceNumber(data.order)}.pdf`);
+  doc.save(`${invoiceNumber(data.order)}${data.isDuplicate ? '_DUPLICATA' : ''}.pdf`);
+}
+
+/** Génère le PDF en base64 pour envoi par e-mail */
+export async function generateInvoiceBase64(data: InvoiceData): Promise<string> {
+  let logoDataUrl: string | undefined;
+  try {
+    const { default: logoUrl } = await import('../assets/logo.png');
+    logoDataUrl = await toDataUrl(logoUrl as string);
+  } catch (err) {
+    console.warn('Logo indisponible pour la facture :', err);
+  }
+
+  const doc = buildInvoice(data, logoDataUrl);
+  return doc.output('datauristring').split(',')[1];
 }
 
 function toDataUrl(url: string): Promise<string> {

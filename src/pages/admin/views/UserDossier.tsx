@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, ExternalLink } from 'lucide-react';
+import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, ExternalLink, Download, Mail } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
+import { generateInvoiceBase64, downloadInvoice } from '../../../lib/invoice';
+import type { InvoiceData } from '../../../lib/invoice';
 
 interface UserDossierProps {
   userId: string;
@@ -24,6 +26,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [logs, setLogs] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [userServices, setUserServices] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [sendingDuplicateId, setSendingDuplicateId] = useState<string | null>(null);
 
   // Reviews forms
   const [showAddReview, setShowAddReview] = useState(false);
@@ -38,8 +42,23 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [impersonating, setImpersonating] = useState(false);
 
   useEffect(() => {
-    fetchUserData();
+    if (userId) {
+      fetchUserData();
+    }
   }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserData();
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (activeTab === 'orders' || activeTab === 'sales') {
+      setLoadingOrders(true);
+      setTimeout(() => setLoadingOrders(false), 500); // Simulate loading since we fetched it all initially
+    }
+  }, [activeTab]);
 
   const fetchUserData = async () => {
     setLoading(true);
@@ -62,8 +81,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         // { data: ticketsData },
         { data: logsData }
       ] = await Promise.all([
-        supabase.from('orders').select('*, service:services(title)').eq('buyer_id', userId).order('created_at', { ascending: false }),
-        supabase.from('orders').select('*, service:services(title)').eq('seller_id', userId).order('created_at', { ascending: false }),
+        supabase.from('orders').select('*, service:services(title), buyer:profiles!orders_buyer_id_fkey(full_name, email), seller:profiles!orders_seller_id_fkey(full_name, email)').eq('buyer_id', userId).order('created_at', { ascending: false }),
+        supabase.from('orders').select('*, service:services(title), buyer:profiles!orders_buyer_id_fkey(full_name, email), seller:profiles!orders_seller_id_fkey(full_name, email)').eq('seller_id', userId).order('created_at', { ascending: false }),
         supabase.from('messages').select('*').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order('created_at', { ascending: false }),
         supabase.from('reviews').select('*, buyer:profiles!reviews_buyer_id_fkey(id, full_name, avatar_url), service:services(id, title)').or(`seller_id.eq.${userId},buyer_id.eq.${userId}`).order('created_at', { ascending: false }),
         supabase.from('services').select('id, title').eq('seller_id', userId).eq('status', 'active'),
@@ -71,6 +90,9 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         // supabase.from('tickets').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
         supabase.from('connection_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       ]);
+
+      if (ordersData) setOrders(ordersData);
+      if (salesData) setSales(salesData);
 
       let finalMessages = [];
       if (messagesRawData && messagesRawData.length > 0) {
@@ -271,6 +293,87 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       console.error("Erreur suppression avis:", err);
       alert("Erreur lors de la suppression de l'avis.");
     }
+  };
+
+  const handleDownloadDuplicate = async (order: any) => {
+    try {
+      const data: InvoiceData = {
+        order,
+        serviceTitle: order.service?.title || 'Service',
+        sellerName: order.seller?.full_name || 'Vendeur',
+        buyerName: order.buyer?.full_name || 'Acheteur',
+        buyerEmail: order.buyer?.email,
+        isDuplicate: true
+      };
+      await downloadInvoice(data);
+    } catch (err) {
+      console.error('Erreur download duplicata:', err);
+      alert('Erreur lors de la génération du duplicata.');
+    }
+  };
+
+  const handleSendDuplicateEmail = async (order: any) => {
+    if (!order.buyer?.email) {
+      alert("L'acheteur n'a pas d'adresse e-mail renseignée.");
+      return;
+    }
+    setSendingDuplicateId(order.id);
+    try {
+      const data: InvoiceData = {
+        order,
+        serviceTitle: order.service?.title || 'Service',
+        sellerName: order.seller?.full_name || 'Vendeur',
+        buyerName: order.buyer?.full_name || 'Acheteur',
+        buyerEmail: order.buyer?.email,
+        isDuplicate: true
+      };
+      
+      const base64Pdf = await generateInvoiceBase64(data);
+      const invoiceRef = `FAC-${new Date(order.created_at).getFullYear()}${String(new Date(order.created_at).getMonth() + 1).padStart(2, '0')}${String(new Date(order.created_at).getDate()).padStart(2, '0')}-${order.id.replace(/-/g, '').slice(0, 5).toUpperCase()}`;
+
+      const emailHtml = `
+        <p>Bonjour ${order.buyer.full_name},</p>
+        <p>Suite à votre demande, veuillez trouver ci-joint un duplicata de votre facture <strong>${invoiceRef}</strong>.</p>
+        <p>Vous souhaitant bonne réception,</p>
+        <p>L’équipe d’assistance Frilya</p>
+      `;
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: [order.buyer.email],
+          subject: `Duplicata de votre facture ${invoiceRef}`,
+          html: emailHtml,
+          attachments: [
+            {
+              filename: `${invoiceRef}_DUPLICATA.pdf`,
+              content: base64Pdf
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) throw new Error('Erreur API email');
+      alert('Le duplicata a été envoyé par e-mail avec succès.');
+    } catch (err) {
+      console.error('Erreur envoi email duplicata:', err);
+      alert("Une erreur est survenue lors de l'envoi de l'e-mail.");
+    } finally {
+      setSendingDuplicateId(null);
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      pending: 'En attente',
+      in_progress: 'En cours',
+      delivered: 'Livrée',
+      completed: 'Terminée',
+      cancelled: 'Annulée',
+      refunded: 'Remboursée'
+    };
+    return labels[status] || status;
   };
 
   if (loading) {
@@ -530,59 +633,86 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
             </div>
           )}
 
-          {/* TAB: ORDERS */}
-          {activeTab === 'orders' && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-500">
-                  <tr>
-                    <th className="p-4 font-semibold">ID Commande</th>
-                    <th className="p-4 font-semibold">Service</th>
-                    <th className="p-4 font-semibold">Montant</th>
-                    <th className="p-4 font-semibold">Date</th>
-                    <th className="p-4 font-semibold">Statut</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {orders.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-slate-500">Aucune commande</td></tr> : orders.map(o => (
-                    <tr key={o.id}>
-                      <td className="p-4 font-mono text-xs">{o.id.split('-')[0]}...</td>
-                      <td className="p-4">{o.service?.title || 'Service inconnu'}</td>
-                      <td className="p-4 font-bold">{o.amount} €</td>
-                      <td className="p-4">{new Date(o.created_at).toLocaleDateString()}</td>
-                      <td className="p-4"><span className="px-2 py-1 bg-slate-100 rounded text-xs font-bold">{o.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* TAB: SALES */}
-          {activeTab === 'sales' && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-500">
-                  <tr>
-                    <th className="p-4 font-semibold">ID Vente</th>
-                    <th className="p-4 font-semibold">Service</th>
-                    <th className="p-4 font-semibold">Montant (Net)</th>
-                    <th className="p-4 font-semibold">Date</th>
-                    <th className="p-4 font-semibold">Statut</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {sales.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-slate-500">Aucune vente</td></tr> : sales.map(s => (
-                    <tr key={s.id}>
-                      <td className="p-4 font-mono text-xs">{s.id.split('-')[0]}...</td>
-                      <td className="p-4">{s.service?.title || 'Service inconnu'}</td>
-                      <td className="p-4 font-bold text-green-600">{s.amount - s.platform_fee} €</td>
-                      <td className="p-4">{new Date(s.created_at).toLocaleDateString()}</td>
-                      <td className="p-4"><span className="px-2 py-1 bg-slate-100 rounded text-xs font-bold">{s.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* TAB: ORDERS & SALES */}
+          {(activeTab === 'orders' || activeTab === 'sales') && (
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <h3 className="text-lg font-bold text-slate-900">
+                  {activeTab === 'orders' ? 'Historique des Achats' : 'Historique des Ventes'}
+                </h3>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {loadingOrders ? (
+                  <div className="p-8 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-frilya-600 mb-2" />
+                    <p className="text-sm text-slate-500">Chargement des transactions...</p>
+                  </div>
+                ) : (activeTab === 'orders' ? orders : sales).length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">
+                    Aucune transaction trouvée.
+                  </div>
+                ) : (
+                  (activeTab === 'orders' ? orders : sales).map(order => (
+                    <div key={order.id} className="p-6 hover:bg-slate-50 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                            <ShoppingBag className="w-6 h-6 text-slate-400" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                #{order.id.split('-')[0].toUpperCase()}
+                              </span>
+                              <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold">{getStatusLabel(order.status)}</span>
+                            </div>
+                            <h4 className="font-bold text-slate-900">{order.service?.title || 'Service inconnu'}</h4>
+                            <div className="text-sm text-slate-500 mt-1 flex flex-col gap-0.5">
+                              <span>
+                                {activeTab === 'orders' ? 'Vendeur : ' : 'Acheteur : '}
+                                <span className="font-medium text-slate-700">
+                                  {activeTab === 'orders' ? order.seller?.full_name : order.buyer?.full_name}
+                                </span>
+                              </span>
+                              <span>Date : {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                                day: '2-digit', month: '2-digit', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                              })}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col sm:items-end gap-3">
+                          <div className={`text-lg font-bold ${activeTab === 'sales' ? 'text-green-600' : 'text-slate-900'}`}>
+                            {Number(activeTab === 'sales' ? order.amount - (order.platform_fee || 0) : order.amount).toFixed(2).replace('.', ',')} €
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleDownloadDuplicate(order)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Duplicata PDF
+                            </button>
+                            <button
+                              onClick={() => handleSendDuplicateEmail(order)}
+                              disabled={sendingDuplicateId === order.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-frilya-50 hover:bg-frilya-100 text-frilya-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {sendingDuplicateId === order.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Mail className="w-3.5 h-3.5" />
+                              )}
+                              Envoyer par mail
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           )}
 

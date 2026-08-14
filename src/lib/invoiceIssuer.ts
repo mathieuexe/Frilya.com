@@ -33,7 +33,11 @@ export const INVOICE_ISSUER = {
  */
 export const invoiceNumber = (order: any) => {
   const date = new Date(order?.paid_at || order?.created_at || Date.now());
-  const yyyymm = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}`;
-  const suffix = String(order?.id || '').replace(/-/g, '').slice(0, 8).toUpperCase();
-  return `FRILYA-${yyyymm}-${suffix}`;
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  
+  // Create a short, memorable suffix based on the UUID (e.g. just 5 chars)
+  const suffix = String(order?.id || '').replace(/-/g, '').slice(0, 5).toUpperCase();
+  return `FAC-${yyyy}${mm}${dd}-${suffix}`;
 };

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Loader2, Send, CheckCircle, MessageSquare, X, Beaker } from 'lucide-react';
+import { Loader2, Send, CheckCircle, X } from 'lucide-react';
 import betaIcon from '../assets/lab-flask.png';
+import feedbackIcon from '../assets/feedback.png';
 
 export default function BetaFeedbackWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -72,7 +73,7 @@ export default function BetaFeedbackWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {isOpen && (
-        <div className="bg-[#f2f4f7] rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.15)] border border-slate-200 w-[360px] mb-4 overflow-hidden flex flex-col transition-all relative">
+        <div className="bg-[#f2f4f7] rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.15)] w-[360px] mb-4 overflow-hidden flex flex-col transition-all relative">
           
           {/* Header Bleu Façon Intercom */}
           <div className="bg-[#0057FF] p-6 text-white pb-14 rounded-t-2xl relative">
@@ -154,7 +155,7 @@ export default function BetaFeedbackWidget() {
             
             <div className="text-center mt-3">
               <span className="text-[11px] font-medium text-slate-400 flex items-center justify-center gap-1">
-                <Beaker className="w-3 h-3" /> Équipe Support Frilya
+                Équipe Support Frilya
               </span>
             </div>
           </div>
@@ -169,7 +170,7 @@ export default function BetaFeedbackWidget() {
         {isOpen ? (
           <X className="w-7 h-7 transform group-hover:rotate-90 transition-transform duration-300" />
         ) : (
-          <MessageSquare className="w-7 h-7" />
+          <img src={feedbackIcon} alt="Feedback" className="w-7 h-7" />
         )}
       </button>
     </div>

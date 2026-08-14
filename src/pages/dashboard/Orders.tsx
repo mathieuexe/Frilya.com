@@ -183,10 +183,17 @@ export default function Orders() {
                 {/* Infos commande */}
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg text-slate-900">{order.services?.title || 'Service inconnu'}</h3>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-mono text-slate-500 mb-1">
+                            Réf: #{order.id.split('-')[0].toUpperCase()}
+                          </span>
+                          <h3 className="font-bold text-lg text-slate-900">
+                            {order.services?.title || 'Service inconnu'}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                           order.seller_id === currentUser?.id ? 'bg-frilya-50 text-frilya-700' : 'bg-slate-100 text-slate-600'
                         }`}>
                           {order.seller_id === currentUser?.id ? 'Vente' : 'Achat'}

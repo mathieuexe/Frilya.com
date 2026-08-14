@@ -100,11 +100,12 @@ export default function OrdersView() {
               orders.map((order) => (
                 <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="p-4">
-                    <div className="font-mono text-xs text-slate-500 mb-1">
-                      {order.id.split('-')[0]}...
-                    </div>
-                    <div className="text-sm text-slate-900 font-medium">
-                      {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                    <div className="font-mono text-sm text-slate-900">#{order.id.split('-')[0].toUpperCase()}</div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                      })}
                     </div>
                   </td>
                   <td className="p-4">
