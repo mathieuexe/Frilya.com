@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { loadStripe } from '@stripe/stripe-js';
 import { ShieldCheck, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
@@ -9,7 +9,10 @@ const stripePromise = loadStripe('pk_live_51Sr1HLCs5mrUe8SK0iyQYCu3YnamJqg201mb2
 export default function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const packageParam = searchParams.get('pkg');
   const [service, setService] = useState<any>(null);
+  const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -57,6 +60,19 @@ export default function Checkout() {
       if (error) throw error;
       setService(data);
 
+      // Récupérer le forfait choisi (?pkg=) parmi ceux du service
+      const { data: pkgs } = await supabase
+        .from('service_packages')
+        .select('*')
+        .eq('service_id', data.id);
+
+      if (pkgs && pkgs.length > 0) {
+        const chosen = pkgs.find(p => p.id === packageParam)
+          || pkgs.find(p => p.package_type === 'basic')
+          || pkgs[0];
+        setSelectedPackage(chosen);
+      }
+
       // Récupérer les frais de plateforme
       const { data: feeData, error: feeError } = await supabase
         .from('settings')
@@ -81,6 +97,9 @@ export default function Checkout() {
     return { net, platformFee, total: Math.ceil(total * 100) / 100 };
   };
 
+  // Prix facturé : celui du forfait choisi, sinon le prix de base du service
+  const getNetPrice = () => Number(selectedPackage?.price ?? service?.price_basic ?? 0);
+
   const handlePayment = async () => {
     if (isBetaActive) {
       alert("Les commandes sont désactivées en mode Bêta.");
@@ -90,7 +109,7 @@ export default function Checkout() {
     setPaying(true);
 
     try {
-      const { total, platformFee } = calculateTotal(service.price_basic);
+      const { total, platformFee } = calculateTotal(getNetPrice());
 
       // 1. Créer la commande en base de données avec le statut "pending"
       const { data: order, error: orderError } = await supabase
@@ -147,7 +166,7 @@ export default function Checkout() {
 
   if (!service) return <div>Service introuvable.</div>;
 
-  const prices = calculateTotal(service.price_basic);
+  const prices = calculateTotal(getNetPrice());
 
   return (
     <div className="bg-slate-50 min-h-screen py-12">
@@ -168,6 +187,12 @@ export default function Checkout() {
                 <div>
                   <h3 className="font-bold text-slate-900 line-clamp-2">{service.title}</h3>
                   <p className="text-sm text-slate-500 mt-1">Vendu par {service.profiles?.full_name}</p>
+                  {selectedPackage && (
+                    <p className="text-sm text-slate-700 font-bold mt-2">
+                      Formule : {selectedPackage.name || selectedPackage.package_type}
+                      {selectedPackage.delivery_days ? ` • Livraison en ${selectedPackage.delivery_days} jour(s)` : ''}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

@@ -38,11 +38,27 @@ export default function CreateService() {
     description: '',
   });
 
+  const [pricingMode, setPricingMode] = useState<'single' | 'packages'>('single');
+
   const [packages, setPackages] = useState<PackagesState>({
-    basic: { id: null, name: 'Basique', description: '', price: 5, delivery_days: 1, revisions_included: 1 },
+    basic: { id: null, name: 'Tarif unique', description: '', price: 5, delivery_days: 1, revisions_included: 1 },
     standard: { id: null, name: 'Standard', description: '', price: 15, delivery_days: 3, revisions_included: 2 },
     premium: { id: null, name: 'Premium', description: '', price: 30, delivery_days: 5, revisions_included: 3 }
   });
+
+  const switchPricingMode = (mode: 'single' | 'packages') => {
+    setPricingMode(mode);
+    // Adapter le libellé de la formule de base au mode choisi
+    setPackages(prev => {
+      if (mode === 'single' && (!prev.basic.name || prev.basic.name === 'Basique')) {
+        return { ...prev, basic: { ...prev.basic, name: 'Tarif unique' } };
+      }
+      if (mode === 'packages' && (!prev.basic.name || prev.basic.name === 'Tarif unique')) {
+        return { ...prev, basic: { ...prev.basic, name: 'Basique' } };
+      }
+      return prev;
+    });
+  };
 
   const [extras, setExtras] = useState<any[]>([]);
   const [faqs, setFaqs] = useState<any[]>([]);
@@ -98,9 +114,11 @@ export default function CreateService() {
         const { data: p } = await supabase.from('service_packages').select('*').eq('service_id', id);
         if (p && p.length > 0) {
           const newPackages = { ...packages };
+          let savedCount = 0;
           p.forEach(pkg => {
             if (pkg.package_type === 'basic' || pkg.package_type === 'standard' || pkg.package_type === 'premium') {
               const type = pkg.package_type as keyof PackagesState;
+              savedCount++;
               newPackages[type] = {
                 id: pkg.id,
                 name: pkg.name || '',
@@ -112,6 +130,8 @@ export default function CreateService() {
             }
           });
           setPackages(newPackages);
+          // Un seul forfait enregistré = tarif unique, sinon formules multiples
+          setPricingMode(savedCount > 1 ? 'packages' : 'single');
         }
 
         // Fetch extras
@@ -204,17 +224,37 @@ export default function CreateService() {
 
       // Sauvegarder les Packages (uniquement si l'étape 2 a été atteinte ou si on a un ID)
       if (currentStep >= 2 || currentServiceId) {
-        const packagesToSave = [
-          { ...packages.basic, service_id: currentServiceId, package_type: 'basic' },
-          { ...packages.standard, service_id: currentServiceId, package_type: 'standard' },
-          { ...packages.premium, service_id: currentServiceId, package_type: 'premium' }
-        ];
-        
+        const packagesToSave = pricingMode === 'single'
+          ? [{ ...packages.basic, service_id: currentServiceId, package_type: 'basic' }]
+          : [
+              { ...packages.basic, service_id: currentServiceId, package_type: 'basic' },
+              { ...packages.standard, service_id: currentServiceId, package_type: 'standard' },
+              { ...packages.premium, service_id: currentServiceId, package_type: 'premium' }
+            ];
+
+        // En mode tarif unique, on supprime les formules Standard/Premium déjà enregistrées
+        if (pricingMode === 'single') {
+          const idsToDelete = [packages.standard.id, packages.premium.id].filter(Boolean);
+          if (idsToDelete.length > 0) {
+            await supabase.from('service_packages').delete().in('id', idsToDelete as string[]);
+            setPackages(prev => ({
+              ...prev,
+              standard: { ...prev.standard, id: null },
+              premium: { ...prev.premium, id: null }
+            }));
+          }
+        }
+
         for (const pkg of packagesToSave) {
-          if (pkg.id) {
-            await supabase.from('service_packages').update(pkg).eq('id', pkg.id);
+          // On n'envoie jamais "id" dans le payload : NULL sur la clé primaire fait échouer l'insertion
+          const { id: pkgId, ...pkgPayload } = pkg;
+
+          if (pkgId) {
+            const { error } = await supabase.from('service_packages').update(pkgPayload).eq('id', pkgId);
+            if (error) console.error("Erreur MAJ forfait :", error);
           } else {
-            const { data } = await supabase.from('service_packages').insert([pkg]).select().single();
+            const { data, error } = await supabase.from('service_packages').insert([pkgPayload]).select().single();
+            if (error) console.error("Erreur création forfait :", error);
             if (data) {
               setPackages(prev => ({
                 ...prev,
@@ -487,6 +527,10 @@ export default function CreateService() {
     );
   }
 
+  const editablePackageTypes: (keyof PackagesState)[] = pricingMode === 'single'
+    ? ['basic']
+    : ['basic', 'standard', 'premium'];
+
   const selectedCategoryName = categories.find(c => c.id.toString() === formData.category_id)?.name;
   const availableSubCategories = selectedCategoryName ? CATEGORY_HIERARCHY[selectedCategoryName] || [] : [];
 
@@ -616,26 +660,50 @@ export default function CreateService() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-1">Formules de prix</h2>
-              <p className="text-sm text-slate-500 mb-6">Proposez jusqu'à 3 niveaux de prestations pour s'adapter à tous les budgets.</p>
+              <h2 className="text-xl font-bold text-slate-900 mb-1">Tarification</h2>
+              <p className="text-sm text-slate-500 mb-6">Choisissez un tarif unique ou proposez 3 formules pour s'adapter à tous les budgets.</p>
             </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {(['basic', 'standard', 'premium'] as const).map((type) => (
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              {([
+                { mode: 'single' as const, title: 'Tarif unique', desc: 'Un seul prix pour votre prestation.' },
+                { mode: 'packages' as const, title: '3 forfaits', desc: 'Basique, Standard et Premium.' }
+              ]).map(option => (
+                <button
+                  key={option.mode}
+                  type="button"
+                  onClick={() => switchPricingMode(option.mode)}
+                  className={`text-left border-2 rounded-2xl p-4 transition-colors ${pricingMode === option.mode ? 'border-frilya-600 bg-frilya-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${pricingMode === option.mode ? 'border-frilya-600' : 'border-slate-300'}`}>
+                      {pricingMode === option.mode && <div className="w-2 h-2 rounded-full bg-frilya-600" />}
+                    </div>
+                    <span className="font-bold text-slate-900">{option.title}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 pl-6">{option.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            <div className={pricingMode === 'single' ? 'max-w-md' : 'grid grid-cols-1 lg:grid-cols-3 gap-6'}>
+              {editablePackageTypes.map((type) => (
                 <div key={type} className={`border rounded-2xl p-5 ${type === 'premium' ? 'border-frilya-200 bg-frilya-50/30' : 'border-slate-200 bg-slate-50'}`}>
                   <h3 className="font-bold text-lg capitalize mb-4 text-slate-900 border-b border-slate-200 pb-3">
-                    {type === 'basic' ? 'Basique' : type === 'standard' ? 'Standard' : 'Premium'}
+                    {pricingMode === 'single' ? 'Votre tarif' : type === 'basic' ? 'Basique' : type === 'standard' ? 'Standard' : 'Premium'}
                   </h3>
-                  
+
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Nom de la formule</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        {pricingMode === 'single' ? 'Nom de la prestation' : 'Nom de la formule'}
+                      </label>
                       <input
                         type="text"
                         value={packages[type].name}
                         onChange={(e) => setPackages({...packages, [type]: {...packages[type], name: e.target.value}})}
                         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-frilya-600"
-                        placeholder={`Ex: Pack ${type}`}
+                        placeholder={pricingMode === 'single' ? 'Ex: Tarif unique' : `Ex: Pack ${type}`}
                       />
                     </div>
                     <div>
@@ -1021,7 +1089,10 @@ export default function CreateService() {
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                  <span><strong>Prix de départ :</strong> {packages.basic.price} €</span>
+                  <span>
+                    <strong>{pricingMode === 'single' ? 'Tarif unique :' : 'Prix de départ :'}</strong> {packages.basic.price} €
+                    {pricingMode === 'packages' && ` (3 forfaits : ${packages.basic.price} € / ${packages.standard.price} € / ${packages.premium.price} €)`}
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />

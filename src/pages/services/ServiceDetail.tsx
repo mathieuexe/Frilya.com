@@ -54,17 +54,24 @@ export default function ServiceDetail() {
       const { data: pkgs } = await supabase
         .from('service_packages')
         .select('*')
-        .eq('service_id', data.id)
-        .order('price', { ascending: true });
-        
+        .eq('service_id', data.id);
+
       if (pkgs && pkgs.length > 0) {
-        setPackages(pkgs);
+        // Ordre logique des forfaits : Basique, Standard, Premium (puis prix croissant)
+        const rank: Record<string, number> = { basic: 0, standard: 1, premium: 2 };
+        const sorted = [...pkgs].sort((a, b) => {
+          const rankA = rank[a.package_type] ?? 99;
+          const rankB = rank[b.package_type] ?? 99;
+          if (rankA !== rankB) return rankA - rankB;
+          return (a.price || 0) - (b.price || 0);
+        });
+        setPackages(sorted);
       } else {
         // Fallback for older services without packages
         const fallbackPkg = {
           id: 'basic',
-          name: 'Formule Basique',
-          description: "La prestation de base décrite dans l'annonce.",
+          name: 'Tarif unique',
+          description: "La prestation décrite dans l'annonce.",
           price: data.price_basic,
           delivery_days: data.delivery_time_days,
           revisions_included: 0
@@ -108,6 +115,9 @@ export default function ServiceDetail() {
   if (!service) {
     return <div className="text-center py-20 font-bold text-xl">Service introuvable.</div>;
   }
+
+  // Plusieurs forfaits enregistrés = affichage multi-formules, sinon un seul tarif unique
+  const hasMultiplePackages = packages.length > 1;
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
@@ -284,21 +294,34 @@ export default function ServiceDetail() {
 
           {/* Colonne Latérale (Droite) - Pricing & CTA */}
           <div className="w-full lg:w-80 shrink-0 space-y-6">
-            {packages.map((pkg, index) => (
-              <div key={pkg.id || index} className={`bg-white p-6 rounded-3xl border ${index === 1 ? 'border-frilya-600 shadow-xl shadow-frilya-200/50' : 'border-slate-200 shadow-sm'}`}>
-                {index === 1 && (
+            {hasMultiplePackages && (
+              <div className="bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-sm">
+                <h2 className="font-bold text-slate-900">Choisissez votre forfait</h2>
+                <p className="text-xs text-slate-500 mt-1">{packages.length} formules disponibles pour ce service.</p>
+              </div>
+            )}
+
+            {packages.map((pkg, index) => {
+              const isRecommended = hasMultiplePackages && index === 1;
+              return (
+              <div key={pkg.id || index} className={`bg-white p-6 rounded-3xl border ${isRecommended ? 'border-frilya-600 shadow-xl shadow-frilya-200/50' : 'border-slate-200 shadow-sm'}`}>
+                {isRecommended && (
                   <div className="bg-frilya-600 text-white text-xs font-bold uppercase tracking-wider text-center py-1.5 -mt-6 -mx-6 mb-6 rounded-t-3xl">
                     Recommandé
                   </div>
                 )}
                 <div className="flex justify-between items-start mb-6">
-                  <h3 className="text-xl font-bold text-slate-900">{pkg.name || pkg.package_type}</h3>
-                  <span className="text-2xl font-bold text-frilya-600">{pkg.price} €</span>
+                  <h3 className="text-xl font-bold text-slate-900">
+                    {pkg.name || pkg.package_type || (hasMultiplePackages ? 'Formule' : 'Tarif unique')}
+                  </h3>
+                  <span className="text-2xl font-bold text-frilya-600 whitespace-nowrap">{pkg.price} €</span>
                 </div>
 
-                <p className="text-sm text-slate-600 mb-6 font-medium">
-                  {pkg.description}
-                </p>
+                {pkg.description && (
+                  <p className="text-sm text-slate-600 mb-6 font-medium">
+                    {pkg.description}
+                  </p>
+                )}
 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center gap-2 text-sm text-slate-700 font-bold">
@@ -324,13 +347,14 @@ export default function ServiceDetail() {
                 ) : (
                   <Link 
                     to={`/paiement/${service.id}?pkg=${pkg.id || 'basic'}`}
-                    className={`w-full flex justify-center items-center ${index === 1 ? 'bg-frilya-600 hover:bg-frilya-500' : 'bg-frilya-900 hover:bg-frilya-800'} text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md`}
+                    className={`w-full flex justify-center items-center ${isRecommended ? 'bg-frilya-600 hover:bg-frilya-500' : 'bg-frilya-900 hover:bg-frilya-800'} text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-md`}
                   >
                     Commander ({pkg.price} €)
                   </Link>
                 )}
               </div>
-            ))}
+              );
+            })}
             
             <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-400 font-medium">
               <ShieldCheck className="w-4 h-4 text-green-500" />
