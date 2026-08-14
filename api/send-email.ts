@@ -13,15 +13,26 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { to, subject, html } = req.body;
+    const { to, subject, html, attachments } = req.body;
     
     if (!to || !subject || !html) {
       return res.status(400).json({ error: 'Missing required fields (to, subject, html).' });
     }
 
-    const RESEND_API_KEY = process.env.VITE_RESEND_API_KEY;
+    const RESEND_API_KEY = process.env.VITE_RESEND_API_KEY || process.env.RESEND_API_KEY;
     if (!RESEND_API_KEY) {
       return res.status(500).json({ error: 'Resend API key is missing from environment variables.' });
+    }
+
+    const emailPayload: any = {
+      from: 'Frilya <noreply@frilya.com>',
+      to: Array.isArray(to) ? to : [to],
+      subject: subject,
+      html: html
+    };
+
+    if (attachments && attachments.length > 0) {
+      emailPayload.attachments = attachments;
     }
 
     const response = await fetch('https://api.resend.com/emails', {
@@ -30,12 +41,7 @@ export default async function handler(req: any, res: any) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${RESEND_API_KEY}`
       },
-      body: JSON.stringify({
-        from: 'Frilya <noreply@frilya.com>',
-        to: Array.isArray(to) ? to : [to],
-        subject: subject,
-        html: html
-      })
+      body: JSON.stringify(emailPayload)
     });
 
     if (!response.ok) {
