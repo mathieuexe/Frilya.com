@@ -47,7 +47,7 @@ export default function Checkout() {
 
       let query = supabase
         .from('services')
-        .select('*, profiles(full_name)');
+        .select('*, profiles!services_seller_id_fkey(full_name)');
         
       if (isUuid) {
         query = query.eq('id', id);

@@ -57,7 +57,7 @@ export default function Home() {
           .from('services')
           .select(`
             *,
-            profiles (full_name, avatar_url)
+            profiles!services_seller_id_fkey (full_name, avatar_url)
           `)
           .eq('status', 'active')
           .order('created_at', { ascending: false })

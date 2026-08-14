@@ -71,7 +71,7 @@ export default function ServicesView() {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      let query = supabase.from('services').select('*, profiles (id, full_name, email, slug)');
+      let query = supabase.from('services').select('*, profiles!services_seller_id_fkey (id, full_name, email, slug)');
       if (statusFilter !== 'all') query = query.eq('status', statusFilter);
 
       const { data, error } = await query.order('created_at', { ascending: false });

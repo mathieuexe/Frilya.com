@@ -27,7 +27,7 @@ export default function Search() {
     try {
       let servicesQuery = supabase
         .from('services')
-        .select('*, profiles(full_name, avatar_url)')
+        .select('*, profiles!services_seller_id_fkey(full_name, avatar_url)')
         .eq('status', 'active');
 
       if (q) {

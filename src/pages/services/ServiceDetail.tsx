@@ -37,7 +37,7 @@ export default function ServiceDetail() {
 
       let query = supabase
         .from('services')
-        .select('*, profiles(full_name, avatar_url, bio, created_at, is_verified, slug, is_beta)');
+        .select('*, profiles!services_seller_id_fkey(full_name, avatar_url, bio, created_at, is_verified, slug, is_beta)');
         
       if (isUuid) {
         query = query.eq('id', id);
