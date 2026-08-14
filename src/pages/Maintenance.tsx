@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Settings, Lock, Mail, Loader2, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
+import BetaCountdown from '../components/BetaCountdown';
 
 export default function Maintenance() {
   const [showLogin, setShowLogin] = useState(false);
@@ -48,8 +49,11 @@ export default function Maintenance() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 selection:bg-frilya-100 relative">
-      <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-lg w-full text-center">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center p-4 selection:bg-frilya-100 relative">
+      <div className="absolute top-0 left-0 right-0">
+        <BetaCountdown mode="maintenance" />
+      </div>
+      <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-lg w-full text-center mt-24">
         <div className="flex justify-center mb-6">
           <div className="bg-frilya-50 p-4 rounded-2xl border border-frilya-100 relative">
             <Settings className="w-12 h-12 text-frilya-600 animate-[spin_4s_linear_infinite]" />

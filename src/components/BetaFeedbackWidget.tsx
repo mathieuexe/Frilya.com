@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Loader2, Send, CheckCircle, MessageSquare, X } from 'lucide-react';
+import { Loader2, Send, CheckCircle, MessageSquare, X, Beaker } from 'lucide-react';
+import betaIcon from '../assets/lab-flask.png';
 
 export default function BetaFeedbackWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -71,84 +72,105 @@ export default function BetaFeedbackWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {isOpen && (
-        <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-[340px] mb-4 overflow-hidden flex flex-col transition-all">
-          <div className="bg-frilya-900 p-4 text-white flex justify-between items-center">
-            <h3 className="font-bold flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              Feedback Bêta
-            </h3>
-            <button onClick={() => setIsOpen(false)} className="text-white/70 hover:text-white transition-colors">
-              <X className="w-5 h-5" />
-            </button>
+        <div className="bg-[#f2f4f7] rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.15)] border border-slate-200 w-[360px] mb-4 overflow-hidden flex flex-col transition-all relative">
+          
+          {/* Header Bleu Façon Intercom */}
+          <div className="bg-[#0057FF] p-6 text-white pb-14 rounded-t-2xl relative">
+            <div className="flex justify-between items-start mb-5">
+              <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center p-2">
+                <img src={betaIcon} alt="Bêta" className="w-full h-full object-contain" />
+              </div>
+              <button onClick={() => setIsOpen(false)} className="text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-1.5 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <h3 className="text-2xl font-bold mb-2">Bonjour, Bêta-testeur 👋</h3>
+            <p className="text-sm text-white/90 leading-relaxed">
+              Nous sommes ravis de vous compter parmi nous. Vos retours nous aident à améliorer Frilya avant le lancement !
+            </p>
           </div>
           
-          <div className="p-4">
-            {success ? (
-              <div className="text-center py-6">
-                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-                <h4 className="font-bold text-slate-900 mb-1">Merci !</h4>
-                <p className="text-sm text-slate-500">Votre retour a bien été envoyé.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">Type de retour</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: 'suggestion', label: 'Suggestion' },
-                      { id: 'bug', label: 'Bug' },
-                      { id: 'review', label: 'Avis' },
-                      { id: 'other', label: 'Autre' }
-                    ].map(t => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => setType(t.id)}
-                        className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition-all ${
-                          type === t.id 
-                            ? 'border-frilya-600 bg-frilya-50 text-frilya-700' 
-                            : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
+          {/* Card du Formulaire (overlapping) */}
+          <div className="px-4 pb-4 -mt-8 relative z-10">
+            <div className="bg-white rounded-xl shadow-md p-5 border border-slate-100">
+              {success ? (
+                <div className="text-center py-6">
+                  <div className="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-7 h-7" />
                   </div>
+                  <h4 className="font-bold text-slate-900 mb-1">C'est envoyé !</h4>
+                  <p className="text-sm text-slate-500">Merci beaucoup pour votre aide.</p>
                 </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                  <h4 className="font-bold text-slate-900 text-sm mb-1">Laisser un feedback</h4>
+                  
+                  <div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: 'suggestion', label: 'Suggestion' },
+                        { id: 'bug', label: 'Bug' },
+                        { id: 'review', label: 'Avis' },
+                        { id: 'other', label: 'Autre' }
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setType(t.id)}
+                          className={`py-2 px-2 rounded-lg text-xs font-bold border transition-all ${
+                            type === t.id 
+                              ? 'border-[#0057FF] bg-[#0057FF]/5 text-[#0057FF]' 
+                              : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">Votre message</label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={content}
-                    onChange={e => setContent(e.target.value)}
-                    placeholder="Décrivez votre idée ou le problème rencontré..."
-                    className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:ring-2 focus:ring-frilya-600 outline-none resize-none bg-slate-50"
-                  />
-                </div>
+                  <div>
+                    <textarea
+                      required
+                      rows={3}
+                      value={content}
+                      onChange={e => setContent(e.target.value)}
+                      placeholder="Dites-nous tout..."
+                      className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#0057FF] focus:border-[#0057FF] outline-none resize-none bg-slate-50 transition-all"
+                    />
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={loading || !content.trim()}
-                  className="flex items-center justify-center gap-2 bg-frilya-900 hover:bg-frilya-800 text-white text-sm font-bold py-2.5 px-4 rounded-xl transition-all disabled:opacity-50"
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Envoyer
-                </button>
-              </form>
-            )}
+                  <button
+                    type="submit"
+                    disabled={loading || !content.trim()}
+                    className="w-full flex items-center justify-center gap-2 bg-[#0057FF] hover:bg-blue-700 text-white text-sm font-bold py-3 px-4 rounded-xl transition-all shadow-md shadow-blue-500/20 disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Envoyer
+                  </button>
+                </form>
+              )}
+            </div>
+            
+            <div className="text-center mt-3">
+              <span className="text-[11px] font-medium text-slate-400 flex items-center justify-center gap-1">
+                <Beaker className="w-3 h-3" /> Équipe Support Frilya
+              </span>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Bouton Bulle Façon Intercom */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-frilya-900 hover:bg-frilya-800 text-white rounded-full p-4 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center"
+        className="bg-[#0057FF] hover:bg-blue-700 text-white rounded-full p-4 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center group"
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        {isOpen ? (
+          <X className="w-7 h-7 transform group-hover:rotate-90 transition-transform duration-300" />
+        ) : (
+          <MessageSquare className="w-7 h-7" />
+        )}
       </button>
     </div>
   );

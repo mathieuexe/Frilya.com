@@ -6,6 +6,7 @@ import { trackPageview, identifyUser, resetUser } from './lib/analytics';
 
 // Layouts
 import MainLayout from './components/layout/MainLayout';
+import { BETA_START, BETA_END } from './components/BetaCountdown';
 
 // Pages
 import Home from './pages/Home';
@@ -58,19 +59,20 @@ function AppRoutes() {
 
   const checkStatus = async () => {
     try {
-      // 1. Vérifier si on est en maintenance & si beta est active
-      const { data: settingsData } = await supabase
-        .from('settings')
-        .select('key, value')
-        .in('key', ['maintenance_mode', 'beta_mode_active']);
-        
+      const now = new Date();
       let isMaintenance = false;
       let isBeta = false;
 
-      settingsData?.forEach(setting => {
-        if (setting.key === 'maintenance_mode') isMaintenance = setting.value === true || setting.value === 'true';
-        if (setting.key === 'beta_mode_active') isBeta = setting.value === true || setting.value === 'true';
-      });
+      if (now < BETA_START) {
+        isMaintenance = true;
+        isBeta = false;
+      } else if (now >= BETA_START && now < BETA_END) {
+        isMaintenance = false;
+        isBeta = true;
+      } else {
+        isMaintenance = false;
+        isBeta = false;
+      }
 
       setIsBetaActiveGlobal(isBeta);
 
@@ -110,7 +112,7 @@ function AppRoutes() {
           .single();
           
         if (profile?.role === 'beta' || profile?.is_beta) {
-          if (profile.beta_end_date && new Date(profile.beta_end_date) < new Date()) {
+          if ((profile.beta_end_date && new Date(profile.beta_end_date) < new Date()) || new Date() >= BETA_END) {
             await supabase.auth.signOut();
             window.location.href = '/connexion?error=beta_expired';
             return;
