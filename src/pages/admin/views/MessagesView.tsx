@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Loader2, Lock, Unlock } from 'lucide-react';
+import { SUPPORT_ACCOUNT_ID } from '../../../lib/constants';
 
 export default function MessagesView() {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const ADMIN_ID = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
+  const ADMIN_ID = SUPPORT_ACCOUNT_ID;
 
   useEffect(() => {
     fetchMessages();

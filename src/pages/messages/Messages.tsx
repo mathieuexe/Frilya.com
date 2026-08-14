@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Send, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { SUPPORT_ACCOUNT_ID } from '../../lib/constants';
 import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
 
@@ -24,7 +25,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const ADMIN_ID = 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb';
+  const ADMIN_ID = SUPPORT_ACCOUNT_ID;
 
   useEffect(() => {
     if (!selectedContact || !user) return;
