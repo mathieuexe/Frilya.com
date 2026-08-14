@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Package, Heart, MessageSquare, AlertTriangle, Settings, LayoutDashboard, LifeBuoy } from 'lucide-react';
+import { Package, Heart, MessageSquare, AlertTriangle, Settings, LayoutDashboard, LifeBuoy, Download, ArrowRight } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
 import seenIcon from '../../assets/seen.png';
+import { downloadInvoice } from '../../lib/invoice';
 
 import { BetaBadge } from '../../components/BetaBadge';
 
@@ -13,6 +14,8 @@ export default function BuyerDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
 
   useEffect(() => {
     checkUser();
@@ -25,13 +28,32 @@ export default function BuyerDashboard() {
       return;
     }
 
-    const { data } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', session.user.id)
       .single();
     
-    setProfile(data);
+    setProfile(profileData);
+
+    // Fetch orders for this buyer
+    const { data: ordersData } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        services(id, title, slug, cover_image_url),
+        profiles!seller_id(id, full_name, avatar_url),
+        buyer:profiles!buyer_id(id, full_name, email)
+      `)
+      .eq('buyer_id', session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (ordersData) {
+      setRecentOrders(ordersData);
+      setActiveOrdersCount(ordersData.filter((o: any) => o.status === 'in_progress' || o.status === 'delivered').length);
+    }
+
     setLoading(false);
   };
 
@@ -44,6 +66,18 @@ export default function BuyerDashboard() {
     { name: 'Service Client', path: '/tableau-de-bord/tickets', icon: LifeBuoy, hideForBeta: true },
     { name: 'Paramètres', path: '/tableau-de-bord/parametres', icon: Settings, hideForBeta: true },
   ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending': return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">En attente</span>;
+      case 'in_progress': return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">En cours</span>;
+      case 'delivered': return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Livrée</span>;
+      case 'completed': return <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Terminée</span>;
+      case 'cancelled': return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">Annulée</span>;
+      case 'disputed': return <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">En litige</span>;
+      default: return <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">{status}</span>;
+    }
+  };
 
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
@@ -168,7 +202,7 @@ export default function BuyerDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
                   <Package className="w-8 h-8 text-frilya-600 mb-4" />
-                  <h3 className="text-2xl font-bold text-slate-900">0</h3>
+                  <h3 className="text-2xl font-bold text-slate-900">{activeOrdersCount}</h3>
                   <p className="text-slate-500 text-sm">Commandes en cours</p>
                 </div>
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
@@ -176,6 +210,80 @@ export default function BuyerDashboard() {
                   <h3 className="text-2xl font-bold text-slate-900">0</h3>
                   <p className="text-slate-500 text-sm">Messages non lus</p>
                 </div>
+              </div>
+
+              {/* Achats récents */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-slate-900">Achats récents</h2>
+                  <Link to="/tableau-de-bord/commandes" className="text-sm font-bold text-frilya-600 hover:text-frilya-700 flex items-center gap-1">
+                    Voir tout <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+                
+                {recentOrders.length === 0 ? (
+                  <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm text-center">
+                    <p className="text-slate-500">Vous n'avez pas encore effectué d'achat.</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                            <th className="p-4 font-semibold">Service</th>
+                            <th className="p-4 font-semibold">Vendeur</th>
+                            <th className="p-4 font-semibold">Montant</th>
+                            <th className="p-4 font-semibold">Statut</th>
+                            <th className="p-4 font-semibold text-right">Facture</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {recentOrders.map(order => (
+                            <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4">
+                                <div className="font-bold text-slate-900 line-clamp-1 max-w-[200px]">
+                                  {order.services?.title || 'Service introuvable'}
+                                </div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                  {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="font-medium text-slate-900">{order.profiles?.full_name || 'Vendeur'}</span>
+                              </td>
+                              <td className="p-4 font-bold text-slate-900">
+                                {order.amount} €
+                              </td>
+                              <td className="p-4">
+                                {getStatusBadge(order.status)}
+                              </td>
+                              <td className="p-4 text-right">
+                                {order.status !== 'pending' && order.status !== 'cancelled' && (
+                                  <button
+                                    onClick={() => {
+                                      downloadInvoice({
+                                        order,
+                                        serviceTitle: order.services?.title || 'Service',
+                                        sellerName: order.profiles?.full_name || 'Vendeur',
+                                        buyerName: order.buyer?.full_name || 'Acheteur',
+                                        buyerEmail: order.buyer?.email
+                                      });
+                                    }}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-frilya-600 font-medium text-sm transition-colors"
+                                    title="Télécharger la facture"
+                                  >
+                                    <Download className="w-4 h-4" /> PDF
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
