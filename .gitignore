@@ -25,3 +25,8 @@ dist-ssr
 
 # Mac OS metadata
 ._*
+
+# Variables d'environnement (clés secrètes) — .env.example reste versionné
+.env
+.env.*
+!.env.example

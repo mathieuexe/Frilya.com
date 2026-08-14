@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { Loader2, ArrowLeft, CheckCircle2, X, Plus, Trash2, UploadCloud, Image as ImageIcon, Video, AlertCircle } from 'lucide-react';
 import { CATEGORY_HIERARCHY } from '../../../lib/categories';
+import { trackServicePublished } from '../../../lib/analytics';
 
 type PackageType = {
   id?: string | null;
@@ -347,6 +348,7 @@ export default function CreateService() {
         if (serviceId) {
           const { error } = await supabase.from('services').update({ status: 'active' }).eq('id', serviceId);
           if (error) throw error;
+          trackServicePublished(serviceId, packages.basic.price);
           navigate('/tableau-de-bord/vendeur/services');
         }
       } catch (err) {

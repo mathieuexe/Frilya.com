@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { trackCheckoutStarted, trackOrderCreated } from '../../lib/analytics';
 import { loadStripe } from '@stripe/stripe-js';
 import { ShieldCheck, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
 
@@ -110,6 +111,7 @@ export default function Checkout() {
 
     try {
       const { total, platformFee } = calculateTotal(getNetPrice());
+      trackCheckoutStarted(service, selectedPackage, total);
 
       // 1. Créer la commande en base de données avec le statut "pending"
       const { data: order, error: orderError } = await supabase
@@ -126,6 +128,7 @@ export default function Checkout() {
         .single();
 
       if (orderError) throw orderError;
+      trackOrderCreated(service, total, platformFee);
 
       // 2. Appeler l'API Stripe
       const apiUrl = '/api/checkout'; // À adapter avec la vraie logique de l'Edge Function pour la marketplace

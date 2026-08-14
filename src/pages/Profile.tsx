@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { trackSellerProfileViewed } from '../lib/analytics';
 import { Loader2, Star, Calendar } from 'lucide-react';
 import catAvatar from '../assets/cat.png';
 import verifiedIcon from '../assets/verified.png';
@@ -63,6 +64,7 @@ export default function Profile() {
             return { ...service, averageRating: Math.round(avg * 10) / 10, reviewCount: revs.length };
           });
           setServices(processedServices);
+          trackSellerProfileViewed(profileData, processedServices.length);
         }
 
         if (reviewsRes.data) {

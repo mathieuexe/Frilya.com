@@ -23,6 +23,7 @@ import DisputesView from './admin/views/DisputesView';
 import SettingsView from './admin/views/SettingsView';
 import BetaManagementView from './admin/views/BetaManagementView';
 import SupportInboxView from './admin/views/SupportInboxView';
+import AnalyticsView from './admin/views/AnalyticsView';
 
 // FAQ & Support Views
 import TicketsView from './admin/views/tickets/TicketsView';
@@ -441,6 +442,7 @@ function AdminShell({
           <div className="max-w-7xl mx-auto">
             <Routes>
               <Route path="/" element={<DashboardView />} />
+              <Route path="/stats" element={<AnalyticsView />} />
               <Route path="/buyers" element={<UsersView type="acheteur" />} />
               <Route path="/sellers" element={<UsersView type="vendeur" />} />
               <Route path="/services" element={<ServicesView />} />

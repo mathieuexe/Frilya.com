@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { trackServiceViewed } from '../../lib/analytics';
 import { Star, Clock, CheckCircle, ShieldCheck, Heart, Share2, Loader2 } from 'lucide-react';
 import verifiedIcon from '../../assets/verified.png';
 
@@ -49,6 +50,7 @@ export default function ServiceDetail() {
 
       if (error) throw error;
       setService(data);
+      trackServiceViewed(data);
 
       // Fetch packages
       const { data: pkgs } = await supabase

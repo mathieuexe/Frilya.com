@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Store, ShoppingBag, MessageSquare, AlertTriangle,
-  Settings, Beaker, LifeBuoy, Inbox, FileText, Activity, Tag
+  Settings, Beaker, LifeBuoy, Inbox, FileText, Activity, Tag, BarChart3
 } from 'lucide-react';
 import type { AdminCounts } from './AdminNotificationsContext';
 
@@ -24,7 +24,8 @@ export const ADMIN_NAV: AdminNavCategory[] = [
     title: 'Pilotage',
     icon: LayoutDashboard,
     items: [
-      { id: 'dashboard', name: 'Tableau de bord', icon: LayoutDashboard, description: "Vue d'ensemble de la plateforme" }
+      { id: 'dashboard', name: 'Tableau de bord', icon: LayoutDashboard, description: "Vue d'ensemble de la plateforme" },
+      { id: 'stats', name: 'Statistique', icon: BarChart3, description: 'Audience, provenance, ventes et conversion' }
     ]
   },
   {

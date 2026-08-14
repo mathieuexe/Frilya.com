@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { trackSearch } from '../../lib/analytics';
 import { Star, Clock, Filter, Search as SearchIcon, User } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -58,6 +59,8 @@ export default function Search() {
 
       setServices(servicesRes.data || []);
       setUsers(usersRes.data || []);
+
+      trackSearch(q, { category: cat }, (servicesRes.data || []).length);
     } catch (error) {
       console.error("Erreur lors de la recherche", error);
     } finally {

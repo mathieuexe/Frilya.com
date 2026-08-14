@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { supabase } from './lib/supabase';
+import { trackPageview, identifyUser, resetUser } from './lib/analytics';
 
 // Layouts
 import MainLayout from './components/layout/MainLayout';
@@ -48,6 +49,11 @@ function AppRoutes() {
   useEffect(() => {
     checkStatus();
   }, [location.pathname]);
+
+  // Analytics : une page vue à chaque changement d'URL (SPA)
+  useEffect(() => {
+    trackPageview(location.pathname + location.search);
+  }, [location.pathname, location.search]);
 
   const checkStatus = async () => {
     try {
@@ -98,7 +104,7 @@ function AppRoutes() {
         setIsAuthenticated(true);
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role, is_beta, beta_end_date, welcome_message_sent')
+          .select('role, is_beta, beta_end_date, welcome_message_sent, is_seller, is_verified, created_at')
           .eq('id', session.user.id)
           .single();
           
@@ -111,6 +117,9 @@ function AppRoutes() {
         }
           
         setIsAdmin(profile?.role === 'admin');
+
+        // Analytics : rattacher les événements à l'utilisateur connecté
+        identifyUser(session.user.id, profile);
 
         // Check if welcome message was sent
         if (profile && !profile.welcome_message_sent) {
@@ -134,6 +143,7 @@ function AppRoutes() {
       } else {
         setIsAuthenticated(false);
         setIsAdmin(false);
+        resetUser();
       }
     } catch (err) {
       console.error('Erreur lors de la vérification du statut:', err);

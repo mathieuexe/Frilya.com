@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, Loader2, ArrowRight, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { trackLogin, trackSignup } from '../lib/analytics';
 import { DiscordIcon } from '../components/DiscordIcon';
 import logo from '../assets/logo.png';
 
@@ -38,6 +39,7 @@ export default function Auth() {
           password,
         });
         if (signInError) throw signInError;
+        trackLogin();
         navigate('/tableau-de-bord'); // Redirection après connexion vers le dashboard
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -87,6 +89,7 @@ export default function Auth() {
           }
         }
         
+        trackSignup('acheteur');
         setMessage('Inscription réussie ! Vous pouvez maintenant vous connecter (ou vérifier votre email si requis).');
         setIsLogin(true);
       }

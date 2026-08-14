@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { sendBetaConfirmationEmail } from '../lib/email';
+import { trackBetaApplication } from '../lib/analytics';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { DiscordIcon } from '../components/DiscordIcon';
 import logo from '../assets/logo.png';
@@ -163,6 +164,7 @@ export default function BetaRegistration() {
       }
 
       // 6. Envoyer l'email de confirmation via Resend
+      trackBetaApplication();
       await sendBetaConfirmationEmail(formData.email, formData.pseudo);
 
       setSuccess(true);

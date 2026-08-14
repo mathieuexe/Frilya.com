@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { trackTicketCreated } from '../lib/analytics';
 import { AlertCircle, Upload, CheckCircle2, Loader2, Store, ShoppingBag } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -130,6 +131,7 @@ export default function ReportIssue() {
 
       if (insertError) throw insertError;
 
+      trackTicketCreated(category);
       setSuccessTicketId(ticketNumber);
     } catch (err: any) {
       console.error(err);
