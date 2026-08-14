@@ -313,8 +313,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   };
 
   const handleSendDuplicateEmail = async (order: any) => {
-    if (!order.buyer?.email) {
-      alert("L'acheteur n'a pas d'adresse e-mail renseignée.");
+    if (!order.seller?.email) {
+      alert("Le vendeur n'a pas d'adresse e-mail renseignée.");
       return;
     }
     setSendingDuplicateId(order.id);
@@ -332,7 +332,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       const invoiceRef = `FAC-${new Date(order.created_at).getFullYear()}${String(new Date(order.created_at).getMonth() + 1).padStart(2, '0')}${String(new Date(order.created_at).getDate()).padStart(2, '0')}-${order.id.replace(/-/g, '').slice(0, 5).toUpperCase()}`;
 
       const emailHtml = `
-        <p>Bonjour ${order.buyer.full_name},</p>
+        <p>Bonjour ${order.seller.full_name},</p>
         <p>Suite à votre demande, veuillez trouver ci-joint un duplicata de votre facture <strong>${invoiceRef}</strong>.</p>
         <p>Vous souhaitant bonne réception,</p>
         <p>L’équipe d’assistance Frilya</p>
@@ -342,7 +342,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: [order.buyer.email],
+          to: [order.seller.email],
           subject: `Duplicata de votre facture ${invoiceRef}`,
           html: emailHtml,
           attachments: [

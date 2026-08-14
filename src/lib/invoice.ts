@@ -46,18 +46,6 @@ export function buildInvoice(data: InvoiceData, logoDataUrl?: string): jsPDF {
   const margin = 16;
   const contentWidth = pageWidth - margin * 2;
 
-  if (isDuplicate) {
-    // Filigrane "DUPLICATA" en diagonale au centre
-    doc.saveGraphicsState();
-    doc.setGState(new (doc as any).GState({ opacity: 0.2 }));
-    doc.setTextColor(150, 150, 150);
-    doc.setFontSize(80);
-    doc.setFont('helvetica', 'bold');
-    // Rotate text by 45 degrees
-    doc.text('DUPLICATA', pageWidth / 2, 140, { align: 'center', angle: 45 });
-    doc.restoreGraphicsState();
-  }
-
   const total = Number(order?.amount || 0);
   const fee = Number(order?.platform_fee || 0);
   const net = Math.max(total - fee, 0);
@@ -275,6 +263,17 @@ export function buildInvoice(data: InvoiceData, logoDataUrl?: string): jsPDF {
     `${INVOICE_ISSUER.legalName} — ${INVOICE_ISSUER.website} — ${INVOICE_ISSUER.email}`,
     pageWidth / 2, 286, { align: 'center' }
   );
+
+  // ---------------- Filigrane (Dessiné en dernier pour être au-dessus du texte) ----------------
+  if (isDuplicate) {
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.2 }));
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(80);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DUPLICATA', pageWidth / 2, 140, { align: 'center', angle: 45 });
+    doc.restoreGraphicsState();
+  }
 
   return doc;
 }
