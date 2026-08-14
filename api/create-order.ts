@@ -16,6 +16,9 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://bkrfulpstfhpnlrwocdt.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+// Clé publique (déjà exposée côté navigateur) : sert à appeler les RPC "au nom de
+// l'utilisateur" pour que auth.uid() soit renseigné dans les fonctions SQL.
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_4Wsxiu9dY6jTMHEnSvAqmg_74mhGlBb';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2026-07-29.dahlia'
@@ -139,22 +142,38 @@ export default async function handler(req: any, res: any) {
 
     if (orderError) throw orderError;
 
-    // --- Paiement par le solde : le débit est fait par la RPC côté client (atomique)
+    // --- Paiement par le solde : encaissé immédiatement, dans la même requête.
+    // La commande ne reste jamais "pending" : soit elle est payée, soit elle est
+    // supprimée. Le débit passe par la fonction SQL atomique (verrous + contrôles).
     if (payment_method === 'balance') {
+      const token = authHeader.replace('Bearer ', '');
+      const supabaseAsUser = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } }
+      });
+
+      const { error: payError } = await supabaseAsUser.rpc('pay_order_with_balance', {
+        p_order_id: order.id
+      });
+
+      if (payError) {
+        await supabase.from('orders').delete().eq('id', order.id);
+        return res.status(400).json({ error: payError.message || 'Paiement par solde impossible.' });
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('balance')
         .eq('id', user.id)
         .single();
 
-      if (Number(profile?.balance || 0) < total) {
-        await supabase.from('orders').delete().eq('id', order.id);
-        return res.status(400).json({
-          error: `Solde insuffisant : ${Number(profile?.balance || 0).toFixed(2)} € disponibles pour ${total.toFixed(2)} € requis.`
-        });
-      }
-
-      return res.status(200).json({ order_id: order.id, total, platform_fee: platformFee });
+      return res.status(200).json({
+        order_id: order.id,
+        status: 'in_progress',
+        paid: true,
+        total,
+        platform_fee: platformFee,
+        balance_after: Number(profile?.balance || 0)
+      });
     }
 
     // --- Paiement par Stripe : tous les moyens activés dans le tableau de bord Stripe

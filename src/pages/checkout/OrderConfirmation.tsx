@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { trackOrderCreated } from '../../lib/analytics';
+import { downloadInvoice } from '../../lib/invoice';
 import {
   CheckCircle2, Loader2, AlertCircle, Clock, MessageSquare, Package,
-  ArrowRight, Wallet, CreditCard, ShieldCheck
+  ArrowRight, Wallet, CreditCard, ShieldCheck, Download
 } from 'lucide-react';
 
 /**
@@ -43,29 +44,40 @@ export default function OrderConfirmation() {
         return;
       }
 
-      // 1. Confirmation serveur du paiement
-      const res = await fetch('/api/verify-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ order_id: orderId, session_id: sessionId })
-      });
+      // 1. État de la commande
+      const loadOrder = async () => {
+        const { data } = await supabase
+          .from('orders')
+          .select('*, services(id, title, slug, cover_image_url), profiles!seller_id(id, full_name, avatar_url, slug), buyer:profiles!buyer_id(id, full_name, email)')
+          .eq('id', orderId)
+          .single();
+        return data;
+      };
 
-      const payload = await res.json().catch(() => ({}));
+      let orderData = await loadOrder();
+      let payload: any = {};
+      let verifyOk = true;
 
-      // 2. Détail de la commande
-      const { data: orderData } = await supabase
-        .from('orders')
-        .select('*, services(id, title, slug, cover_image_url), profiles!seller_id(id, full_name, avatar_url, slug)')
-        .eq('id', orderId)
-        .single();
+      // 2. Un paiement par carte se confirme côté serveur ; un paiement par solde
+      // est déjà encaissé (aucune vérification à faire).
+      if (orderData?.status === 'pending') {
+        const res = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ order_id: orderId, session_id: sessionId })
+        });
+        payload = await res.json().catch(() => ({}));
+        verifyOk = res.ok;
+        orderData = await loadOrder();
+      }
 
       setOrder(orderData);
 
-      const paid = orderData && orderData.status !== 'pending';
-      setStatus(paid ? 'paid' : res.ok ? 'pending' : 'error');
+      const paid = !!orderData && orderData.status !== 'pending';
+      setStatus(paid ? 'paid' : verifyOk ? 'pending' : 'error');
 
       if (!paid) {
         setMessage(
@@ -194,6 +206,23 @@ export default function OrderConfirmation() {
                   <MessageSquare className="w-4 h-4" /> Contacter le vendeur
                 </Link>
               </div>
+
+              {isPaid && (
+                <button
+                  onClick={() => {
+                    downloadInvoice({
+                      order,
+                      serviceTitle: order.services?.title || 'Service',
+                      sellerName: order.profiles?.full_name || 'Vendeur',
+                      buyerName: order.buyer?.full_name || 'Acheteur',
+                      buyerEmail: order.buyer?.email
+                    });
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3.5 px-6 rounded-xl transition-colors mt-3"
+                >
+                  <Download className="w-4 h-4" /> Télécharger ma facture
+                </button>
+              )}
 
               {!isPaid && (
                 <button

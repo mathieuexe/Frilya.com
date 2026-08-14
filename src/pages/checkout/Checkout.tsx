@@ -169,12 +169,7 @@ export default function Checkout() {
         return;
       }
 
-      // Paiement par le solde : débit atomique côté base
-      const { error: rpcError } = await supabase.rpc('pay_order_with_balance', {
-        p_order_id: payload.order_id
-      });
-      if (rpcError) throw new Error(rpcError.message);
-
+      // Paiement par le solde : déjà encaissé par le serveur, rien à confirmer
       trackOrderCreated(service, total, platformFee);
       navigate(`/commande/confirmation?order_id=${payload.order_id}`);
     } catch (err: any) {

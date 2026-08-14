@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import {
   Package, Star, MessageSquare, Loader2, Truck, CheckCircle2, Clock, Wallet,
-  CreditCard, FileText, ShieldCheck, AlertCircle
+  CreditCard, FileText, ShieldCheck, AlertCircle, Download
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { downloadInvoice } from '../../lib/invoice';
 
 export default function Orders() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -251,6 +252,24 @@ export default function Orders() {
                       >
                         <MessageSquare className="w-4 h-4" /> Contacter
                       </Link>
+
+                      {order.buyer_id === currentUser?.id && order.status !== 'pending' && order.status !== 'cancelled' && (
+                        <button
+                          onClick={() => {
+                            downloadInvoice({
+                              order,
+                              serviceTitle: order.services?.title || 'Service',
+                              sellerName: order.profiles?.full_name || 'Vendeur',
+                              buyerName: order.buyer?.full_name || 'Acheteur',
+                              buyerEmail: order.buyer?.email
+                            });
+                          }}
+                          className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 font-bold text-sm transition-colors flex items-center gap-2"
+                          title="Télécharger la facture"
+                        >
+                          <Download className="w-4 h-4" /> Facture
+                        </button>
+                      )}
 
                       {/* Vendeur : déclarer la livraison */}
                       {order.seller_id === currentUser?.id && order.status === 'in_progress' && (
