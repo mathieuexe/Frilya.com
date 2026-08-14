@@ -146,12 +146,18 @@ function AdminShell({
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  /** Index de la catégorie dont le sous-menu est ouvert (navigation horizontale) */
+  const [openCategory, setOpenCategory] = useState<number | null>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const navBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
+      }
+      if (navBarRef.current && !navBarRef.current.contains(event.target as Node)) {
+        setOpenCategory(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -160,6 +166,7 @@ function AdminShell({
 
   useEffect(() => {
     setMobileNavOpen(false);
+    setOpenCategory(null);
   }, [location.pathname]);
 
   const currentPath = location.pathname.replace('/admin', '') || '/';
@@ -247,8 +254,8 @@ function AdminShell({
             </div>
           </div>
 
-          {/* Barre de navigation */}
-          <div className="bg-slate-900/80 px-4 md:px-6 py-2.5 flex items-center gap-1 overflow-x-auto">
+          {/* Barre de navigation — pas d'overflow ici, sinon les sous-menus sont rognés */}
+          <div ref={navBarRef} className="bg-slate-900/80 px-4 md:px-6 py-2.5 flex flex-wrap items-center gap-1">
             {ADMIN_NAV.map((cat, idx) => {
               const catBadge = categoryBadgeCount(cat, counts);
 
@@ -271,20 +278,27 @@ function AdminShell({
               }
 
               const isActiveCategory = cat.items.some(item => isActivePath(item.id));
+              const isMenuOpen = openCategory === idx;
               return (
                 <div key={idx} className="relative group">
                   <button
+                    onClick={() => setOpenCategory(isMenuOpen ? null : idx)}
+                    aria-expanded={isMenuOpen}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
-                      isActiveCategory ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      isActiveCategory || isMenuOpen ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
                     }`}
                   >
                     <cat.icon className="w-4 h-4" />
                     {cat.title}
                     <NotificationBubble count={catBadge} />
-                    <ChevronDown className="w-3 h-3 opacity-50" />
+                    <ChevronDown className={`w-3 h-3 opacity-50 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  <div className="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                  <div className={`absolute left-0 top-full pt-2 transition-all duration-150 z-50 ${
+                    isMenuOpen
+                      ? 'opacity-100 visible'
+                      : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'
+                  }`}>
                     <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 min-w-[280px]">
                       {cat.items.map(item => {
                         const active = isActivePath(item.id);
@@ -292,7 +306,7 @@ function AdminShell({
                         return (
                           <button
                             key={item.id}
-                            onClick={navButton(item.id)}
+                            onClick={() => { setOpenCategory(null); navigate(pathForItem(item.id)); }}
                             className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors text-left ${
                               active ? 'bg-frilya-50 text-frilya-700' : 'text-slate-600 hover:bg-slate-50'
                             }`}
