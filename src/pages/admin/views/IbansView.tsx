@@ -51,7 +51,7 @@ export default function IbansView() {
 
       // 3. Send email (via Resend)
       try {
-        await fetch('/api/send-email', {
+        const response = await fetch('/api/send-email', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -62,6 +62,14 @@ export default function IbansView() {
             html: `<p>${messageContent.replace(/\n/g, '<br/>')}</p>`
           })
         });
+        
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("text/html") !== -1) {
+          console.error("L'API d'email n'est pas disponible en local sans Vercel CLI.");
+        } else if (!response.ok) {
+          const errData = await response.json().catch(() => null);
+          console.error("Erreur API email IBAN:", errData);
+        }
       } catch (emailErr) {
         console.error("Erreur envoi email:", emailErr);
         // On ne bloque pas si l'email échoue

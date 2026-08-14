@@ -354,11 +354,22 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         })
       });
 
-      if (!response.ok) throw new Error('Erreur API email');
+      // Si on est en local avec Vite, /api renvoie index.html (200 OK) au lieu du JSON
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("text/html") !== -1) {
+        throw new Error("L'API d'email n'est pas disponible en local sans Vercel CLI. Veuillez tester sur la version déployée (Vercel) ou utiliser 'vercel dev'.");
+      }
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        console.error("Erreur détaillée:", errData);
+        throw new Error(errData?.error?.message || 'Erreur API email');
+      }
+      
       alert('Le duplicata a été envoyé par e-mail avec succès.');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erreur envoi email duplicata:', err);
-      alert("Une erreur est survenue lors de l'envoi de l'e-mail.");
+      alert(err.message || "Une erreur est survenue lors de l'envoi de l'e-mail.");
     } finally {
       setSendingDuplicateId(null);
     }
