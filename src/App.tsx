@@ -20,6 +20,7 @@ import ServiceDetailPage from './pages/services/ServiceDetail';
 import ServicesList from './pages/dashboard/seller/ServicesList';
 import CreateServicePage from './pages/dashboard/seller/CreateService';
 import CheckoutPage from './pages/checkout/Checkout';
+import OrderConfirmationPage from './pages/checkout/OrderConfirmation';
 import MessagesPage from './pages/messages/Messages';
 import ProfilePage from './pages/Profile';
 
@@ -225,6 +226,7 @@ function AppRoutes() {
       <Route path="/beta" element={<BetaRegistrationPage />} />
       <Route path="/connexion" element={<AuthPage />} />
       <Route path="/paiement/:id" element={<CheckoutPage />} />
+      <Route path="/commande/confirmation" element={<OrderConfirmationPage />} />
       <Route path="/admin/*" element={<AdminPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
