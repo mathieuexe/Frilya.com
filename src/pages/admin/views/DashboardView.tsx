@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Store, ShoppingBag, Package, Inbox, AlertTriangle, Beaker, Scale,
-  ArrowRight, Loader2, CheckCircle2, TrendingUp, Clock
+  ArrowRight, Loader2, CheckCircle2, TrendingUp, Clock, Edit3
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { SUPPORT_ACCOUNT_ID } from '../../../lib/constants';
@@ -28,6 +28,9 @@ export default function DashboardView() {
   const [recentTickets, setRecentTickets] = useState<any[]>([]);
   const [recentSupport, setRecentSupport] = useState<any[]>([]);
   const [recentBeta, setRecentBeta] = useState<any[]>([]);
+  const [note, setNote] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteTimeout, setNoteTimeout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export default function DashboardView() {
 
   const fetchDashboard = async () => {
     try {
-      const [buyers, sellers, services, orders, betaTesters, tickets, supportMsgs, betaApps] = await Promise.all([
+      const [buyers, sellers, services, orders, betaTesters, tickets, supportMsgs, betaApps, noteData] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_seller', false).neq('role', 'admin'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_seller', true),
         supabase.from('services').select('id', { count: 'exact', head: true }),
@@ -44,7 +47,8 @@ export default function DashboardView() {
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_beta', true),
         supabase.from('report_tickets').select('id, ticket_number, title, status, priority, created_at').order('created_at', { ascending: false }).limit(5),
         supabase.from('messages').select('id, sender_id, content, created_at, is_read').eq('receiver_id', SUPPORT_ACCOUNT_ID).order('created_at', { ascending: false }).limit(5),
-        supabase.from('beta_applications').select('id, pseudo, email, status, created_at').order('created_at', { ascending: false }).limit(5)
+        supabase.from('beta_applications').select('id, pseudo, email, status, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase.from('settings').select('value').eq('key', 'admin_notepad').maybeSingle()
       ]);
 
       const revenue = (orders.data || []).reduce((acc: number, o: any) => acc + Number(o.amount || 0), 0);
@@ -60,6 +64,10 @@ export default function DashboardView() {
 
       setRecentTickets(tickets.data || []);
       setRecentBeta(betaApps.data || []);
+      
+      if (noteData.data) {
+        setNote(noteData.data.value?.content || '');
+      }
 
       // Noms des expéditeurs des derniers messages SAV
       const senderIds = [...new Set((supportMsgs.data || []).map(m => m.sender_id).filter(Boolean))];
@@ -75,6 +83,25 @@ export default function DashboardView() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newNote = e.target.value;
+    setNote(newNote);
+    
+    if (noteTimeout) clearTimeout(noteTimeout);
+    
+    setNoteTimeout(setTimeout(async () => {
+      setSavingNote(true);
+      try {
+        const { error } = await supabase
+          .from('settings')
+          .upsert({ key: 'admin_notepad', value: { content: newNote } }, { onConflict: 'key' });
+        if (error) console.error("Erreur sauvegarde note:", error);
+      } finally {
+        setSavingNote(false);
+      }
+    }, 1000));
   };
 
   const kpis = [
@@ -201,7 +228,7 @@ export default function DashboardView() {
       </div>
 
       {/* Activité récente */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
 
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -302,6 +329,30 @@ export default function DashboardView() {
               </button>
             ))}
           </div>
+        </div>
+        {/* Bloc Notes */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-bold text-slate-900 flex items-center gap-2">
+              <Edit3 className="w-4 h-4 text-frilya-600" /> Bloc-notes
+            </h3>
+            {savingNote && (
+              <span className="text-xs text-slate-400 flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" /> Enregistrement...
+              </span>
+            )}
+            {!savingNote && note && (
+              <span className="text-xs text-slate-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Sauvegardé
+              </span>
+            )}
+          </div>
+          <textarea
+            value={note}
+            onChange={handleNoteChange}
+            placeholder="Écrivez vos notes ici... (sauvegarde automatique)"
+            className="flex-1 w-full p-5 min-h-[250px] resize-none outline-none text-sm text-slate-700 bg-transparent placeholder:text-slate-300"
+          />
         </div>
       </div>
     </div>
