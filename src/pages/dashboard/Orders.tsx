@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { downloadInvoice } from '../../lib/invoice';
+import { formatOrderId } from '../../lib/formatUtils';
 
 export default function Orders() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -186,7 +187,7 @@ export default function Orders() {
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex flex-col">
                           <span className="text-xs font-mono text-slate-500 mb-1">
-                            Réf: #{order.id.split('-')[0].toUpperCase()}
+                            Réf: {formatOrderId(order.id)}
                           </span>
                           <h3 className="font-bold text-lg text-slate-900">
                             {order.services?.title || 'Service inconnu'}

@@ -1,3 +1,5 @@
+import { formatInvoiceId } from './formatUtils';
+
 /**
  * Informations légales figurant sur les factures.
  *
@@ -32,12 +34,5 @@ export const INVOICE_ISSUER = {
  * avant d'utiliser ces factures comme pièces comptables officielles.
  */
 export const invoiceNumber = (order: any) => {
-  const date = new Date(order?.paid_at || order?.created_at || Date.now());
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  
-  // Create a short, memorable suffix based on the UUID (e.g. just 5 chars)
-  const suffix = String(order?.id || '').replace(/-/g, '').slice(0, 5).toUpperCase();
-  return `FAC-${yyyy}${mm}${dd}-${suffix}`;
+  return formatInvoiceId(order?.id);
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Loader2, User, Package, ShoppingBag, ArrowRight, Ticket, Scale } from 'lucide-react';
+import { formatOrderId, formatDisputeId } from '../../../lib/formatUtils';
 import { supabase } from '../../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -172,7 +173,7 @@ export default function AdminGlobalSearch({ dark = false }: { dark?: boolean }) 
                       <ShoppingBag className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-slate-900 truncate">Commande #{o.id.split('-')[0]}</div>
+                      <div className="text-sm font-bold text-slate-900 truncate">Commande {formatOrderId(o.id)}</div>
                       <div className="text-xs text-slate-500">{o.amount} € - {o.status}</div>
                     </div>
                     <ArrowRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -208,7 +209,8 @@ export default function AdminGlobalSearch({ dark = false }: { dark?: boolean }) 
                       <Scale className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-slate-900 truncate">Litige sur Commande #{d.id.split('-')[0]}</div>
+                      <div className="text-sm font-bold text-slate-900 truncate">Litige {formatDisputeId(d.id)}</div>
+                      <div className="text-xs text-slate-500">{d.status}</div>
                     </div>
                     <ArrowRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>

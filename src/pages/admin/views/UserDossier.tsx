@@ -8,6 +8,7 @@ import {
 import catAvatar from '../../../assets/cat.png';
 import { generateInvoiceBase64, downloadInvoice } from '../../../lib/invoice';
 import type { InvoiceData } from '../../../lib/invoice';
+import { formatOrderId, formatInvoiceId } from '../../../lib/formatUtils';
 
 interface UserDossierProps {
   userId: string;
@@ -303,7 +304,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       };
       
       const base64Pdf = await generateInvoiceBase64(data);
-      const invoiceRef = `FAC-${new Date(order.created_at).getFullYear()}${String(new Date(order.created_at).getMonth() + 1).padStart(2, '0')}${String(new Date(order.created_at).getDate()).padStart(2, '0')}-${order.id.replace(/-/g, '').slice(0, 5).toUpperCase()}`;
+      const invoiceRef = formatInvoiceId(order.id);
 
       const emailHtml = `
         <p>Bonjour ${order.seller.full_name},</p>
@@ -684,7 +685,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                           <div>
                             <div className="flex items-center gap-3 mb-1.5">
                               <span className="font-mono text-xs text-slate-600 bg-slate-100 border border-slate-200 px-2 py-1 rounded-md font-medium">
-                                #{order.id.split('-')[0].toUpperCase()}
+                                {formatOrderId(order.id)}
                               </span>
                               <span className="px-2.5 py-1 bg-white border border-slate-200 rounded-md text-xs font-bold text-slate-700 shadow-sm">
                                 {getStatusLabel(order.status)}

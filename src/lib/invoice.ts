@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { INVOICE_ISSUER, invoiceNumber } from './invoiceIssuer';
+import { formatOrderId } from './formatUtils';
 
 /**
  * Génération de la facture PDF d'une commande.
@@ -248,7 +249,7 @@ export function buildInvoice(data: InvoiceData, logoDataUrl?: string): jsPDF {
     INVOICE_ISSUER.vatNote,
     'Frilya agit en qualité d\'intermédiaire : la prestation est réalisée par le vendeur indiqué ci-dessus.',
     'Le règlement est conservé sous séquestre et versé au vendeur après validation de la livraison par le client.',
-    `Référence de commande : ${order?.id || '—'}`
+    `Référence de commande : ${formatOrderId(order?.id) || '—'}`
   ];
   notes.forEach(note => {
     doc.splitTextToSize(note, contentWidth).forEach((line: string) => {

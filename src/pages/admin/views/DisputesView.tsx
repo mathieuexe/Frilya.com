@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { formatDisputeId, formatOrderId } from '../../../lib/formatUtils';
 import { Loader2, AlertCircle, CheckCircle, Trash2 } from 'lucide-react';
 
 export default function DisputesView() {
@@ -67,7 +68,7 @@ export default function DisputesView() {
                 <tr key={dispute.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="p-4">
                     <div className="font-mono text-xs text-slate-500 mb-1">
-                      #{dispute.id.split('-')[0]}
+                      {formatDisputeId(dispute.id)}
                     </div>
                     <div className="text-sm text-slate-900 font-medium">
                       {new Date(dispute.created_at).toLocaleDateString('fr-FR')}
@@ -75,7 +76,7 @@ export default function DisputesView() {
                   </td>
                   <td className="p-4">
                     <div className="font-mono text-xs font-bold text-frilya-600">
-                      Ord: {dispute.order_id?.split('-')[0]}
+                      {formatOrderId(dispute.order_id)}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
                       Montant: {dispute.order?.amount} €

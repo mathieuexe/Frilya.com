@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { formatOrderId } from '../../../lib/formatUtils';
 import { Loader2, Search, Edit, Ban, RefreshCcw } from 'lucide-react';
 
 export default function OrdersView() {
@@ -100,7 +101,7 @@ export default function OrdersView() {
               orders.map((order) => (
                 <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="p-4">
-                    <div className="font-mono text-sm text-slate-900">#{order.id.split('-')[0].toUpperCase()}</div>
+                    <div className="font-mono text-sm text-slate-900">{formatOrderId(order.id)}</div>
                     <div className="text-xs text-slate-500">
                       {new Date(order.created_at).toLocaleDateString('fr-FR', {
                         day: '2-digit', month: '2-digit', year: 'numeric',
