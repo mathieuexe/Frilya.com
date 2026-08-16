@@ -12,6 +12,7 @@ import { ADMIN_NAV, ADMIN_NAV_ITEMS, pathForItem, categoryBadgeCount } from './a
 import NotificationBubble from './admin/components/NotificationBubble';
 import NotificationsBell from './admin/components/NotificationsBell';
 import AdminProfileMenu from './admin/components/AdminProfileMenu';
+import AdminGlobalSearch from './admin/components/AdminGlobalSearch';
 
 // Views
 import DashboardView from './admin/views/DashboardView';
@@ -415,6 +416,10 @@ function AdminShell({
               {activeItem?.description && (
                 <p className="text-sm text-slate-500 truncate">{activeItem.description}</p>
               )}
+            </div>
+
+            <div className="flex-1 flex justify-center max-w-md">
+              <AdminGlobalSearch />
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
