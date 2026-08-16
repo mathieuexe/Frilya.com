@@ -242,7 +242,7 @@ export default function Settings() {
           bank_name: bankName,
           bank_address: bankAddress,
           rib_file_url: ribUrl,
-          rib_status: (ribUrl || profile.rib_file_url) ? 'pending' : profile.rib_status
+          rib_status: 'pending'
         })
         .eq('id', profile.id);
         
