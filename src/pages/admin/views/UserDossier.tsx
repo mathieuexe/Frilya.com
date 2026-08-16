@@ -377,230 +377,206 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen pb-12 animate-in fade-in duration-200">
-      {/* Sticky Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 sticky top-0 z-50 flex items-center justify-between shadow-sm">
-        <button onClick={onClose} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm transition-colors group">
-          <div className="bg-slate-100 group-hover:bg-slate-200 p-1.5 rounded-lg transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-          </div>
-          Retour aux utilisateurs
+    <div className="space-y-6 animate-in fade-in duration-200">
+      
+      {/* Header Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <button onClick={onClose} className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm transition-colors bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm w-fit">
+          <ArrowLeft className="w-4 h-4" />
+          Retour à la liste
         </button>
+        
         <div className="flex items-center gap-3">
-           <button onClick={handleSaveInfo} disabled={saving} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl font-bold text-sm transition-colors shadow-sm disabled:opacity-50">
-             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-             Enregistrer
-           </button>
+          <button 
+            onClick={handleImpersonate} 
+            disabled={impersonating}
+            className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-xl font-bold text-sm transition-colors shadow-sm disabled:opacity-50"
+          >
+            {impersonating ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+            Se connecter
+          </button>
+          <button 
+            onClick={handleSaveInfo} 
+            disabled={saving} 
+            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-xl font-bold text-sm transition-colors shadow-sm disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Enregistrer
+          </button>
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="bg-white border-b border-slate-200 shadow-sm relative mb-8">
-        <div className="h-48 md:h-64 w-full bg-slate-200 relative overflow-hidden group">
-           {bannerFile ? (
-             <img src={URL.createObjectURL(bannerFile)} alt="Bannière" className="w-full h-full object-cover" />
-           ) : profile?.banner_url ? (
-             <img src={profile.banner_url} alt="Bannière" className="w-full h-full object-cover" />
-           ) : (
-             <div className="w-full h-full bg-gradient-to-r from-slate-200 to-slate-300"></div>
-           )}
-           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <label className="cursor-pointer bg-white/90 backdrop-blur text-slate-900 px-4 py-2 rounded-xl font-bold text-sm shadow-lg flex items-center gap-2 hover:bg-white transition-colors">
-                <Camera className="w-4 h-4" />
-                Changer la bannière
-                <input type="file" accept="image/*" className="hidden" onChange={e => setBannerFile(e.target.files ? e.target.files[0] : null)} />
-              </label>
-           </div>
+      {/* Profil Header Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row items-start md:items-center gap-6">
+        <div className="relative shrink-0 group">
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover border border-slate-200 bg-slate-100 overflow-hidden relative shadow-sm">
+            {avatarFile ? (
+              <img src={URL.createObjectURL(avatarFile)} className="w-full h-full object-cover" />
+            ) : (
+              <img src={profile?.avatar_url || catAvatar} className="w-full h-full object-cover" />
+            )}
+            <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
+               <Camera className="w-5 h-5" />
+               <input type="file" accept="image/*" className="hidden" onChange={e => setAvatarFile(e.target.files ? e.target.files[0] : null)} />
+            </label>
+          </div>
+          {profile?.is_verified && (
+            <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-sm border border-slate-100">
+              <CheckCircle className="w-5 h-5 text-blue-500 fill-blue-500/20" />
+            </div>
+          )}
         </div>
         
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-           <div className="relative -mt-20 md:-mt-24 flex flex-col md:flex-row gap-6 justify-between items-end md:items-start pb-8">
-              <div className="flex flex-col md:flex-row gap-6 items-center md:items-end w-full md:w-auto">
-                 <div className="relative shrink-0 group">
-                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl object-cover shadow-xl border-4 border-white bg-white overflow-hidden relative">
-                      {avatarFile ? (
-                        <img src={URL.createObjectURL(avatarFile)} className="w-full h-full object-cover" />
-                      ) : (
-                        <img src={profile?.avatar_url || catAvatar} className="w-full h-full object-cover" />
-                      )}
-                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
-                         <Camera className="w-6 h-6" />
-                         <input type="file" accept="image/*" className="hidden" onChange={e => setAvatarFile(e.target.files ? e.target.files[0] : null)} />
-                      </label>
-                    </div>
-                    {profile?.is_verified && (
-                      <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-md border border-slate-50">
-                        <CheckCircle className="w-7 h-7 text-blue-500 fill-blue-500/20" />
-                      </div>
-                    )}
-                 </div>
-                 <div className="text-center md:text-left pb-2 w-full">
-                    <h1 className="text-3xl font-black text-slate-900 flex items-center justify-center md:justify-start gap-3">
-                      {profile?.full_name || 'Utilisateur inconnu'}
-                    </h1>
-                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 mt-3 text-sm text-slate-600">
-                       <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-slate-400" /> {profile?.email}</span>
-                       <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-slate-400" /> Inscrit en {stats.joinDate}</span>
-                       {profile?.is_seller && <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1"><Store className="w-3 h-3"/> Vendeur</span>}
-                       {profile?.role === 'admin' && <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100 flex items-center gap-1"><ShieldAlert className="w-3 h-3"/> Admin</span>}
-                       {profile?.is_beta && <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-900 text-white border border-slate-700 flex items-center gap-1">β Bêta</span>}
-                    </div>
-                 </div>
-              </div>
-              
-              <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
-                 <button 
-                   onClick={handleImpersonate} 
-                   disabled={impersonating}
-                   className="w-full md:w-auto flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm disabled:opacity-50"
-                 >
-                   {impersonating ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
-                   Se connecter en tant que
-                 </button>
-              </div>
-           </div>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            {profile?.full_name || 'Utilisateur inconnu'}
+          </h1>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+             <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-slate-400" /> {profile?.email}</span>
+             <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-slate-400" /> Inscrit en {stats.joinDate}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+             {profile?.is_seller && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1"><Store className="w-3 h-3"/> Vendeur</span>}
+             {profile?.role === 'admin' && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100 flex items-center gap-1"><ShieldAlert className="w-3 h-3"/> Admin</span>}
+             {profile?.is_beta && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-900 text-white border border-slate-700 flex items-center gap-1">β Bêta</span>}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* KPIs Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-               <CreditCard className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Solde Actuel</div>
-              <div className="text-2xl font-black text-slate-900">{profile?.balance || 0} €</div>
-            </div>
+      {/* KPIs Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+             <CreditCard className="w-6 h-6" />
           </div>
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-               <ShoppingBag className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Achats ({orders.length})</div>
-              <div className="text-2xl font-black text-slate-900">{stats.totalSpent.toFixed(2)} €</div>
-            </div>
+          <div>
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Solde Actuel</div>
+            <div className="text-xl font-black text-slate-900">{profile?.balance || 0} €</div>
           </div>
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-               <Store className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ventes Net ({sales.length})</div>
-              <div className="text-2xl font-black text-slate-900">{stats.totalEarned.toFixed(2)} €</div>
-            </div>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+             <ShoppingBag className="w-6 h-6" />
           </div>
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
-               <Star className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Note Moyenne</div>
-              <div className="text-2xl font-black text-slate-900 flex items-center gap-1.5">
-                {stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '-'} <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-              </div>
+          <div>
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Total Achats ({orders.length})</div>
+            <div className="text-xl font-black text-slate-900">{stats.totalSpent.toFixed(2)} €</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+             <Store className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Ventes Net ({sales.length})</div>
+            <div className="text-xl font-black text-slate-900">{stats.totalEarned.toFixed(2)} €</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+             <Star className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Note Moyenne</div>
+            <div className="text-xl font-black text-slate-900 flex items-center gap-1.5">
+              {stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '-'} <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Modern Tabs */}
-        <div className="flex items-center gap-2 p-1.5 bg-slate-200/50 rounded-2xl overflow-x-auto hide-scrollbar mb-8 border border-slate-200/50">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as Tab)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${
-                activeTab === tab.id 
-                  ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-900/5' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-              }`}
-            >
-              <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-frilya-600' : 'text-slate-400'}`} />
-              {tab.name}
-            </button>
-          ))}
-        </div>
+      {/* Modern Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as Tab)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all whitespace-nowrap border ${
+              activeTab === tab.id 
+                ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-slate-300' : 'text-slate-400'}`} />
+            {tab.name}
+          </button>
+        ))}
+      </div>
 
         {/* Content Area */}
         <div className="animate-in slide-in-from-bottom-4 duration-300">
           
           {/* TAB: INFO */}
           {activeTab === 'info' && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column */}
-              <div className="xl:col-span-2 space-y-8">
+              <div className="lg:col-span-2 space-y-6">
                 {/* Informations Générales */}
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
-                    <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-                      <User className="w-5 h-5 text-slate-600" />
-                    </div>
-                    <h3 className="font-bold text-lg text-slate-900">Informations Générales</h3>
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                    <User className="w-4 h-4 text-slate-400" />
+                    <h3 className="font-semibold text-slate-800">Informations Générales</h3>
                   </div>
-                  <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nom Complet</label>
-                      <input type="text" value={editForm.full_name || ''} onChange={e => setEditForm({...editForm, full_name: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-frilya-600 focus:ring-4 focus:ring-frilya-600/10 transition-all" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Nom Complet</label>
+                      <input type="text" value={editForm.full_name || ''} onChange={e => setEditForm({...editForm, full_name: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email</label>
-                      <input type="email" value={editForm.email || ''} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-frilya-600 focus:ring-4 focus:ring-frilya-600/10 transition-all" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+                      <input type="email" value={editForm.email || ''} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Solde du compte (€)</label>
-                      <input type="number" value={editForm.balance || 0} onChange={e => setEditForm({...editForm, balance: Number(e.target.value)})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-frilya-600 focus:outline-none focus:border-frilya-600 focus:ring-4 focus:ring-frilya-600/10 transition-all" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Solde du compte (€)</label>
+                      <input type="number" value={editForm.balance || 0} onChange={e => setEditForm({...editForm, balance: Number(e.target.value)})} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow" />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Biographie</label>
-                      <textarea value={editForm.bio || ''} onChange={e => setEditForm({...editForm, bio: e.target.value})} rows={4} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-frilya-600 focus:ring-4 focus:ring-frilya-600/10 transition-all resize-none" placeholder="Description de l'utilisateur..." />
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Biographie</label>
+                      <textarea value={editForm.bio || ''} onChange={e => setEditForm({...editForm, bio: e.target.value})} rows={3} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow resize-none" placeholder="Description de l'utilisateur..." />
                     </div>
                   </div>
                 </div>
 
                 {/* Informations Bancaires */}
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
-                    <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-                      <CreditCard className="w-5 h-5 text-slate-600" />
-                    </div>
-                    <h3 className="font-bold text-lg text-slate-900">Coordonnées Bancaires</h3>
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-slate-400" />
+                    <h3 className="font-semibold text-slate-800">Coordonnées Bancaires</h3>
                   </div>
-                  <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Bénéficiaire</label>
-                      <input type="text" value={editForm.beneficiary_name || ''} readOnly className="w-full px-4 py-3 bg-slate-100/50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none cursor-not-allowed font-medium" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Bénéficiaire</label>
+                      <input type="text" value={editForm.beneficiary_name || ''} readOnly className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 outline-none cursor-not-allowed" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Banque</label>
-                      <input type="text" value={editForm.bank_name || ''} readOnly className="w-full px-4 py-3 bg-slate-100/50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none cursor-not-allowed font-medium" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Banque</label>
+                      <input type="text" value={editForm.bank_name || ''} readOnly className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 outline-none cursor-not-allowed" />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">IBAN</label>
-                      <input type="text" value={editForm.iban || ''} readOnly className="w-full px-4 py-3 bg-slate-100/50 border border-slate-200 rounded-xl text-sm text-slate-700 font-mono outline-none cursor-not-allowed tracking-wider" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">IBAN</label>
+                      <input type="text" value={editForm.iban || ''} readOnly className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 font-mono outline-none cursor-not-allowed" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">BIC</label>
-                      <input type="text" value={editForm.bic || ''} readOnly className="w-full px-4 py-3 bg-slate-100/50 border border-slate-200 rounded-xl text-sm text-slate-700 font-mono outline-none cursor-not-allowed tracking-wider" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">BIC</label>
+                      <input type="text" value={editForm.bic || ''} readOnly className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 font-mono outline-none cursor-not-allowed" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Statut du RIB</label>
-                      <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold flex items-center">
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Statut du RIB</label>
+                      <div className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm flex items-center">
                         {editForm.rib_status === 'approved' ? (
-                          <span className="text-emerald-600 flex items-center gap-2"><CheckCircle className="w-4 h-4"/> Validé</span>
+                          <span className="text-emerald-600 font-medium flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> Validé</span>
                         ) : editForm.rib_status === 'pending' ? (
-                          <span className="text-amber-600 flex items-center gap-2"><Clock className="w-4 h-4"/> En attente</span>
+                          <span className="text-amber-600 font-medium flex items-center gap-1.5"><Clock className="w-4 h-4"/> En attente</span>
                         ) : editForm.rib_status === 'rejected' ? (
-                          <span className="text-red-600 flex items-center gap-2"><AlertTriangle className="w-4 h-4"/> Refusé</span>
+                          <span className="text-red-600 font-medium flex items-center gap-1.5"><AlertTriangle className="w-4 h-4"/> Refusé</span>
                         ) : (
-                          <span className="text-slate-500">Aucun RIB soumis</span>
+                          <span className="text-slate-400">Aucun RIB soumis</span>
                         )}
                       </div>
                     </div>
                     {editForm.rib_file_url && (
-                      <div className="md:col-span-2 mt-2">
-                        <a href={editForm.rib_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center w-full gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold transition-colors">
+                      <div className="md:col-span-2 pt-2">
+                        <a href={editForm.rib_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors shadow-sm">
                           <ExternalLink className="w-4 h-4" />
                           Consulter le document RIB
                         </a>
@@ -611,58 +587,56 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
               </div>
 
               {/* Right Column: Settings & Status */}
-              <div className="space-y-8">
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
-                    <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-                      <ShieldAlert className="w-5 h-5 text-slate-600" />
-                    </div>
-                    <h3 className="font-bold text-lg text-slate-900">Paramètres du Compte</h3>
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-slate-400" />
+                    <h3 className="font-semibold text-slate-800">Paramètres du Compte</h3>
                   </div>
-                  <div className="p-6 space-y-6">
+                  <div className="p-6 space-y-5">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Rôle d'accès</label>
-                      <select value={editForm.role || ''} onChange={e => setEditForm({...editForm, role: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:border-frilya-600 focus:ring-4 focus:ring-frilya-600/10 transition-all">
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Rôle d'accès</label>
+                      <select value={editForm.role || ''} onChange={e => setEditForm({...editForm, role: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow">
                         <option value="acheteur">Utilisateur Standard</option>
                         <option value="admin">Administrateur</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Statut Vendeur</label>
-                      <select value={editForm.is_seller ? 'true' : 'false'} onChange={e => setEditForm({...editForm, is_seller: e.target.value === 'true'})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:border-frilya-600 focus:ring-4 focus:ring-frilya-600/10 transition-all">
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Statut Vendeur</label>
+                      <select value={editForm.is_seller ? 'true' : 'false'} onChange={e => setEditForm({...editForm, is_seller: e.target.value === 'true'})} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow">
                         <option value="false">Non (Acheteur uniquement)</option>
                         <option value="true">Oui (Vendeur activé)</option>
                       </select>
                     </div>
 
-                    <div className="pt-6 border-t border-slate-100 space-y-4">
-                      <label className="flex items-center gap-4 p-4 border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors group">
+                    <div className="pt-5 border-t border-slate-100 space-y-3">
+                      <label className="flex items-start gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
                         <input 
                           type="checkbox" 
                           checked={editForm.is_verified || false} 
                           onChange={e => setEditForm({...editForm, is_verified: e.target.checked})}
-                          className="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-600"
+                          className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                         />
                         <div>
-                          <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                          <div className="font-medium text-slate-800 text-sm flex items-center gap-1.5">
                             Compte Certifié
-                            <CheckCircle className="w-4 h-4 text-blue-500 fill-blue-500/20" />
+                            <CheckCircle className="w-3.5 h-3.5 text-blue-500" />
                           </div>
                           <div className="text-xs text-slate-500 mt-0.5">Affiche le badge bleu officiel</div>
                         </div>
                       </label>
 
-                      <label className="flex items-center gap-4 p-4 border border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50 transition-colors group">
+                      <label className="flex items-start gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
                         <input 
                           type="checkbox" 
                           checked={editForm.is_beta || false} 
                           onChange={e => setEditForm({...editForm, is_beta: e.target.checked})}
-                          className="w-5 h-5 text-slate-900 rounded border-slate-300 focus:ring-slate-900"
+                          className="mt-0.5 w-4 h-4 text-slate-900 rounded border-slate-300 focus:ring-slate-900"
                         />
                         <div>
-                          <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                          <div className="font-medium text-slate-800 text-sm flex items-center gap-1.5">
                             Bêta-testeur
-                            <div className="w-4 h-4 bg-slate-900 text-white rounded-full flex items-center justify-center text-[9px] font-bold">β</div>
+                            <span className="bg-slate-900 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">BÊTA</span>
                           </div>
                           <div className="text-xs text-slate-500 mt-0.5">Accès prioritaire aux nouveautés</div>
                         </div>
@@ -1021,6 +995,5 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
           )}
         </div>
       </div>
-    </div>
   );
 }
