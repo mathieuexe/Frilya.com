@@ -3,7 +3,7 @@ import { Search, Loader2, User, Package, ShoppingBag, ArrowRight, Ticket, Scale 
 import { supabase } from '../../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
-export default function AdminGlobalSearch() {
+export default function AdminGlobalSearch({ dark = false }: { dark?: boolean }) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -113,7 +113,11 @@ export default function AdminGlobalSearch() {
             if (query.trim()) setIsOpen(true);
           }}
           placeholder="Rechercher service, profil, commande..."
-          className="w-full pl-10 pr-10 py-2 bg-slate-100 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-frilya-600 transition-all placeholder:text-slate-400 text-slate-900"
+          className={`w-full pl-10 pr-10 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-frilya-600 transition-all ${
+            dark 
+              ? 'bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500' 
+              : 'bg-slate-100 border-slate-200 text-slate-900 placeholder:text-slate-400'
+          }`}
         />
         {loading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-slate-400" />
