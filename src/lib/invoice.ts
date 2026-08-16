@@ -56,7 +56,10 @@ export function buildInvoice(data: InvoiceData, logoDataUrl?: string): jsPDF {
   // ---------------- En-tête ----------------
   if (logoDataUrl) {
     try {
-      doc.addImage(logoDataUrl, 'PNG', margin, 14, 32, 32 * 0.28);
+      // Pour éviter d'écraser le logo, on utilise un ratio plus naturel
+      // La hauteur sera calculée proportionnellement à la largeur de 32mm
+      // Ratio estimé d'après le logo Frilya
+      doc.addImage(logoDataUrl, 'PNG', margin, 14, 32, 32 * 0.35);
     } catch {
       // logo indisponible : on continue sans
     }
