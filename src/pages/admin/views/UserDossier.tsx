@@ -407,7 +407,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   ].filter(t => !t.hidden);
 
   return (
-    <div className="bg-white rounded-3xl w-full flex flex-col shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-200 h-[calc(100vh-8rem)]">
+    <div className="bg-white rounded-3xl w-full flex flex-col shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-200 min-h-[calc(100vh-8rem)]">
       
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50 shrink-0">
@@ -461,7 +461,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 custom-scrollbar">
+        <div className="flex-1 p-6 bg-slate-50">
           
           {/* TAB: INFO */}
           {activeTab === 'info' && (

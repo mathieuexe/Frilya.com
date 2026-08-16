@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import {
   LogOut, ShieldAlert, Loader2, ArrowLeft, ChevronDown, Menu, X, ExternalLink
 } from 'lucide-react';
@@ -24,6 +24,7 @@ import DisputesView from './admin/views/DisputesView';
 import SettingsView from './admin/views/SettingsView';
 import BetaManagementView from './admin/views/BetaManagementView';
 import SupportInboxView from './admin/views/SupportInboxView';
+import UserDossier from './admin/views/UserDossier';
 import AnalyticsView from './admin/views/AnalyticsView';
 import IbansView from './admin/views/IbansView';
 
@@ -134,6 +135,15 @@ export default function Admin() {
   );
 }
 
+function UserDossierWrapper() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  
+  if (!id) return null;
+  
+  return <UserDossier userId={id} onClose={() => navigate(-1)} />;
+}
+
 function AdminShell({
   adminProfile,
   onUpdatePreference,
@@ -234,10 +244,6 @@ function AdminShell({
               </span>
             </button>
 
-            <div className="flex-1 flex justify-center px-4 max-w-2xl">
-              <AdminGlobalSearch dark={true} />
-            </div>
-
             <div className="flex items-center gap-2 shrink-0">
               <a
                 href="/"
@@ -262,8 +268,9 @@ function AdminShell({
           </div>
 
           {/* Barre de navigation — pas d'overflow ici, sinon les sous-menus sont rognés */}
-          <div ref={navBarRef} className="bg-slate-900/80 px-4 md:px-6 py-2.5 flex flex-wrap items-center gap-1">
-            {ADMIN_NAV.map((cat, idx) => {
+          <div ref={navBarRef} className="bg-slate-900/80 px-4 md:px-6 py-2.5 flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-1 flex-1">
+              {ADMIN_NAV.map((cat, idx) => {
               const catBadge = categoryBadgeCount(cat, counts);
 
               if (cat.items.length === 1) {
@@ -334,6 +341,11 @@ function AdminShell({
                 </div>
               );
             })}
+            </div>
+            
+            <div className="w-full max-w-xs flex justify-end shrink-0 ml-auto hidden md:flex">
+              <AdminGlobalSearch dark={true} />
+            </div>
           </div>
         </header>
       ) : (
@@ -451,6 +463,7 @@ function AdminShell({
               <Route path="/stats" element={<AnalyticsView />} />
               <Route path="/buyers" element={<UsersView type="acheteur" />} />
               <Route path="/sellers" element={<UsersView type="vendeur" />} />
+              <Route path="/users/:id" element={<UserDossierWrapper />} />
               <Route path="/ibans" element={<IbansView />} />
               <Route path="/services" element={<ServicesView />} />
               <Route path="/messages" element={<MessagesView />} />

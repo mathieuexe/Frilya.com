@@ -71,7 +71,7 @@ export default function AdminGlobalSearch({ dark = false }: { dark?: boolean }) 
   const handleSelectProfile = (profile: any) => {
     setIsOpen(false);
     setQuery('');
-    navigate(profile.is_seller ? '/admin/sellers' : '/admin/buyers');
+    navigate(`/admin/users/${profile.id}`);
   };
 
   const handleSelectService = () => {

@@ -3,8 +3,9 @@ import { supabase } from '../../../lib/supabase';
 import { Loader2, Search, Trash2, CheckCircle, Eye, Plus, User, Mail, Lock, X } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import verifiedIcon from '../../../assets/verified.png';
-import UserDossier from './UserDossier';
 import { createClient } from '@supabase/supabase-js';
+
+import { useNavigate } from 'react-router-dom';
 
 // Configuration pour un client qui ne modifie pas la session en cours (Admin)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://bkrfulpstfhpnlrwocdt.supabase.co';
@@ -20,13 +21,14 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
   // States pour la création d'utilisateur
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [newUserForm, setNewUserForm] = useState({ fullName: '', email: '', password: '' });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -123,10 +125,6 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
     u.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (selectedUser) {
-    return <UserDossier userId={selectedUser} onClose={() => { setSelectedUser(null); fetchUsers(); }} />;
-  }
-
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -211,7 +209,7 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
                         <CheckCircle className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => setSelectedUser(user.id)}
+                        onClick={() => navigate(`/admin/users/${user.id}`)}
                         className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-frilya-50 rounded-lg transition-colors" 
                         title="Ouvrir le dossier complet"
                       >
