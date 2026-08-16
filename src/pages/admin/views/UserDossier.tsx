@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, ExternalLink, Download, Mail } from 'lucide-react';
+import { User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, ExternalLink, Download, Mail, CheckCircle, Clock } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import { generateInvoiceBase64, downloadInvoice } from '../../../lib/invoice';
 import type { InvoiceData } from '../../../lib/invoice';
@@ -406,62 +406,138 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
     { id: 'logs', name: 'Connexions', icon: History }
   ].filter(t => !t.hidden);
 
+  const stats = {
+    totalSpent: orders.reduce((sum, o) => sum + (o.amount || 0), 0),
+    totalEarned: sales.reduce((sum, o) => sum + ((o.amount || 0) - (o.platform_fee || 0)), 0),
+    avgRating: reviews.filter(r => r.seller_id === userId).reduce((sum, r, _, arr) => sum + r.rating / arr.length, 0) || 0,
+    joinDate: profile?.created_at ? new Date(profile.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '-'
+  };
+
   return (
-    <div className="bg-white rounded-3xl w-full flex flex-col shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-200 min-h-[calc(100vh-8rem)]">
+    <div className="bg-slate-50 min-h-[calc(100vh-8rem)] pb-12 animate-in fade-in duration-200">
       
-      {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50 shrink-0">
-        <div className="flex items-center gap-4">
-          <button onClick={onClose} className="p-2.5 text-slate-500 hover:text-frilya-600 hover:bg-white rounded-xl transition-colors shadow-sm border border-slate-200 bg-white mr-2">
-            <ArrowLeft className="w-5 h-5" />
+      {/* Top Header / KPIs */}
+      <div className="bg-white border-b border-slate-200 px-6 py-8">
+        <div className="max-w-7xl mx-auto">
+          
+          <button onClick={onClose} className="inline-flex items-center gap-2 text-slate-500 hover:text-frilya-600 transition-colors mb-6 text-sm font-medium">
+            <ArrowLeft className="w-4 h-4" />
+            Retour à la liste
           </button>
-          <img src={profile?.avatar_url || catAvatar} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">{profile?.full_name || 'Utilisateur inconnu'}</h2>
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span>{profile?.email}</span>
-              <span>•</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${profile?.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-700'}`}>
-                {profile?.role}
-              </span>
-              {profile?.is_seller && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Vendeur</span>
-              )}
+
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            
+            {/* Identity */}
+            <div className="flex items-center gap-5">
+              <div className="relative">
+                <img src={profile?.avatar_url || catAvatar} alt="" className="w-20 h-20 rounded-2xl object-cover shadow-sm border border-slate-100" />
+                {profile?.is_verified && (
+                  <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-0.5 shadow-sm">
+                    <CheckCircle className="w-5 h-5 text-blue-500 fill-blue-500/20" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                  {profile?.full_name || 'Utilisateur inconnu'}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
+                  <span className="text-slate-600 flex items-center gap-1.5">
+                    <Mail className="w-4 h-4 text-slate-400" />
+                    {profile?.email}
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-600 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-slate-400" />
+                    Membre depuis {stats.joinDate}
+                  </span>
+                  {profile?.is_seller && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                        Vendeur
+                      </span>
+                    </>
+                  )}
+                  {profile?.role === 'admin' && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100">
+                        Administrateur
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              <button 
+                onClick={handleImpersonate} 
+                disabled={impersonating} 
+                className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors disabled:opacity-50 shadow-sm"
+              >
+                {impersonating ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                Se connecter en tant que...
+              </button>
             </div>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden md:block">
-            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Solde Actuel</div>
-            <div className="text-xl font-bold text-frilya-600 flex items-center gap-1">
-              <CreditCard className="w-4 h-4" />
-              {profile?.balance || 0} €
+
+          {/* KPIs Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5" /> Solde
+              </div>
+              <div className="text-2xl font-black text-slate-900">{profile?.balance || 0} €</div>
+            </div>
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5" /> Achats
+              </div>
+              <div className="text-2xl font-black text-slate-900">{stats.totalSpent.toFixed(2)} € <span className="text-sm font-medium text-slate-500">({orders.length})</span></div>
+            </div>
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <Store className="w-3.5 h-3.5" /> Ventes Net
+              </div>
+              <div className="text-2xl font-black text-slate-900">{stats.totalEarned.toFixed(2)} € <span className="text-sm font-medium text-slate-500">({sales.length})</span></div>
+            </div>
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5" /> Note Vendeur
+              </div>
+              <div className="text-2xl font-black text-slate-900 flex items-baseline gap-1">
+                {stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '-'} <Star className={`w-4 h-4 ${stats.avgRating > 0 ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+              </div>
             </div>
           </div>
+
         </div>
       </div>
 
-        {/* Tabs */}
-        <div className="flex overflow-x-auto border-b border-slate-100 px-6 shrink-0 custom-scrollbar">
+      <div className="max-w-7xl mx-auto px-6 mt-8">
+        {/* Modern Tabs */}
+        <div className="flex flex-wrap gap-2 mb-6">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as Tab)}
-              className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
                 activeTab === tab.id 
-                  ? 'border-frilya-600 text-frilya-600' 
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'bg-slate-900 text-white shadow-sm' 
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
-              <tab.icon className="w-4 h-4" />
+              <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-slate-300' : 'text-slate-400'}`} />
               {tab.name}
             </button>
           ))}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 p-6 bg-slate-50">
+        {/* Content Area */}
+        <div className="animate-in slide-in-from-bottom-2 duration-300">
           
           {/* TAB: INFO */}
           {activeTab === 'info' && (
@@ -897,8 +973,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
               Module en cours de finalisation (données affichées si existantes dans la DB).
             </div>
           )}
-
         </div>
       </div>
+    </div>
   );
 }
