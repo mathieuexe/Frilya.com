@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, User, Package, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Search, Loader2, User, Package, ShoppingBag, ArrowRight, Ticket, Scale } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,7 +11,9 @@ export default function AdminGlobalSearch() {
     profiles: any[];
     services: any[];
     orders: any[];
-  }>({ profiles: [], services: [], orders: [] });
+    tickets: any[];
+    disputes: any[];
+  }>({ profiles: [], services: [], orders: [], tickets: [], disputes: [] });
   
   const wrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -28,7 +30,7 @@ export default function AdminGlobalSearch() {
 
   useEffect(() => {
     if (!query.trim()) {
-      setResults({ profiles: [], services: [], orders: [] });
+      setResults({ profiles: [], services: [], orders: [], tickets: [], disputes: [] });
       return;
     }
 
@@ -44,17 +46,20 @@ export default function AdminGlobalSearch() {
     try {
       const q = `%${query}%`;
       
-      const [profilesRes, servicesRes, ordersRes] = await Promise.all([
+      const [profilesRes, servicesRes, ordersRes, ticketsRes, disputesRes] = await Promise.all([
         supabase.from('profiles').select('id, full_name, email, is_seller').or(`full_name.ilike.${q},email.ilike.${q}`).limit(5),
         supabase.from('services').select('id, title, slug').ilike('title', q).limit(5),
-        // order ID can be partial matched
-        supabase.from('orders').select('id, amount, status').ilike('id', q).limit(5)
+        supabase.from('orders').select('id, amount, status').ilike('id', q).limit(5),
+        supabase.from('report_tickets').select('id, ticket_number, title, status').or(`ticket_number.ilike.${q},title.ilike.${q}`).limit(5),
+        supabase.from('orders').select('id, amount, status').eq('status', 'disputed').ilike('id', q).limit(5)
       ]);
 
       setResults({
         profiles: profilesRes.data || [],
         services: servicesRes.data || [],
-        orders: ordersRes.data || []
+        orders: ordersRes.data || [],
+        tickets: ticketsRes.data || [],
+        disputes: disputesRes.data || []
       });
     } catch (err) {
       console.error('Search error:', err);
@@ -69,16 +74,28 @@ export default function AdminGlobalSearch() {
     navigate(profile.is_seller ? '/admin/sellers' : '/admin/buyers');
   };
 
-  const handleSelectService = (service: any) => {
+  const handleSelectService = () => {
     setIsOpen(false);
     setQuery('');
     navigate('/admin/services');
   };
 
-  const handleSelectOrder = (order: any) => {
+  const handleSelectOrder = () => {
     setIsOpen(false);
     setQuery('');
     navigate('/admin/orders');
+  };
+
+  const handleSelectTicket = () => {
+    setIsOpen(false);
+    setQuery('');
+    navigate('/admin/tickets');
+  };
+
+  const handleSelectDispute = () => {
+    setIsOpen(false);
+    setQuery('');
+    navigate('/admin/disputes');
   };
 
   return (
@@ -129,7 +146,7 @@ export default function AdminGlobalSearch() {
               <div>
                 <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Services</div>
                 {results.services.map(s => (
-                  <button key={s.id} onClick={() => handleSelectService(s)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl flex items-center gap-3 group">
+                  <button key={s.id} onClick={() => handleSelectService()} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl flex items-center gap-3 group">
                     <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
                       <Package className="w-4 h-4" />
                     </div>
@@ -146,7 +163,7 @@ export default function AdminGlobalSearch() {
               <div>
                 <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Commandes</div>
                 {results.orders.map(o => (
-                  <button key={o.id} onClick={() => handleSelectOrder(o)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl flex items-center gap-3 group">
+                  <button key={o.id} onClick={() => handleSelectOrder()} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl flex items-center gap-3 group">
                     <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                       <ShoppingBag className="w-4 h-4" />
                     </div>
@@ -160,7 +177,42 @@ export default function AdminGlobalSearch() {
               </div>
             )}
 
-            {results.profiles.length === 0 && results.services.length === 0 && results.orders.length === 0 && !loading && (
+            {results.tickets.length > 0 && (
+              <div>
+                <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tickets Support</div>
+                {results.tickets.map(t => (
+                  <button key={t.id} onClick={() => handleSelectTicket()} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl flex items-center gap-3 group">
+                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
+                      <Ticket className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-slate-900 truncate">#{t.ticket_number} - {t.title}</div>
+                      <div className="text-xs text-slate-500">{t.status}</div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {results.disputes.length > 0 && (
+              <div>
+                <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Litiges</div>
+                {results.disputes.map(d => (
+                  <button key={d.id} onClick={() => handleSelectDispute()} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-xl flex items-center gap-3 group">
+                    <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600 shrink-0">
+                      <Scale className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-slate-900 truncate">Litige sur Commande #{d.id.split('-')[0]}</div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {results.profiles.length === 0 && results.services.length === 0 && results.orders.length === 0 && results.tickets.length === 0 && results.disputes.length === 0 && !loading && (
               <div className="p-4 text-center text-sm text-slate-500">
                 Aucun résultat trouvé pour "{query}"
               </div>
