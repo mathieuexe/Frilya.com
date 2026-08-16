@@ -408,38 +408,58 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       </div>
 
       {/* Profil Header Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row items-start md:items-center gap-6">
-        <div className="relative shrink-0 group">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover border border-slate-200 bg-slate-100 overflow-hidden relative shadow-sm">
-            {avatarFile ? (
-              <img src={URL.createObjectURL(avatarFile)} className="w-full h-full object-cover" />
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Banner Area */}
+        <div className="h-32 md:h-48 w-full bg-slate-100 relative group border-b border-slate-200">
+          {bannerFile ? (
+            <img src={URL.createObjectURL(bannerFile)} className="w-full h-full object-cover" />
+          ) : (
+            profile?.banner_url ? (
+              <img src={profile.banner_url} className="w-full h-full object-cover" />
             ) : (
-              <img src={profile?.avatar_url || catAvatar} className="w-full h-full object-cover" />
-            )}
-            <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
-               <Camera className="w-5 h-5" />
-               <input type="file" accept="image/*" className="hidden" onChange={e => setAvatarFile(e.target.files ? e.target.files[0] : null)} />
-            </label>
-          </div>
-          {profile?.is_verified && (
-            <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-sm border border-slate-100">
-              <CheckCircle className="w-5 h-5 text-blue-500 fill-blue-500/20" />
-            </div>
+              <div className="w-full h-full bg-gradient-to-r from-blue-50 to-indigo-50" />
+            )
           )}
+          <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
+            <Camera className="w-6 h-6 mr-2" />
+            <span className="font-semibold">Modifier la bannière</span>
+            <input type="file" accept="image/*" className="hidden" onChange={e => setBannerFile(e.target.files ? e.target.files[0] : null)} />
+          </label>
         </div>
         
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            {profile?.full_name || 'Utilisateur inconnu'}
-          </h1>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
-             <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-slate-400" /> {profile?.email}</span>
-             <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-slate-400" /> Inscrit en {stats.joinDate}</span>
+        <div className="p-6 flex flex-col md:flex-row items-start md:items-center gap-6 relative">
+          <div className="relative shrink-0 group -mt-16 md:-mt-20">
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-cover border-4 border-white bg-slate-100 overflow-hidden relative shadow-md">
+              {avatarFile ? (
+                <img src={URL.createObjectURL(avatarFile)} className="w-full h-full object-cover" />
+              ) : (
+                <img src={profile?.avatar_url || catAvatar} className="w-full h-full object-cover" />
+              )}
+              <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
+                 <Camera className="w-5 h-5" />
+                 <input type="file" accept="image/*" className="hidden" onChange={e => setAvatarFile(e.target.files ? e.target.files[0] : null)} />
+              </label>
+            </div>
+            {profile?.is_verified && (
+              <div className="absolute bottom-0 -right-2 bg-white rounded-full p-1 shadow-sm border border-slate-100">
+                <CheckCircle className="w-6 h-6 text-blue-500 fill-blue-500/20" />
+              </div>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-             {profile?.is_seller && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1"><Store className="w-3 h-3"/> Vendeur</span>}
-             {profile?.role === 'admin' && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100 flex items-center gap-1"><ShieldAlert className="w-3 h-3"/> Admin</span>}
-             {profile?.is_beta && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-900 text-white border border-slate-700 flex items-center gap-1">β Bêta</span>}
+          
+          <div className="flex-1 mt-2 md:mt-0">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">
+              {profile?.full_name || 'Utilisateur inconnu'}
+            </h1>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+               <span className="flex items-center gap-1.5"><Mail className="w-4 h-4 text-slate-400" /> {profile?.email}</span>
+               <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-slate-400" /> Inscrit en {stats.joinDate}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+               {profile?.is_seller && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1"><Store className="w-3 h-3"/> Vendeur</span>}
+               {profile?.role === 'admin' && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100 flex items-center gap-1"><ShieldAlert className="w-3 h-3"/> Admin</span>}
+               {profile?.is_beta && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-900 text-white border border-slate-700 flex items-center gap-1">β Bêta</span>}
+            </div>
           </div>
         </div>
       </div>
