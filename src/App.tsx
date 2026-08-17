@@ -30,6 +30,7 @@ import FaqHome from './pages/faq/FaqHome';
 import FaqCategory from './pages/faq/FaqCategory';
 import FaqArticle from './pages/faq/FaqArticle';
 import ReportIssue from './pages/ReportIssue';
+import LegalPage from './pages/LegalPage';
 import UserTickets from './pages/dashboard/UserTickets';
 
 import Orders from './pages/dashboard/Orders';
@@ -196,6 +197,11 @@ function AppRoutes() {
         <Route path="/faq/categorie/:slug" element={<FaqCategory />} />
         <Route path="/faq/article/:slug" element={<FaqArticle />} />
         <Route path="/signaler-probleme" element={<ReportIssue />} />
+        
+        {/* Pages Légales */}
+        <Route path="/cgu" element={<LegalPage />} />
+        <Route path="/cgv" element={<LegalPage />} />
+        <Route path="/confidentialite" element={<LegalPage />} />
         
         {/* Dashboard Acheteur */}
         <Route path="/tableau-de-bord" element={<BuyerDashboard />}>

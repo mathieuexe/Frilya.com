@@ -62,6 +62,7 @@ export const ADMIN_NAV: AdminNavCategory[] = [
     icon: Settings,
     items: [
       { id: 'beta', name: 'Gestion Bêta', icon: Beaker, badge: 'beta', description: 'Demandes, testeurs et feedbacks' },
+      { id: 'legal', name: 'Pages Légales', icon: FileText, description: 'CGV, CGU, Confidentialité' },
       { id: 'settings', name: 'Paramètres', icon: Settings, description: 'Configuration de la plateforme' }
     ]
   }

@@ -27,6 +27,7 @@ import SupportInboxView from './admin/views/SupportInboxView';
 import UserDossier from './admin/views/UserDossier';
 import AnalyticsView from './admin/views/AnalyticsView';
 import IbansView from './admin/views/IbansView';
+import LegalPagesView from './admin/views/LegalPagesView';
 
 // FAQ & Support Views
 import TicketsView from './admin/views/tickets/TicketsView';
@@ -474,7 +475,8 @@ function AdminShell({
               <Route path="/support" element={<SupportInboxView />} />
               <Route path="/tickets" element={<TicketsView />} />
               <Route path="/faq_categories" element={<FaqCategoriesView />} />
-              <Route path="/faq_articles" element={<FaqArticlesView />} />
+              <Route path="faq_articles" element={<FaqArticlesView />} />
+              <Route path="legal" element={<LegalPagesView />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </div>
