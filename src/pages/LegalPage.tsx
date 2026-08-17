@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import DOMPurify from 'dompurify';
