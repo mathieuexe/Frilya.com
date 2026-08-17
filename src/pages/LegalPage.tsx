@@ -4,8 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
-export default function LegalPage() {
-  const { slug } = useParams<{ slug: string }>();
+export default function LegalPage({ slug }: { slug: string }) {
   const [pageData, setPageData] = useState<{ title: string; content: string; updated_at: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

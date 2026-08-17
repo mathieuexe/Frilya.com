@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Loader2, Save, FileText, CheckCircle, AlertTriangle, Search } from 'lucide-react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 
 interface LegalPage {
   id: string;
@@ -101,18 +99,6 @@ export default function LegalPagesView() {
     p.title.toLowerCase().includes(search.toLowerCase()) || 
     p.slug.toLowerCase().includes(search.toLowerCase())
   );
-
-  // Configuration de l'éditeur Quill
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      ['link'],
-      ['clean']
-    ],
-  };
 
   if (loading) {
     return (
@@ -218,15 +204,13 @@ export default function LegalPagesView() {
               
               <div className="flex-1 overflow-hidden flex flex-col p-4">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Contenu HTML</label>
-                <div className="flex-1 overflow-y-auto border border-slate-200 rounded-lg rounded-t-none">
-                  <ReactQuill 
-                    theme="snow" 
-                    value={editContent} 
-                    onChange={setEditContent} 
-                    modules={modules}
-                    className="h-[calc(100%-42px)]"
-                  />
-                </div>
+                <textarea 
+                  value={editContent} 
+                  onChange={e => setEditContent(e.target.value)}
+                  className="flex-1 w-full bg-slate-900 text-slate-100 p-4 font-mono text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  spellCheck="false"
+                  placeholder="<h1>Titre</h1><p>Contenu...</p>"
+                />
               </div>
             </>
           ) : (

@@ -199,9 +199,9 @@ function AppRoutes() {
         <Route path="/signaler-probleme" element={<ReportIssue />} />
         
         {/* Pages Légales */}
-        <Route path="/cgu" element={<LegalPage />} />
-        <Route path="/cgv" element={<LegalPage />} />
-        <Route path="/confidentialite" element={<LegalPage />} />
+        <Route path="/cgu" element={<LegalPage slug="cgu" />} />
+        <Route path="/cgv" element={<LegalPage slug="cgv" />} />
+        <Route path="/confidentialite" element={<LegalPage slug="confidentialite" />} />
         
         {/* Dashboard Acheteur */}
         <Route path="/tableau-de-bord" element={<BuyerDashboard />}>
