@@ -54,27 +54,23 @@ export default function LegalPage({ slug }: { slug: string }) {
   const sanitizedContent = DOMPurify.sanitize(pageData.content || '');
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-24 pb-12 sm:pt-32 sm:pb-20">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-6 sm:p-8 md:p-12 border-b border-slate-100 bg-slate-50/50">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2 sm:mb-4">{pageData.title}</h1>
-            <p className="text-slate-500 text-xs sm:text-sm">
-              Dernière mise à jour : {new Date(pageData.updated_at).toLocaleDateString('fr-FR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </p>
-          </div>
-          
-          <div className="p-6 sm:p-8 md:p-12">
-            <div 
-              className="prose prose-sm sm:prose-base prose-slate max-w-none prose-headings:font-bold prose-a:text-frilya-600 hover:prose-a:text-frilya-700 prose-img:rounded-xl"
-              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-            />
-          </div>
+    <div className="min-h-screen bg-white pt-24 pb-12 sm:pt-32 sm:pb-20">
+      <div className="container mx-auto px-4 max-w-5xl">
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-2">{pageData.title}</h1>
+          <p className="text-slate-500 text-sm">
+            Dernière mise à jour : {new Date(pageData.updated_at).toLocaleDateString('fr-FR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </p>
         </div>
+        
+        <div 
+          className="prose prose-sm sm:prose-base prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-slate-800 prose-p:leading-relaxed prose-a:text-frilya-600 hover:prose-a:text-frilya-700 prose-img:rounded-xl"
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+        />
       </div>
     </div>
   );
