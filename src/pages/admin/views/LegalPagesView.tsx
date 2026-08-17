@@ -3,7 +3,6 @@ import { supabase } from '../../../lib/supabase';
 import { Loader2, Save, FileText, CheckCircle, AlertTriangle, Search } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import DOMPurify from 'dompurify';
 
 interface LegalPage {
   id: string;
