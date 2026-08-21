@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 
 export const sendBetaConfirmationEmail = async (email: string, pseudo: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
         <p style="color: #64748b; font-size: 14px; margin-top: 5px;">La plateforme freelance française pour réaliser tous vos projets</p>
@@ -33,7 +33,7 @@ export const sendBetaConfirmationEmail = async (email: string, pseudo: string) =
 
 export const sendBetaAcceptedEmail = async (email: string, pseudo: string, password: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
         <p style="color: #64748b; font-size: 14px; margin-top: 5px;">La plateforme freelance française pour réaliser tous vos projets</p>
@@ -75,7 +75,7 @@ export const sendBetaAcceptedEmail = async (email: string, pseudo: string, passw
 
 export const sendBetaRejectedEmail = async (email: string, pseudo: string, reason: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
         <p style="color: #64748b; font-size: 14px; margin-top: 5px;">La plateforme freelance française pour réaliser tous vos projets</p>
@@ -176,7 +176,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
 
 export const sendRegistrationConfirmationEmail = async (email: string, pseudo: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -197,7 +197,7 @@ export const sendRegistrationConfirmationEmail = async (email: string, pseudo: s
 
 export const sendTicketCreatedEmail = async (email: string, pseudo: string, ticketRef: string, category: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -219,7 +219,7 @@ export const sendTicketCreatedEmail = async (email: string, pseudo: string, tick
 
 export const sendTicketReplyEmail = async (email: string, pseudo: string, ticketRef: string, replierName: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -241,7 +241,7 @@ export const sendTicketReplyEmail = async (email: string, pseudo: string, ticket
 
 export const sendOrderCreatedEmail = async (email: string, pseudo: string, serviceTitle: string, isSeller: boolean) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -263,7 +263,7 @@ export const sendOrderCreatedEmail = async (email: string, pseudo: string, servi
 
 export const sendOrderDeliveredEmail = async (email: string, pseudo: string, serviceTitle: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -286,7 +286,7 @@ export const sendOrderDeliveredEmail = async (email: string, pseudo: string, ser
 
 export const sendDisputeOpenedEmail = async (email: string, pseudo: string, serviceTitle: string, isSeller: boolean) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -309,7 +309,7 @@ export const sendDisputeOpenedEmail = async (email: string, pseudo: string, serv
 
 export const sendServiceHiddenEmail = async (email: string, pseudo: string, serviceTitle: string, reason: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -336,7 +336,7 @@ export const sendServiceHiddenEmail = async (email: string, pseudo: string, serv
 
 export const sendServiceRestoredEmail = async (email: string, pseudo: string, serviceTitle: string, comment?: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -360,7 +360,7 @@ export const sendServiceRestoredEmail = async (email: string, pseudo: string, se
 
 export const sendServiceDeletedEmail = async (email: string, pseudo: string, serviceTitle: string, reason: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -382,7 +382,7 @@ export const sendServiceDeletedEmail = async (email: string, pseudo: string, ser
 
 export const sendAdminTempPasswordEmail = async (email: string, pseudo: string, tempPassword: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -410,7 +410,7 @@ export const sendAdminTempPasswordEmail = async (email: string, pseudo: string, 
 
 export const sendAdminResetLinkEmail = async (email: string, pseudo: string, resetLink: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
@@ -439,7 +439,7 @@ export const sendAdminResetLinkEmail = async (email: string, pseudo: string, res
 
 export const sendDisputeClosedEmail = async (email: string, pseudo: string, serviceTitle: string) => {
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+    <div style="font-family: 'Marianne', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
         <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
       </div>
