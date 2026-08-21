@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
+import BetaCountdown, { BETA_START, BETA_END } from '../components/BetaCountdown';
 
 // Shell admin
 import { AdminNotificationsProvider, useAdminNotifications } from './admin/AdminNotificationsContext';
@@ -231,8 +232,14 @@ function AdminShell({
     </>
   );
 
+  const now = new Date();
+  const showBetaCountdown = now < BETA_END;
+  const betaMode = now < BETA_START ? 'maintenance' : 'beta';
+
   return (
-    <div className={`min-h-screen bg-slate-100 flex ${isHorizontal ? 'flex-col' : 'flex-col lg:flex-row'}`}>
+    <div className="flex flex-col min-h-screen">
+      {showBetaCountdown && <BetaCountdown mode={betaMode} />}
+      <div className={`flex-1 bg-slate-100 flex ${isHorizontal ? 'flex-col' : 'flex-col lg:flex-row min-w-0'}`}>
 
       {isHorizontal ? (
         /* ---------------- NAVIGATION HORIZONTALE ---------------- */
@@ -482,6 +489,7 @@ function AdminShell({
           </div>
         </main>
       </div>
+    </div>
     </div>
   );
 }
