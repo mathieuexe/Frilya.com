@@ -43,6 +43,7 @@ import BetaFeedback from './pages/dashboard/BetaFeedback';
 import BetaRegistrationPage from './pages/BetaRegistration';
 import CookieBanner from './components/CookieBanner';
 import ForcePasswordChange from './components/ForcePasswordChange';
+import ImpersonationBanner from './components/ImpersonationBanner';
 
 function AppRoutes() {
   const [loading, setLoading] = useState(true);
@@ -249,6 +250,7 @@ function AppRoutes() {
 export default function AppWrapper() {
   return (
     <Router>
+      <ImpersonationBanner />
       <CookieBanner />
       <ForcePasswordChange />
       <AppRoutes />

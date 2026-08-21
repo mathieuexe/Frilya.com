@@ -210,6 +210,13 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       if (!res.ok) throw new Error(data.error || "Erreur de connexion");
 
       if (data.url) {
+        // Save current admin session to be able to return
+        sessionStorage.setItem('admin_recovery_session', JSON.stringify({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          email: profile.email
+        }));
+        
         window.location.href = data.url;
       }
     } catch (err: any) {
