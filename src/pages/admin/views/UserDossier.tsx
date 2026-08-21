@@ -18,6 +18,7 @@ interface UserDossierProps {
 type Tab = 'info' | 'orders' | 'sales' | 'messages' | 'disputes' | 'tickets' | 'logs' | 'reviews' | 'emails';
 
 import ImageCropper from '../../../components/ImageCropper';
+import { SUPPORT_ACCOUNT_ID } from '../../../lib/constants';
 
 import googleLogo from '../../../assets/google-logo-icon-gsuite-hd-701751694791470gzbayltphh.png';
 
@@ -918,12 +919,14 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
           {/* TAB: MESSAGES */}
           {activeTab === 'messages' && (
             <div className="space-y-4 max-w-4xl mx-auto">
-              {messages.length === 0 ? (
-                <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center shadow-sm">
-                  <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500 font-medium">Aucun message trouvé pour cet utilisateur.</p>
-                </div>
-              ) : messages.map(m => (
+              {(() => {
+                const userMessages = messages.filter(m => m.sender_id !== SUPPORT_ACCOUNT_ID && m.receiver_id !== SUPPORT_ACCOUNT_ID);
+                return userMessages.length === 0 ? (
+                  <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center shadow-sm">
+                    <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500 font-medium">Aucun message utilisateur trouvé.</p>
+                  </div>
+                ) : userMessages.map(m => (
                 <div key={m.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex gap-4">
                   <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                     <MessageSquare className="w-5 h-5 text-slate-400" />
@@ -945,7 +948,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                     </div>
                   </div>
                 </div>
-              ))}
+              ));
+              })()}
             </div>
           )}
 
@@ -1210,15 +1214,58 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
             </div>
           )}
 
-          {/* TAB: TICKETS & DISPUTES */}
-          {(activeTab === 'tickets' || activeTab === 'disputes') && (
+          {/* TAB: TICKETS */}
+          {activeTab === 'tickets' && (
+            <div className="space-y-4 max-w-4xl mx-auto">
+              {(() => {
+                const supportMessages = messages.filter(m => m.sender_id === SUPPORT_ACCOUNT_ID || m.receiver_id === SUPPORT_ACCOUNT_ID);
+                return supportMessages.length === 0 ? (
+                  <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center shadow-sm">
+                    <LifeBuoy className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500 font-medium">Aucun ticket de support trouvé pour cet utilisateur.</p>
+                  </div>
+                ) : (
+                  supportMessages.map(m => (
+                    <div key={m.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex gap-4">
+                      <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
+                        {m.sender_id === SUPPORT_ACCOUNT_ID ? (
+                          <LifeBuoy className="w-5 h-5 text-indigo-500" />
+                        ) : (
+                          <MessageSquare className="w-5 h-5 text-indigo-400" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
+                          <div className="text-sm">
+                            <span className="font-bold text-slate-900">{m.sender?.full_name || (m.sender_id === SUPPORT_ACCOUNT_ID ? 'Support Frilya' : 'Inconnu')}</span>
+                            <span className="text-slate-400 mx-2">&rarr;</span>
+                            <span className="font-bold text-slate-900">{m.receiver?.full_name || (m.receiver_id === SUPPORT_ACCOUNT_ID ? 'Support Frilya' : 'Inconnu')}</span>
+                          </div>
+                          <div className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(m.created_at).toLocaleString('fr-FR')}
+                          </div>
+                        </div>
+                        <div className={`text-sm p-4 rounded-2xl border leading-relaxed whitespace-pre-wrap ${m.sender_id === SUPPORT_ACCOUNT_ID ? 'bg-indigo-50/50 border-indigo-100 text-indigo-900' : 'bg-slate-50 border-slate-100 text-slate-700'}`}>
+                          {m.content}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                );
+              })()}
+            </div>
+          )}
+
+          {/* TAB: DISPUTES */}
+          {activeTab === 'disputes' && (
             <div className="bg-white p-16 rounded-3xl border border-slate-200 text-center shadow-sm">
               <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle className="w-8 h-8 text-amber-500" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Module en développement</h3>
               <p className="text-slate-500 max-w-md mx-auto">
-                L'affichage détaillé des {activeTab === 'tickets' ? 'tickets de support' : 'litiges'} sera disponible prochainement dans cette vue centralisée.
+                L'affichage détaillé des litiges sera disponible prochainement dans cette vue centralisée.
               </p>
             </div>
           )}
