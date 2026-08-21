@@ -11,7 +11,7 @@ import { BETA_START, BETA_END } from './components/BetaCountdown';
 // Pages
 import Home from './pages/Home';
 import MaintenancePage from './pages/Maintenance';
-import AuthPage from './pages/Auth';
+// import AuthPage from './pages/Auth';
 import AdminPage from './pages/Admin';
 import BuyerDashboard from './pages/dashboard/BuyerDashboard';
 import SellerDashboard from './pages/dashboard/SellerDashboard';
@@ -44,6 +44,8 @@ import BetaRegistrationPage from './pages/BetaRegistration';
 import CookieBanner from './components/CookieBanner';
 import ForcePasswordChange from './components/ForcePasswordChange';
 import ImpersonationBanner from './components/ImpersonationBanner';
+import { AuthModalProvider } from './contexts/AuthModalContext';
+import AuthModal from './components/AuthModal';
 
 function AppRoutes() {
   const [loading, setLoading] = useState(true);
@@ -238,7 +240,7 @@ function AppRoutes() {
       {/* Routes sans layout standard (plein écran) */}
       <Route path="/maintenance" element={<MaintenancePage />} />
       <Route path="/beta" element={<BetaRegistrationPage />} />
-      <Route path="/connexion" element={<AuthPage />} />
+      {/* <Route path="/connexion" element={<AuthPage />} /> */}
       <Route path="/paiement/:id" element={<CheckoutPage />} />
       <Route path="/commande/confirmation" element={<OrderConfirmationPage />} />
       <Route path="/admin/*" element={<AdminPage />} />
@@ -250,10 +252,13 @@ function AppRoutes() {
 export default function AppWrapper() {
   return (
     <Router>
-      <ImpersonationBanner />
-      <CookieBanner />
-      <ForcePasswordChange />
-      <AppRoutes />
+      <AuthModalProvider>
+        <ImpersonationBanner />
+        <CookieBanner />
+        <ForcePasswordChange />
+        <AuthModal />
+        <AppRoutes />
+      </AuthModalProvider>
     </Router>
   );
 }

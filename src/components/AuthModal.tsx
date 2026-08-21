@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, Loader2, User, Check } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Lock, Mail, Loader2, User, Check, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { trackLogin, trackSignup } from '../lib/analytics';
 import { DiscordIcon } from '../components/DiscordIcon';
+import { useAuthModal } from '../contexts/AuthModalContext';
+import loginBg from '../assets/login-min.jpg';
 
-export default function Auth() {
+export default function AuthModal() {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const { isOpen, closeModal, defaultView } = useAuthModal();
+  
+  const [isLogin, setIsLogin] = useState(defaultView === 'login');
   const [showEmailForm, setShowEmailForm] = useState(false);
   
   const [email, setEmail] = useState('');
@@ -19,14 +24,27 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  // Sync view when opened
+  useEffect(() => {
+    if (isOpen) {
+      setIsLogin(defaultView === 'login');
+      setShowEmailForm(false);
+      setError(null);
+      setMessage(null);
+      setPassword('');
+    }
+  }, [isOpen, defaultView]);
+
   // Check URL params for specific errors (e.g. beta_expired)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('error') === 'beta_expired') {
+    if (params.get('error') === 'beta_expired' && isOpen) {
       setError("Votre accès Bêta a expiré. Merci pour votre participation !");
       setShowEmailForm(true);
     }
-  }, []);
+  }, [isOpen, location.search]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +60,7 @@ export default function Auth() {
         });
         if (signInError) throw signInError;
         trackLogin();
+        closeModal();
         navigate('/tableau-de-bord');
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -106,44 +125,63 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 selection:bg-frilya-100">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+        onClick={closeModal}
+      />
       
       {/* Modal Container */}
-      <div className="bg-white w-full max-w-[900px] rounded-[24px] overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[600px] animate-in fade-in zoom-in-95 duration-300">
+      <div className="bg-white w-full max-w-[900px] rounded-[24px] overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[600px] animate-in fade-in zoom-in-95 duration-300 relative z-10">
         
         {/* Left Side (Visual / Benefits) */}
-        <div className="hidden md:flex md:w-[45%] bg-[#8B2C46] text-white p-10 flex-col relative">
-          <Link to="/" className="text-2xl font-black tracking-tight hover:opacity-90 transition-opacity w-fit">
-            frilya.
-          </Link>
+        <div 
+          className="hidden md:flex md:w-[45%] text-white p-10 flex-col relative bg-cover bg-center"
+          style={{ backgroundImage: `url(${loginBg})` }}
+        >
+          {/* Overlay to ensure text readability */}
+          <div className="absolute inset-0 bg-[#8B2C46]/80 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-slate-900/30" />
+
+          <div className="relative z-10">
+            <Link to="/" onClick={closeModal} className="text-2xl font-black tracking-tight hover:opacity-90 transition-opacity w-fit">
+              frilya.
+            </Link>
+          </div>
           
-          <div className="mt-16 flex-1">
-            <h2 className="text-4xl font-bold mb-8 leading-tight">
+          <div className="mt-16 flex-1 relative z-10">
+            <h2 className="text-4xl font-bold mb-8 leading-tight drop-shadow-md">
               Le succès commence ici
             </h2>
             
-            <ul className="space-y-5 text-[17px] font-medium text-white/90">
-              <li className="flex items-start gap-3">
+            <ul className="space-y-5 text-[17px] font-medium text-white/95">
+              <li className="flex items-start gap-3 drop-shadow">
                 <Check className="w-6 h-6 shrink-0 mt-0.5" />
                 Plus de 700 catégories de services
               </li>
-              <li className="flex items-start gap-3">
+              <li className="flex items-start gap-3 drop-shadow">
                 <Check className="w-6 h-6 shrink-0 mt-0.5" />
                 Un travail de qualité, livré plus rapidement
               </li>
-              <li className="flex items-start gap-3">
+              <li className="flex items-start gap-3 drop-shadow">
                 <Check className="w-6 h-6 shrink-0 mt-0.5" />
                 Accès aux meilleurs talents freelances français
               </li>
             </ul>
           </div>
-
-          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
         </div>
 
         {/* Right Side (Form) */}
         <div className="w-full md:w-[55%] p-8 md:p-12 flex flex-col justify-center bg-white relative">
-          <Link to="/" className="md:hidden text-2xl font-black tracking-tight text-slate-900 mb-8 block">
+          <button 
+            onClick={closeModal}
+            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <Link to="/" onClick={closeModal} className="md:hidden text-2xl font-black tracking-tight text-slate-900 mb-8 block">
             frilya.
           </Link>
 

@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import catAvatar from '../../assets/cat.png';
 import verifiedIcon from '../../assets/verified.png';
 import { BetaBadge } from '../BetaBadge';
+import { useAuthModal } from '../../contexts/AuthModalContext';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,6 +22,7 @@ export default function Header() {
   const [searchResults, setSearchResults] = useState<{services: any[], users: any[]}>({ services: [], users: [] });
   const [showSearchResults, setShowSearchResults] = useState(false);
   const navigate = useNavigate();
+  const { openModal } = useAuthModal();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,7 +225,7 @@ export default function Header() {
 
         {/* Right: Actions */}
         <div className="hidden md:flex items-center gap-4">
-          <Link to="/vendeur/inscription" className="text-sm font-bold text-slate-600 hover:text-frilya-900 transition-colors mr-2">
+          <Link to={userProfile ? "/vendeur/inscription" : "#"} onClick={(e) => { if (!userProfile) { e.preventDefault(); openModal('signup'); } }} className="text-sm font-bold text-slate-600 hover:text-frilya-900 transition-colors mr-2">
             Devenir vendeur
           </Link>
           
@@ -285,14 +287,14 @@ export default function Header() {
                   )}
                 </div>
               ) : (
-                <Link to="/connexion" className="flex items-center gap-2 hover:bg-slate-100 rounded-full transition-all">
+                <button onClick={() => openModal('login')} className="flex items-center gap-2 hover:bg-slate-100 rounded-full transition-all">
                   <div className="w-7 h-7 bg-frilya-100 rounded-full flex items-center justify-center overflow-hidden">
                     <img src={userIcon} alt="Mon compte" className="w-4 h-4 opacity-70" />
                   </div>
                   <span className="text-sm font-bold text-slate-700 max-w-[100px] truncate">
                     Se connecter
                   </span>
-                </Link>
+                </button>
               )}
               
               {userProfile?.is_verified && (
@@ -370,7 +372,7 @@ export default function Header() {
               </button>
             )}
 
-            <Link to="/vendeur/inscription" className="block text-center w-full bg-frilya-900 text-white font-bold py-2.5 rounded-xl text-sm">
+            <Link to={userProfile ? "/vendeur/inscription" : "#"} onClick={(e) => { if (!userProfile) { e.preventDefault(); openModal('signup'); setIsMenuOpen(false); } }} className="block text-center w-full bg-frilya-900 text-white font-bold py-2.5 rounded-xl text-sm">
               Devenir vendeur
             </Link>
           </div>
