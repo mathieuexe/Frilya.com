@@ -8,6 +8,7 @@ import {
   CheckCircle2, ArrowRight, LogIn, ArrowLeft, Clock, Mail
 } from 'lucide-react';
 import { DiscordIcon } from '../components/DiscordIcon';
+import { useAuthModal } from '../contexts/AuthModalContext';
 import logo from '../assets/logo.png';
 import bgVideo from '../assets/original-e6c90943d3d9da57b997c2898244009e.mp4';
 import confettiVideo from '../assets/Confetti.webm';
@@ -71,6 +72,7 @@ const HomeLink = ({ variant = 'primary' }: { variant?: 'primary' | 'ghost' }) =>
 );
 
 export default function BetaRegistration() {
+  const { openModal } = useAuthModal();
   const confettiRef = useRef<HTMLVideoElement>(null);
   const playCount = useRef(0);
   
@@ -484,13 +486,13 @@ export default function BetaRegistration() {
                   </div>
                 </div>
               ) : (
-                <a
-                  href="/connexion"
+                <button
+                  onClick={() => openModal('login')}
                   className="inline-flex items-center gap-2 text-sm font-bold text-white/80 hover:text-white transition-colors"
                 >
                   <LogIn className="w-4 h-4" />
                   J'ai déjà un compte bêta — se connecter
-                </a>
+                </button>
               )}
             </div>
           </div>
