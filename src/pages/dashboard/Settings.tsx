@@ -133,6 +133,18 @@ export default function Settings() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      
+      // Permettre aux admins d'uploader des GIFs animés directement (sans recadrage)
+      if (profile?.role === 'admin' && file.type === 'image/gif') {
+        if (type === 'avatar') {
+          setAvatarFile(file);
+        } else {
+          setBannerFile(file);
+        }
+        e.target.value = '';
+        return;
+      }
+
       const url = URL.createObjectURL(file);
       setCropState({ url, type });
       // Reset input so the same file can be selected again if needed
