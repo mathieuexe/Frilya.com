@@ -10,6 +10,7 @@ import {
 import { DiscordIcon } from '../components/DiscordIcon';
 import logo from '../assets/logo.png';
 import bgVideo from '../assets/original-e6c90943d3d9da57b997c2898244009e.mp4';
+import confettiVideo from '../assets/Confetti.webm';
 
 /** Décor commun à tous les états de la page bêta : vidéo + voile dégradé bleu Frilya */
 function BetaBackdrop({ children }: { children: React.ReactNode }) {
@@ -240,6 +241,16 @@ export default function BetaRegistration() {
   if (success) {
     return (
       <BetaBackdrop>
+        {/* Animation de confettis en surimpression */}
+        <video 
+          autoPlay 
+          muted 
+          playsInline 
+          className="fixed inset-0 w-full h-full object-cover z-50 pointer-events-none mix-blend-screen"
+        >
+          <source src={confettiVideo} type="video/webm" />
+        </video>
+
         <a href="/" className="mb-8">
           <img src={logo} alt="Frilya" className="h-9 w-auto brightness-0 invert" />
         </a>
@@ -389,16 +400,6 @@ export default function BetaRegistration() {
             <a href="/" className="inline-block mb-8">
               <img src={logo} alt="Frilya" className="h-8 w-auto brightness-0 invert" />
             </a>
-
-            <div className="inline-flex items-center gap-2 self-start mb-6 group cursor-default">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-frilya-500 to-frilya-400 shadow-lg shadow-frilya-500/20 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold text-white/50 uppercase tracking-widest leading-none mb-0.5">Accès restreint</span>
-                <span className="block text-sm font-bold text-white leading-none">Programme bêta privé</span>
-              </div>
-            </div>
 
             <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-4">
               Testez Frilya avant<br className="hidden md:block" /> tout le monde
