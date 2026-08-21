@@ -140,10 +140,6 @@ export default function AuthModal() {
           className="hidden md:flex md:w-[45%] text-white p-10 flex-col relative bg-cover bg-center"
           style={{ backgroundImage: `url(${loginBg})` }}
         >
-          {/* Overlay to ensure text readability */}
-          <div className="absolute inset-0 bg-[#8B2C46]/80 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-slate-900/30" />
-
           <div className="relative z-10">
             <Link to="/" onClick={closeModal} className="text-2xl font-black tracking-tight hover:opacity-90 transition-opacity w-fit">
               frilya.
