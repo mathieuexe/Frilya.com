@@ -41,6 +41,7 @@ export default function Footer() {
               <li><Link to="/cgu" className="hover:text-frilya-600 transition-colors">Conditions Générales d'Utilisation</Link></li>
               <li><Link to="/cgv" className="hover:text-frilya-600 transition-colors">Conditions Générales de Vente</Link></li>
               <li><Link to="/confidentialite" className="hover:text-frilya-600 transition-colors">Politique de confidentialité</Link></li>
+              <li><a href="#" id="open_preferences_center" className="hover:text-frilya-600 transition-colors">Gérer mes cookies</a></li>
             </ul>
           </div>
         </div>
