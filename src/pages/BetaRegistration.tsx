@@ -390,10 +390,15 @@ export default function BetaRegistration() {
               <img src={logo} alt="Frilya" className="h-8 w-auto brightness-0 invert" />
             </a>
 
-            <span className="inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white text-[11px] font-bold uppercase tracking-[0.12em] mb-5">
-              <Sparkles className="w-3.5 h-3.5 text-white/80" />
-              Programme bêta privé
-            </span>
+            <div className="inline-flex items-center gap-2 self-start mb-6 group cursor-default">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-frilya-500 to-frilya-400 shadow-lg shadow-frilya-500/20 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold text-white/50 uppercase tracking-widest leading-none mb-0.5">Accès restreint</span>
+                <span className="block text-sm font-bold text-white leading-none">Programme bêta privé</span>
+              </div>
+            </div>
 
             <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-4">
               Testez Frilya avant<br className="hidden md:block" /> tout le monde
