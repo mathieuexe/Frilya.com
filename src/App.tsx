@@ -40,6 +40,7 @@ import Settings from './pages/dashboard/Settings';
 import BetaFeedback from './pages/dashboard/BetaFeedback';
 
 import BetaRegistrationPage from './pages/BetaRegistration';
+import CookieBanner from './components/CookieBanner';
 
 function AppRoutes() {
   const [loading, setLoading] = useState(true);
@@ -245,6 +246,7 @@ function AppRoutes() {
 export default function AppWrapper() {
   return (
     <Router>
+      <CookieBanner />
       <AppRoutes />
     </Router>
   );

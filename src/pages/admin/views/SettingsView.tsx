@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Power, Loader2, Percent, FileCheck, Check, X, PenTool } from 'lucide-react';
+import { Power, Loader2, Percent, FileCheck, Check, X, PenTool, Cookie } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 export default function SettingsView() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [cookieBannerEnabled, setCookieBannerEnabled] = useState(true);
   const [allowedIps, setAllowedIps] = useState<string>('');
   const [platformFee, setPlatformFee] = useState<string>('20');
   const [signature, setSignature] = useState<string>('');
@@ -92,6 +93,20 @@ export default function SettingsView() {
         setMaintenanceMode(maintenanceData.value === true || maintenanceData.value === 'true');
       }
 
+      const { data: cookieData, error: cookieError } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'cookie_banner_enabled')
+        .single();
+
+      if (cookieError && cookieError.code !== 'PGRST116') throw cookieError;
+      
+      if (cookieData) {
+        setCookieBannerEnabled(cookieData.value === true || cookieData.value === 'true');
+      } else {
+        setCookieBannerEnabled(true); // default true if not found
+      }
+
       const { data: ipData } = await supabase
         .from('settings')
         .select('value')
@@ -134,13 +149,32 @@ export default function SettingsView() {
       const newValue = !maintenanceMode;
       const { error: upsertError } = await supabase
         .from('settings')
-        .upsert({ key: 'maintenance_mode', value: newValue }, { onConflict: 'key' });
+        .upsert({ key: 'maintenance_mode', value: newValue.toString() }, { onConflict: 'key' });
 
       if (upsertError) throw upsertError;
       setMaintenanceMode(newValue);
     } catch (err: any) {
       console.error("Erreur lors de la modification:", err);
       setError("Impossible de modifier le mode maintenance.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const toggleCookieBanner = async () => {
+    setActionLoading(true);
+    setError(null);
+    try {
+      const newValue = !cookieBannerEnabled;
+      const { error: upsertError } = await supabase
+        .from('settings')
+        .upsert({ key: 'cookie_banner_enabled', value: newValue.toString() }, { onConflict: 'key' });
+
+      if (upsertError) throw upsertError;
+      setCookieBannerEnabled(newValue);
+    } catch (err: any) {
+      console.error("Erreur lors de la modification:", err);
+      setError("Impossible de modifier l'état du bandeau cookie.");
     } finally {
       setActionLoading(false);
     }
@@ -333,6 +367,52 @@ export default function SettingsView() {
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               'Enregistrer les frais'
+            )}
+          </button>
+        </div>
+
+        {/* Carte Cookie */}
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Bandeau Cookies</h2>
+              <p className="text-slate-500 text-sm mt-1">Activer ou désactiver l'affichage du consentement TermsFeed</p>
+            </div>
+            <div className={`p-3 rounded-2xl ${cookieBannerEnabled ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600'}`}>
+              <Cookie className="w-6 h-6" />
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-slate-700">Statut actuel :</span>
+              <span className={`font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider ${cookieBannerEnabled ? 'bg-green-500 text-white' : 'bg-slate-500 text-white'}`}>
+                {cookieBannerEnabled ? 'Activé' : 'Désactivé'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-3 mb-4">
+              {cookieBannerEnabled 
+                ? "Le bandeau de consentement TermsFeed s'affiche pour les visiteurs." 
+                : "Le bandeau est masqué sur tout le site."}
+            </p>
+          </div>
+
+          <button
+            onClick={toggleCookieBanner}
+            disabled={actionLoading}
+            className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-xl transition-all shadow-sm ${
+              cookieBannerEnabled 
+                ? 'bg-slate-900 hover:bg-slate-800 text-white' 
+                : 'bg-green-600 hover:bg-green-700 text-white'
+            } disabled:opacity-50`}
+          >
+            {actionLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <Power className="w-5 h-5" />
+                {cookieBannerEnabled ? 'Désactiver le bandeau' : 'Activer le bandeau'}
+              </>
             )}
           </button>
         </div>
