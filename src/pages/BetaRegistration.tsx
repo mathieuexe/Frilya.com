@@ -200,12 +200,17 @@ export default function BetaRegistration() {
       }
 
       // 4. Sauvegarder en base de données
+      let finalMotivation = formData.motivation;
+      if (discordConsent && formData.discordUsername) {
+        finalMotivation += `\n\n[DISCORD_BROADCAST_CONSENT: ${formData.discordUsername}]`;
+      }
+
       const { error: dbError } = await supabase
         .from('beta_applications')
         .insert([{
           pseudo: formData.pseudo,
           email: formData.email.trim(),
-          motivation: formData.motivation,
+          motivation: finalMotivation,
           ip_address: userIp
         }]);
 

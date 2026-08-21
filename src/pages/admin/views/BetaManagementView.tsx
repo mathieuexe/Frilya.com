@@ -114,6 +114,17 @@ export default function BetaManagementView() {
     }
   };
 
+  const getMotivationAndDiscord = (rawMotivation: string) => {
+    const match = rawMotivation?.match(/\[DISCORD_BROADCAST_CONSENT:\s*(.*?)\]/);
+    if (match) {
+      return {
+        text: rawMotivation.replace(/\[DISCORD_BROADCAST_CONSENT:\s*.*?\]/, '').trim(),
+        discord: match[1]
+      };
+    }
+    return { text: rawMotivation || '', discord: null };
+  };
+
   const handleAcceptRequest = async (request: any) => {
     setActionLoading(request.id);
     try {
@@ -176,6 +187,24 @@ export default function BetaManagementView() {
 
       // 5. Send Email
       await sendBetaAcceptedEmail(request.email, request.pseudo, tempPassword, betaEndDate);
+
+      // 6. Envoi webhook Discord de validation si consenti
+      const { discord } = getMotivationAndDiscord(request.motivation);
+      if (discord) {
+        try {
+          await fetch('https://discord.com/api/webhooks/1537067880808452157/p3MvVrdU7wLO-_CwStKyPxc7R3Nm9L9k_Fr8w6zZrsTYBx57AxI8wO972LXmHBFn2gvo', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              content: `@${discord}, ton compte t'attend là-bas ! Pense à vérifier tes e-mails. ✨`
+            })
+          });
+        } catch (webhookError) {
+          console.error("Erreur d'envoi webhook discord (validation):", webhookError);
+        }
+      }
 
       alert("Candidature acceptée et email envoyé !");
       fetchData();
@@ -387,13 +416,22 @@ export default function BetaManagementView() {
                 <tbody className="divide-y divide-slate-100">
                   {requests.length === 0 ? (
                     <tr><td colSpan={5} className="p-8 text-center text-slate-500">Aucune demande.</td></tr>
-                  ) : requests.map(req => (
+                  ) : requests.map(req => {
+                    const { text, discord } = getMotivationAndDiscord(req.motivation);
+                    return (
                     <tr key={req.id}>
                       <td className="p-4">
                         <div className="font-bold text-slate-900">{req.pseudo}</div>
                         <div className="text-sm text-slate-500">{req.email}</div>
                       </td>
-                      <td className="p-4 text-sm text-slate-600 max-w-xs truncate" title={req.motivation}>{req.motivation}</td>
+                      <td className="p-4 text-sm text-slate-600 max-w-xs" title={text}>
+                        <div className="truncate">{text}</div>
+                        {discord && (
+                          <span className="inline-block mt-1 px-2 py-0.5 bg-[#5865F2]/10 text-[#5865F2] text-[10px] font-bold rounded-full">
+                            Discord: @{discord}
+                          </span>
+                        )}
+                      </td>
                       <td className="p-4 text-sm text-slate-500">{new Date(req.created_at).toLocaleDateString('fr-FR')}</td>
                       <td className="p-4">
                         <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : req.status === 'accepted' || req.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -413,7 +451,8 @@ export default function BetaManagementView() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
