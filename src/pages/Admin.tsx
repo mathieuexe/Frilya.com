@@ -29,6 +29,7 @@ import UserDossier from './admin/views/UserDossier';
 import AnalyticsView from './admin/views/AnalyticsView';
 import IbansView from './admin/views/IbansView';
 import LegalPagesView from './admin/views/LegalPagesView';
+import WithdrawalsView from './admin/views/WithdrawalsView';
 
 // FAQ & Support Views
 import TicketsView from './admin/views/tickets/TicketsView';
@@ -477,6 +478,7 @@ function AdminShell({
               <Route path="/services" element={<ServicesView />} />
               <Route path="/messages" element={<MessagesView />} />
               <Route path="/orders" element={<OrdersView />} />
+              <Route path="/withdrawals" element={<WithdrawalsView />} />
               <Route path="/disputes" element={<DisputesView />} />
               <Route path="/settings" element={<SettingsView />} />
               <Route path="/beta" element={<BetaManagementView />} />

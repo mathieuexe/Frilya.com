@@ -50,6 +50,7 @@ export default function SellerDashboard() {
     { name: 'Vue d\'ensemble', path: '/tableau-de-bord/vendeur', icon: LayoutDashboard },
     { name: 'Mes services', path: '/tableau-de-bord/vendeur/services', customIcon: puzzleIcon, hideForBeta: true },
     { name: 'Commandes reçues', path: '/tableau-de-bord/vendeur/commandes', customIcon: checkoutIcon, hideForBeta: true },
+    { name: 'Revenus & Retraits', path: '/tableau-de-bord/vendeur/revenus', customIcon: moneyIcon, hideForBeta: true },
     { name: 'Messages', path: '/tableau-de-bord/vendeur/messages', customIcon: chatIcon },
     { name: 'Litiges', path: '/tableau-de-bord/vendeur/litiges', icon: AlertTriangle, hideForBeta: true },
     { name: 'Service Client', path: '/tableau-de-bord/vendeur/tickets', icon: LifeBuoy, hideForBeta: true },

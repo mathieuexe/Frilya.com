@@ -50,8 +50,18 @@ export default function LegalPage({ slug }: { slug: string }) {
     return <Navigate to="/" replace />;
   }
 
+  // Linkify raw URLs before sanitizing
+  const linkify = (text: string) => {
+    // Matches URLs that start with http:// or https://
+    // Replaces them only if they don't seem to be part of an existing HTML attribute
+    const urlRegex = /(^|\s)(https?:\/\/[^\s<]+)/g;
+    return text.replace(urlRegex, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+  };
+
+  const linkifiedContent = linkify(pageData.content || '');
+
   // Purifier le HTML pour éviter les failles XSS
-  const sanitizedContent = DOMPurify.sanitize(pageData.content || '');
+  const sanitizedContent = DOMPurify.sanitize(linkifiedContent);
 
   return (
     <div className="min-h-screen bg-white pt-24 pb-12 sm:pt-32 sm:pb-20">

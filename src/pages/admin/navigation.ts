@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Store, ShoppingBag, MessageSquare, AlertTriangle,
-  Settings, Beaker, LifeBuoy, Inbox, FileText, Activity, Tag, BarChart3
+  Settings, Beaker, LifeBuoy, Inbox, FileText, Activity, Tag, BarChart3, CreditCard
 } from 'lucide-react';
 import type { AdminCounts } from './AdminNotificationsContext';
 
@@ -53,6 +53,7 @@ export const ADMIN_NAV: AdminNavCategory[] = [
     items: [
       { id: 'services', name: 'Services', icon: Store, description: 'Annonces publiées' },
       { id: 'orders', name: 'Commandes', icon: ShoppingBag, description: 'Transactions' },
+      { id: 'withdrawals', name: 'Retraits', icon: CreditCard, badge: 'withdrawals', description: 'Demandes de retraits' },
       { id: 'messages', name: 'Supervision messages', icon: MessageSquare, description: 'Historique des messages privés' },
       { id: 'disputes', name: 'Litiges', icon: AlertTriangle, badge: 'disputes', description: 'Conflits acheteurs / vendeurs' }
     ]

@@ -13,6 +13,8 @@ export type AdminCounts = {
   disputes: number;
   /** IBAN en attente de validation */
   ibans: number;
+  /** Demandes de retrait en attente */
+  withdrawals: number;
 };
 
 type AdminNotificationsValue = {
@@ -22,7 +24,7 @@ type AdminNotificationsValue = {
   refresh: () => Promise<void>;
 };
 
-const EMPTY_COUNTS: AdminCounts = { tickets: 0, beta: 0, support: 0, disputes: 0, ibans: 0 };
+const EMPTY_COUNTS: AdminCounts = { tickets: 0, beta: 0, support: 0, disputes: 0, ibans: 0, withdrawals: 0 };
 
 const AdminNotificationsContext = createContext<AdminNotificationsValue>({
   counts: EMPTY_COUNTS,
@@ -41,7 +43,7 @@ export function AdminNotificationsProvider({ children }: { children: React.React
 
   const refresh = useCallback(async () => {
     try {
-      const [ticketsRes, betaRes, supportRes, disputesRes, ibansRes] = await Promise.all([
+      const [ticketsRes, betaRes, supportRes, disputesRes, ibansRes, withdrawalsRes] = await Promise.all([
         supabase
           .from('report_tickets')
           .select('id', { count: 'exact', head: true })
@@ -62,7 +64,11 @@ export function AdminNotificationsProvider({ children }: { children: React.React
         supabase
           .from('profiles')
           .select('id', { count: 'exact', head: true })
-          .eq('rib_status', 'pending')
+          .eq('rib_status', 'pending'),
+        supabase
+          .from('withdrawal_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending')
       ]);
 
       setCounts({
@@ -70,7 +76,8 @@ export function AdminNotificationsProvider({ children }: { children: React.React
         beta: betaRes.count || 0,
         support: supportRes.count || 0,
         disputes: disputesRes.count || 0,
-        ibans: ibansRes.count || 0
+        ibans: ibansRes.count || 0,
+        withdrawals: withdrawalsRes.count || 0
       });
     } catch (err) {
       console.error('Erreur lors du calcul des notifications admin :', err);

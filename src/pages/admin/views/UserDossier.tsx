@@ -17,6 +17,8 @@ interface UserDossierProps {
 
 type Tab = 'info' | 'orders' | 'sales' | 'messages' | 'disputes' | 'tickets' | 'logs' | 'reviews' | 'emails';
 
+import ImageCropper from '../../../components/ImageCropper';
+
 export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [resetLoading, setResetLoading] = useState(false);
+  const [cropState, setCropState] = useState<{ url: string, type: 'avatar' | 'banner' } | null>(null);
 
   useEffect(() => {
     if (userId) {
@@ -431,6 +434,40 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
     joinDate: profile?.created_at ? new Date(profile.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '-'
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      // Les admins gardent le bypass pour les GIFs animés
+      if (profile?.role === 'admin' && file.type === 'image/gif') {
+        if (type === 'avatar') setAvatarFile(file);
+        else setBannerFile(file);
+        e.target.value = '';
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+      setCropState({ url, type });
+      e.target.value = '';
+    }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    if (!cropState) return;
+    const file = new File([croppedBlob], `cropped_${cropState.type}.jpg`, { type: 'image/jpeg' });
+    if (cropState.type === 'avatar') setAvatarFile(file);
+    else setBannerFile(file);
+    URL.revokeObjectURL(cropState.url);
+    setCropState(null);
+  };
+
+  const handleCropCancel = () => {
+    if (cropState) {
+      URL.revokeObjectURL(cropState.url);
+      setCropState(null);
+    }
+  };
+
   return (
     <>
       <div className="space-y-6 animate-in fade-in duration-200">
@@ -478,7 +515,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
           <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
             <Camera className="w-6 h-6 mr-2" />
             <span className="font-semibold">Modifier la bannière</span>
-            <input type="file" accept="image/*" className="hidden" onChange={e => setBannerFile(e.target.files ? e.target.files[0] : null)} />
+            <input type="file" accept="image/*" className="hidden" onChange={e => handleFileSelect(e, 'banner')} />
           </label>
         </div>
         
@@ -492,7 +529,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
               )}
               <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center text-white">
                  <Camera className="w-5 h-5" />
-                 <input type="file" accept="image/*" className="hidden" onChange={e => setAvatarFile(e.target.files ? e.target.files[0] : null)} />
+                 <input type="file" accept="image/*" className="hidden" onChange={e => handleFileSelect(e, 'avatar')} />
               </label>
             </div>
             {profile?.is_verified && (
@@ -582,6 +619,16 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         {/* Content Area */}
         <div className="animate-in slide-in-from-bottom-4 duration-300">
           
+          {cropState && (
+            <ImageCropper
+              image={cropState.url}
+              aspect={cropState.type === 'avatar' ? 1 : 16 / 5}
+              shape={cropState.type === 'avatar' ? 'round' : 'rect'}
+              onCropComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+            />
+          )}
+
           {/* TAB: INFO */}
           {activeTab === 'info' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

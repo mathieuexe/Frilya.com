@@ -20,6 +20,7 @@ import SearchPage from './pages/services/Search';
 import ServiceDetailPage from './pages/services/ServiceDetail';
 import ServicesList from './pages/dashboard/seller/ServicesList';
 import CreateServicePage from './pages/dashboard/seller/CreateService';
+import Revenus from './pages/dashboard/seller/Revenus';
 import CheckoutPage from './pages/checkout/Checkout';
 import OrderConfirmationPage from './pages/checkout/OrderConfirmation';
 import MessagesPage from './pages/messages/Messages';
@@ -224,6 +225,7 @@ function AppRoutes() {
           <Route path="services/nouveau" element={<CreateServicePage />} />
           <Route path="services/edition/:id" element={<CreateServicePage />} />
           <Route path="commandes" element={<Orders />} />
+          <Route path="revenus" element={<Revenus />} />
           <Route path="messages" element={<MessagesPage inDashboard={true} />} />
           <Route path="litiges" element={<Disputes />} />
           <Route path="tickets" element={<UserTickets />} />
