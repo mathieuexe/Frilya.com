@@ -61,6 +61,7 @@ export const ADMIN_NAV: AdminNavCategory[] = [
     title: 'Système',
     icon: Settings,
     items: [
+      { id: 'admins', name: 'Administrateurs', icon: Users, description: 'Gestion des comptes admins' },
       { id: 'beta', name: 'Gestion Bêta', icon: Beaker, badge: 'beta', description: 'Demandes, testeurs et feedbacks' },
       { id: 'legal', name: 'Pages Légales', icon: FileText, description: 'CGV, CGU, Confidentialité' },
       { id: 'settings', name: 'Paramètres', icon: Settings, description: 'Configuration de la plateforme' }

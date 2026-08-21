@@ -17,7 +17,7 @@ const adminAuthClient = createClient(supabaseUrl, supabaseKey, {
   }
 });
 
-export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
+export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' | 'admin' }) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -40,6 +40,8 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
       let query = supabase.from('profiles').select('*');
       if (type === 'vendeur') {
         query = query.eq('is_seller', true);
+      } else if (type === 'admin') {
+        query = query.eq('role', 'admin');
       } else {
         query = query.eq('role', 'acheteur').eq('is_seller', false);
       }
@@ -97,7 +99,7 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
             id: signUpData.user.id,
             email: newUserForm.email,
             full_name: newUserForm.fullName,
-            role: 'acheteur',
+            role: type === 'admin' ? 'admin' : 'acheteur',
             is_seller: type === 'vendeur'
           }, { onConflict: 'id' });
           
@@ -129,7 +131,7 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
     <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h2 className="text-xl font-bold text-slate-900">
-          {type === 'vendeur' ? 'Gestion des Vendeurs' : 'Gestion des Acheteurs'}
+          {type === 'vendeur' ? 'Gestion des Vendeurs' : type === 'admin' ? 'Gestion des Administrateurs' : 'Gestion des Acheteurs'}
         </h2>
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <div className="relative w-full sm:w-72">
@@ -233,7 +235,7 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' }) {
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50">
               <h2 className="text-xl font-bold text-slate-900">
-                Ajouter un {type === 'vendeur' ? 'vendeur' : 'acheteur'}
+                Ajouter un {type === 'vendeur' ? 'vendeur' : type === 'admin' ? 'administrateur' : 'acheteur'}
               </h2>
               <button onClick={() => setIsCreatingUser(false)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-full transition-colors">
                 <X className="w-5 h-5" />

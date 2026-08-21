@@ -471,6 +471,7 @@ function AdminShell({
               <Route path="/stats" element={<AnalyticsView />} />
               <Route path="/buyers" element={<UsersView type="acheteur" />} />
               <Route path="/sellers" element={<UsersView type="vendeur" />} />
+              <Route path="/admins" element={<UsersView type="admin" />} />
               <Route path="/users/:id" element={<UserDossierWrapper />} />
               <Route path="/ibans" element={<IbansView />} />
               <Route path="/services" element={<ServicesView />} />
