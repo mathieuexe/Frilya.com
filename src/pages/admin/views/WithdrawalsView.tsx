@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Loader2, CheckCircle, XCircle, Search, Clock } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Search, Clock, CreditCard } from 'lucide-react';
+import { SUPPORT_ACCOUNT_ID } from '../../../lib/constants';
 
 export default function WithdrawalsView() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -61,6 +62,24 @@ export default function WithdrawalsView() {
       });
 
       if (error) throw error;
+
+      if (status === 'accepted') {
+        const msg = `Bonjour,\n\nVotre demande de retrait d'un montant de ${Number(selectedRequest.amount).toFixed(2)} € a été acceptée et traitée avec succès !\n\nPlateforme utilisée : ${platform}\nIBAN cible : ${rib}\nRéférence du virement : ${reference}\n${note ? `\nNote de l'administrateur : ${note}` : ''}\n\nLe montant devrait apparaître sur votre compte bancaire d'ici quelques jours ouvrés selon les délais bancaires habituels.\n\nL'équipe Frilya`;
+        
+        await supabase.from('messages').insert({
+          sender_id: SUPPORT_ACCOUNT_ID,
+          receiver_id: selectedRequest.seller_id,
+          content: msg
+        });
+      } else if (status === 'rejected') {
+        const msg = `Bonjour,\n\nVotre demande de retrait d'un montant de ${Number(selectedRequest.amount).toFixed(2)} € a malheureusement été refusée.\n\nMotif : ${note}\n\nLe montant a été recrédité sur votre solde Frilya. Si vous avez des questions, n'hésitez pas à répondre à ce message.\n\nL'équipe Frilya`;
+        
+        await supabase.from('messages').insert({
+          sender_id: SUPPORT_ACCOUNT_ID,
+          receiver_id: selectedRequest.seller_id,
+          content: msg
+        });
+      }
 
       await fetchRequests();
       setSelectedRequest(null);
@@ -247,27 +266,45 @@ export default function WithdrawalsView() {
                   </div>
                 </>
               ) : (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <div>
-                      <div className="text-xs text-slate-500">Statut</div>
-                      <div className="font-bold text-slate-900">{selectedRequest.status === 'accepted' ? 'Accepté' : 'Refusé'}</div>
+                      <div className="text-xs text-slate-500 mb-1">Date de la demande</div>
+                      <div className="font-bold text-slate-900">{new Date(selectedRequest.created_at).toLocaleString('fr-FR')}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-slate-500">Plateforme</div>
-                      <div className="font-bold text-slate-900">{selectedRequest.payment_platform || '-'}</div>
+                      <div className="text-xs text-slate-500 mb-1">Date de traitement</div>
+                      <div className="font-bold text-slate-900">{selectedRequest.processed_at ? new Date(selectedRequest.processed_at).toLocaleString('fr-FR') : '-'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">Statut</div>
+                      <div className={`font-bold inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs uppercase tracking-wider ${selectedRequest.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                        {selectedRequest.status === 'accepted' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                        {selectedRequest.status === 'accepted' ? 'Accepté' : 'Refusé'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500 mb-1">Plateforme</div>
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <CreditCard className="w-4 h-4 text-slate-400" />
+                        {selectedRequest.payment_platform || '-'}
+                      </div>
                     </div>
                     <div className="col-span-2">
-                      <div className="text-xs text-slate-500">RIB / IBAN</div>
-                      <div className="font-bold text-slate-900 font-mono">{selectedRequest.rib_iban || '-'}</div>
+                      <div className="text-xs text-slate-500 mb-1">RIB / IBAN cible</div>
+                      <div className="font-bold text-slate-900 font-mono bg-white p-2 rounded-lg border border-slate-200">{selectedRequest.rib_iban || '-'}</div>
                     </div>
+                    {selectedRequest.status === 'accepted' && (
+                      <div className="col-span-2">
+                        <div className="text-xs text-slate-500 mb-1">Référence du virement</div>
+                        <div className="font-bold text-slate-900 font-mono bg-white p-2 rounded-lg border border-slate-200">{selectedRequest.transfer_reference || '-'}</div>
+                      </div>
+                    )}
                     <div className="col-span-2">
-                      <div className="text-xs text-slate-500">Référence virement</div>
-                      <div className="font-bold text-slate-900">{selectedRequest.transfer_reference || '-'}</div>
-                    </div>
-                    <div className="col-span-2">
-                      <div className="text-xs text-slate-500">Note admin</div>
-                      <div className="font-medium text-slate-700">{selectedRequest.admin_note || '-'}</div>
+                      <div className="text-xs text-slate-500 mb-1">Note de traitement</div>
+                      <div className="font-medium text-slate-700 bg-white p-3 rounded-lg border border-slate-200 min-h-[3rem] whitespace-pre-wrap">
+                        {selectedRequest.admin_note || '-'}
+                      </div>
                     </div>
                   </div>
                 </div>

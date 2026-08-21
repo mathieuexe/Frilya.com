@@ -144,6 +144,34 @@ export default function Revenus() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Historique des transactions */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+          <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <History className="w-5 h-5 text-slate-400" />
+            Dernières transactions
+          </h3>
+          <div className="space-y-4">
+            {transactions.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-8">Aucune transaction.</p>
+            ) : transactions.map(tx => (
+              <div key={tx.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">{tx.reason}</div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {new Date(tx.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`font-black ${tx.direction === 'credit' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                    {tx.direction === 'credit' ? '+' : '-'}{Number(tx.amount).toFixed(2)} €
+                  </div>
+                  <div className="text-xs text-slate-400 font-medium">Solde: {Number(tx.balance_after).toFixed(2)} €</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Mes demandes de retrait */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
           <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
@@ -174,34 +202,6 @@ export default function Revenus() {
                   'bg-red-100 text-red-700'
                 }`}>
                   {req.status === 'pending' ? 'En attente' : req.status === 'accepted' ? 'Effectué' : 'Refusé'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Historique des transactions */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <History className="w-5 h-5 text-slate-400" />
-            Dernières transactions
-          </h3>
-          <div className="space-y-4">
-            {transactions.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-8">Aucune transaction.</p>
-            ) : transactions.map(tx => (
-              <div key={tx.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <div>
-                  <div className="font-bold text-slate-900 text-sm">{tx.reason}</div>
-                  <div className="text-xs text-slate-500 mt-1">
-                    {new Date(tx.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className={`font-black ${tx.direction === 'credit' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                    {tx.direction === 'credit' ? '+' : '-'}{Number(tx.amount).toFixed(2)} €
-                  </div>
-                  <div className="text-xs text-slate-400 font-medium">Solde: {Number(tx.balance_after).toFixed(2)} €</div>
                 </div>
               </div>
             ))}
