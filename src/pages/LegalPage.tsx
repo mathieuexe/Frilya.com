@@ -68,7 +68,7 @@ export default function LegalPage({ slug }: { slug: string }) {
         </div>
         
         <div 
-          className="prose prose-sm sm:prose-base prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-slate-800 prose-p:leading-relaxed prose-a:text-frilya-600 hover:prose-a:text-frilya-700 prose-img:rounded-xl whitespace-pre-wrap"
+          className="prose prose-sm sm:prose-base prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-slate-800 prose-p:leading-relaxed prose-a:text-frilya-600 hover:prose-a:text-frilya-700 prose-img:rounded-xl prose-strong:font-bold prose-u:underline whitespace-pre-wrap"
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
       </div>
