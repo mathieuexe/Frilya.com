@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { sendBetaConfirmationEmail } from '../lib/email';
@@ -71,6 +71,9 @@ const HomeLink = ({ variant = 'primary' }: { variant?: 'primary' | 'ghost' }) =>
 );
 
 export default function BetaRegistration() {
+  const confettiRef = useRef<HTMLVideoElement>(null);
+  const playCount = useRef(0);
+  
   const [formData, setFormData] = useState({
     pseudo: '',
     email: '',
@@ -238,14 +241,30 @@ export default function BetaRegistration() {
     }
   };
 
+  useEffect(() => {
+    if (success && confettiRef.current) {
+      // Ralentit la vidéo (par exemple 0.7x de la vitesse normale)
+      confettiRef.current.playbackRate = 0.7;
+    }
+  }, [success]);
+
+  const handleConfettiEnded = () => {
+    playCount.current += 1;
+    if (playCount.current < 2 && confettiRef.current) {
+      confettiRef.current.play();
+    }
+  };
+
   if (success) {
     return (
       <BetaBackdrop>
         {/* Animation de confettis en surimpression */}
         <video 
+          ref={confettiRef}
           autoPlay 
           muted 
           playsInline 
+          onEnded={handleConfettiEnded}
           className="fixed inset-0 w-full h-full object-cover z-50 pointer-events-none mix-blend-screen"
         >
           <source src={confettiVideo} type="video/webm" />
