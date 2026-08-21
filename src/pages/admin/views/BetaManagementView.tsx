@@ -178,6 +178,7 @@ export default function BetaManagementView() {
         await supabase.from('profiles').update({
           is_beta: true,
           beta_end_date: new Date(betaEndDate).toISOString(),
+          force_password_change: true
         }).eq('id', userId);
       }
 

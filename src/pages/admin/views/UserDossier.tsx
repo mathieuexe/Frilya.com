@@ -3,7 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { 
   User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, 
   Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, 
-  ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor
+  ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor, Lock
 } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import { generateInvoiceBase64, downloadInvoice } from '../../../lib/invoice';
@@ -15,7 +15,7 @@ interface UserDossierProps {
   onClose: () => void;
 }
 
-type Tab = 'info' | 'orders' | 'sales' | 'messages' | 'disputes' | 'tickets' | 'logs' | 'reviews';
+type Tab = 'info' | 'orders' | 'sales' | 'messages' | 'disputes' | 'tickets' | 'logs' | 'reviews' | 'emails';
 
 export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [activeTab, setActiveTab] = useState<Tab>('info');
@@ -43,6 +43,9 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [impersonating, setImpersonating] = useState(false);
+
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -72,14 +75,16 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         { data: messagesRawData },
         { data: reviewsData },
         { data: servicesData },
-        { data: logsData }
+        { data: logsData },
+        { data: emailsData }
       ] = await Promise.all([
         supabase.from('orders').select('*, service:services(title), buyer:profiles!orders_buyer_id_fkey(full_name, email), seller:profiles!orders_seller_id_fkey(full_name, email)').eq('buyer_id', userId).order('created_at', { ascending: false }),
         supabase.from('orders').select('*, service:services(title), buyer:profiles!orders_buyer_id_fkey(full_name, email), seller:profiles!orders_seller_id_fkey(full_name, email)').eq('seller_id', userId).order('created_at', { ascending: false }),
         supabase.from('messages').select('*').or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order('created_at', { ascending: false }),
         supabase.from('reviews').select('*, buyer:profiles!reviews_buyer_id_fkey(id, full_name, avatar_url), service:services(id, title)').or(`seller_id.eq.${userId},buyer_id.eq.${userId}`).order('created_at', { ascending: false }),
         supabase.from('services').select('id, title').eq('seller_id', userId).eq('status', 'active'),
-        supabase.from('connection_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+        supabase.from('connection_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('email_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
       ]);
 
       let finalMessages = [];
@@ -107,6 +112,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       setReviews(reviewsData || []);
       setUserServices(servicesData || []);
       setLogs(logsData || []);
+      setEmailLogs(emailsData || []);
 
     } catch (err) {
       console.error("Erreur de chargement du dossier", err);
@@ -343,6 +349,52 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
     }
   };
 
+  const handleResetAction = async (action: 'temp_password' | 'reset_link') => {
+    if (!confirm(`Voulez-vous vraiment effectuer cette action (${action === 'temp_password' ? 'Générer mot de passe temporaire' : 'Lien de réinitialisation'}) ?`)) return;
+    
+    setResetLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Non autorisé");
+
+      const res = await fetch('/api/admin-reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          userId: userId,
+          email: profile.email,
+          pseudo: profile.full_name || 'Utilisateur',
+          action: action
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur lors de l'action");
+
+      if (action === 'temp_password' && data.tempPassword) {
+        // Appeler la nouvelle fonction de lib/email.ts
+        const { sendAdminTempPasswordEmail } = await import('../../../lib/email');
+        await sendAdminTempPasswordEmail(profile.email, profile.full_name || 'Utilisateur', data.tempPassword);
+        alert(`Nouveau mot de passe généré (${data.tempPassword}) et envoyé par email !`);
+      } else if (action === 'reset_link' && data.resetLink) {
+        const { sendAdminResetLinkEmail } = await import('../../../lib/email');
+        await sendAdminResetLinkEmail(profile.email, profile.full_name || 'Utilisateur', data.resetLink);
+        alert("Lien de réinitialisation généré et envoyé par email !");
+      }
+      
+      // Rafraîchir l'historique des emails
+      fetchUserData();
+    } catch (err: any) {
+      console.error("Erreur réinitialisation:", err);
+      alert(err.message || "Erreur lors de la réinitialisation");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       pending: 'En attente', in_progress: 'En cours', delivered: 'Livrée',
@@ -367,6 +419,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
     { id: 'reviews', name: 'Avis', icon: Star },
     { id: 'disputes', name: 'Litiges', icon: AlertTriangle },
     { id: 'tickets', name: 'Support', icon: LifeBuoy },
+    { id: 'emails', name: 'Historique des e-mails', icon: Mail },
     { id: 'logs', name: 'Journal', icon: History }
   ].filter(t => !t.hidden);
 
@@ -662,6 +715,39 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                           <div className="text-xs text-slate-500 mt-0.5">Accès prioritaire aux nouveautés</div>
                         </div>
                       </label>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Section Sécurité / Mot de passe */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-slate-400" />
+                    <h3 className="font-semibold text-slate-800">Sécurité</h3>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                      <p className="text-sm text-slate-600 mb-3">Pour des raisons de sécurité, les mots de passe sont cryptés et invisibles. Vous pouvez toutefois forcer une réinitialisation :</p>
+                      
+                      <div className="flex flex-col gap-3">
+                        <button
+                          onClick={() => handleResetAction('reset_link')}
+                          disabled={resetLoading}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                        >
+                          {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                          Envoyer un lien de réinitialisation
+                        </button>
+                        
+                        <button
+                          onClick={() => handleResetAction('temp_password')}
+                          disabled={resetLoading}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-frilya-900 hover:bg-frilya-800 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                        >
+                          {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                          Générer un mot de passe temporaire
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -993,6 +1079,54 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                             <MapPin className="w-3.5 h-3.5 text-slate-400" />
                             {l.city || 'Inconnue'} {l.isp ? `(${l.isp})` : ''}
                           </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: EMAILS */}
+          {activeTab === 'emails' && (
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+                <Mail className="w-5 h-5 text-slate-500" />
+                <h3 className="font-bold text-lg text-slate-900">Historique des e-mails</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-white border-b border-slate-100 text-slate-500">
+                    <tr>
+                      <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Date & Heure</th>
+                      <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Objet</th>
+                      <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Destinataire</th>
+                      <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {emailLogs.length === 0 ? <tr><td colSpan={4} className="p-12 text-center text-slate-500 font-medium">Aucun e-mail enregistré pour cet utilisateur.</td></tr> : emailLogs.map(l => (
+                      <tr key={l.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 text-xs font-medium text-slate-600">
+                          {new Date(l.created_at).toLocaleString('fr-FR')}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-800 font-medium">
+                          {l.subject}
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs text-slate-500">{l.email_to}</td>
+                        <td className="px-6 py-4">
+                          {l.status === 'sent' ? (
+                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-bold border border-emerald-100 flex items-center gap-1.5 w-fit">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Envoyé
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-md text-xs font-bold border border-red-100 flex items-center gap-1.5 w-fit" title={l.error_message}>
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              Erreur
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}

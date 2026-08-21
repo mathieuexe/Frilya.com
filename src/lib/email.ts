@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 // L'API Key est maintenant utilisée côté backend dans api/send-email.ts
 // pour des raisons de sécurité et pour éviter les erreurs CORS.
 
@@ -123,9 +125,52 @@ const sendEmail = async (to: string, subject: string, html: string) => {
       throw new Error('Erreur lors de l\'envoi de l\'email');
     }
 
-    return await response.json();
-  } catch (error) {
+    const data = await response.json();
+
+    // Log the email in database
+    try {
+      // Fetch user ID based on email to link the log
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', to)
+        .maybeSingle();
+
+      await supabase.from('email_logs').insert([{
+        user_id: profile?.id || null,
+        email_to: to,
+        subject: subject,
+        content: html,
+        status: 'sent'
+      }]);
+    } catch (logError) {
+      console.error('Failed to log email:', logError);
+    }
+
+    return data;
+  } catch (error: any) {
     console.error('Exception lors de l\'appel API send-email:', error);
+    
+    // Log the error
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', to)
+        .maybeSingle();
+
+      await supabase.from('email_logs').insert([{
+        user_id: profile?.id || null,
+        email_to: to,
+        subject: subject,
+        content: html,
+        status: 'error',
+        error_message: error?.message || 'Unknown error'
+      }]);
+    } catch (logError) {
+      console.error('Failed to log email error:', logError);
+    }
+
     throw error;
   }
 };
@@ -334,6 +379,63 @@ export const sendServiceDeletedEmail = async (email: string, pseudo: string, ser
     </div>
   `;
   return sendEmail(email, `Votre annonce « ${serviceTitle} » a été supprimée`, html);
+};
+
+export const sendAdminTempPasswordEmail = async (email: string, pseudo: string, tempPassword: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #0f172a; margin-top: 0;">Nouveau mot de passe temporaire</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>À votre demande (ou à celle d'un administrateur), un nouveau mot de passe temporaire a été généré pour votre compte.</p>
+        
+        <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Mot de passe provisoire :</strong> <span style="font-family: monospace; background: #f1f5f9; padding: 4px 8px; border-radius: 4px;">${tempPassword}</span></p>
+        </div>
+        
+        <p>Lors de votre prochaine connexion, il vous sera demandé de le modifier pour sécuriser votre compte.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://frilya.com/connexion" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Me connecter</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, 'Votre nouveau mot de passe temporaire', html);
+};
+
+export const sendAdminResetLinkEmail = async (email: string, pseudo: string, resetLink: string) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://frilya.com/logo.png" alt="Frilya" style="height: 40px; width: auto;" />
+      </div>
+      <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; margin-bottom: 30px;">
+        <h2 style="color: #0f172a; margin-top: 0;">Réinitialisation de votre mot de passe</h2>
+        <p>Bonjour ${pseudo},</p>
+        <p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.</p>
+        <p>Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetLink}" style="background-color: #0f172a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Réinitialiser mon mot de passe</a>
+        </div>
+        
+        <p style="font-size: 13px; color: #64748b;">Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :<br/>
+        <a href="${resetLink}" style="color: #3b82f6; word-break: break-all;">${resetLink}</a></p>
+        
+        <p>Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.</p>
+      </div>
+      <div style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p>© ${new Date().getFullYear()} Frilya. Tous droits réservés.</p>
+      </div>
+    </div>
+  `;
+  return sendEmail(email, 'Réinitialisation de votre mot de passe', html);
 };
 
 export const sendDisputeClosedEmail = async (email: string, pseudo: string, serviceTitle: string) => {
