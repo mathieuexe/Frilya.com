@@ -47,7 +47,7 @@ export default async function handler(req: any, res: any) {
       return res.status(403).json({ error: 'Unauthorized: admin role required' });
     }
 
-    const { userId, email, pseudo, action } = req.body;
+    const { userId, email, action } = req.body;
     if (!userId || !email || !action) {
       return res.status(400).json({ error: 'Missing required fields' });
     }

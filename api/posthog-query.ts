@@ -237,13 +237,17 @@ export default async function handler(req: any, res: any) {
           })
         });
 
-        const payload = await response.json();
-
         if (!response.ok) {
-          results[name] = { error: payload?.detail || payload?.error || `HTTP ${response.status}` };
+          let errorMsg = `HTTP ${response.status}`;
+          try {
+            const payload = await response.json() as any;
+            errorMsg = payload?.detail || payload?.error || errorMsg;
+          } catch(e) { /* ignore */ }
+          results[name] = { error: errorMsg };
           return;
         }
 
+        const payload = await response.json() as any;
         results[name] = {
           columns: payload.columns || [],
           rows: payload.results || []
