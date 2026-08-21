@@ -3,7 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { 
   User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, 
   Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, 
-  ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor, Lock, Eye, X
+  ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor, Lock, Eye, X, Ticket
 } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import { generateInvoiceBase64, downloadInvoice } from '../../../lib/invoice';
@@ -32,6 +32,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [sales, setSales] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [userServices, setUserServices] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
@@ -83,7 +84,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         { data: reviewsData },
         { data: servicesData },
         { data: logsData },
-        { data: emailsData }
+        { data: emailsData },
+        { data: ticketsData }
       ] = await Promise.all([
         supabase.from('orders').select('*, service:services(title), buyer:profiles!orders_buyer_id_fkey(full_name, email), seller:profiles!orders_seller_id_fkey(full_name, email)').eq('buyer_id', userId).order('created_at', { ascending: false }),
         supabase.from('orders').select('*, service:services(title), buyer:profiles!orders_buyer_id_fkey(full_name, email), seller:profiles!orders_seller_id_fkey(full_name, email)').eq('seller_id', userId).order('created_at', { ascending: false }),
@@ -91,7 +93,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
         supabase.from('reviews').select('*, buyer:profiles!reviews_buyer_id_fkey(id, full_name, avatar_url), service:services(id, title)').or(`seller_id.eq.${userId},buyer_id.eq.${userId}`).order('created_at', { ascending: false }),
         supabase.from('services').select('id, title').eq('seller_id', userId).eq('status', 'active'),
         supabase.from('connection_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-        supabase.from('email_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+        supabase.from('email_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from('report_tickets').select('*').eq('reporter_id', userId).order('created_at', { ascending: false })
       ]);
 
       let finalMessages = [];
@@ -120,6 +123,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
       setUserServices(servicesData || []);
       setLogs(logsData || []);
       setEmailLogs(emailsData || []);
+      setTickets(ticketsData || []);
 
     } catch (err) {
       console.error("Erreur de chargement du dossier", err);
@@ -1216,44 +1220,110 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
 
           {/* TAB: TICKETS */}
           {activeTab === 'tickets' && (
-            <div className="space-y-4 max-w-4xl mx-auto">
-              {(() => {
-                const supportMessages = messages.filter(m => m.sender_id === SUPPORT_ACCOUNT_ID || m.receiver_id === SUPPORT_ACCOUNT_ID);
-                return supportMessages.length === 0 ? (
-                  <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center shadow-sm">
-                    <LifeBuoy className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 font-medium">Aucun ticket de support trouvé pour cet utilisateur.</p>
+            <div className="space-y-8 max-w-4xl mx-auto">
+              
+              {/* Tickets de signalement / Support */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-indigo-500" />
+                  Tickets
+                </h3>
+                {tickets.length === 0 ? (
+                  <div className="bg-white p-8 rounded-3xl border border-slate-200 text-center shadow-sm">
+                    <Ticket className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500 font-medium">Aucun ticket trouvé pour cet utilisateur.</p>
                   </div>
                 ) : (
-                  supportMessages.map(m => (
-                    <div key={m.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex gap-4">
-                      <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
-                        {m.sender_id === SUPPORT_ACCOUNT_ID ? (
-                          <LifeBuoy className="w-5 h-5 text-indigo-500" />
-                        ) : (
-                          <MessageSquare className="w-5 h-5 text-indigo-400" />
+                  <div className="space-y-4">
+                    {tickets.map(t => (
+                      <div key={t.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
+                              <Ticket className="w-5 h-5 text-slate-500" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900">{t.title}</div>
+                              <div className="text-xs text-slate-500 flex items-center gap-2 mt-1">
+                                <span className="font-medium bg-slate-100 px-2 py-0.5 rounded-full">#{t.ticket_number}</span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {new Date(t.created_at).toLocaleString('fr-FR')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              t.status === 'nouveau' ? 'bg-blue-100 text-blue-700' :
+                              t.status === 'en_attente' ? 'bg-amber-100 text-amber-700' :
+                              t.status === 'en_cours' ? 'bg-indigo-100 text-indigo-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {t.status === 'nouveau' ? 'Nouveau' :
+                               t.status === 'en_attente' ? 'En attente' :
+                               t.status === 'en_cours' ? 'En cours' : 'Résolu'}
+                            </span>
+                          </div>
+                        </div>
+                        {t.description && (
+                          <div className="mt-2 text-sm text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100 whitespace-pre-wrap">
+                            {t.description}
+                          </div>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
-                          <div className="text-sm">
-                            <span className="font-bold text-slate-900">{m.sender?.full_name || (m.sender_id === SUPPORT_ACCOUNT_ID ? 'Support Frilya' : 'Inconnu')}</span>
-                            <span className="text-slate-400 mx-2">&rarr;</span>
-                            <span className="font-bold text-slate-900">{m.receiver?.full_name || (m.receiver_id === SUPPORT_ACCOUNT_ID ? 'Support Frilya' : 'Inconnu')}</span>
-                          </div>
-                          <div className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(m.created_at).toLocaleString('fr-FR')}
-                          </div>
-                        </div>
-                        <div className={`text-sm p-4 rounded-2xl border leading-relaxed whitespace-pre-wrap ${m.sender_id === SUPPORT_ACCOUNT_ID ? 'bg-indigo-50/50 border-indigo-100 text-indigo-900' : 'bg-slate-50 border-slate-100 text-slate-700'}`}>
-                          {m.content}
-                        </div>
-                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Messages Support */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <LifeBuoy className="w-5 h-5 text-indigo-500" />
+                  Messages Support
+                </h3>
+                {(() => {
+                  const supportMessages = messages.filter(m => m.sender_id === SUPPORT_ACCOUNT_ID || m.receiver_id === SUPPORT_ACCOUNT_ID);
+                  return supportMessages.length === 0 ? (
+                    <div className="bg-white p-8 rounded-3xl border border-slate-200 text-center shadow-sm">
+                      <LifeBuoy className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                      <p className="text-slate-500 font-medium">Aucun message de support trouvé pour cet utilisateur.</p>
                     </div>
-                  ))
-                );
-              })()}
+                  ) : (
+                    <div className="space-y-4">
+                      {supportMessages.map(m => (
+                        <div key={m.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex gap-4">
+                          <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
+                            {m.sender_id === SUPPORT_ACCOUNT_ID ? (
+                              <LifeBuoy className="w-5 h-5 text-indigo-500" />
+                            ) : (
+                              <MessageSquare className="w-5 h-5 text-indigo-400" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
+                              <div className="text-sm">
+                                <span className="font-bold text-slate-900">{m.sender?.full_name || (m.sender_id === SUPPORT_ACCOUNT_ID ? 'Support Frilya' : 'Inconnu')}</span>
+                                <span className="text-slate-400 mx-2">&rarr;</span>
+                                <span className="font-bold text-slate-900">{m.receiver?.full_name || (m.receiver_id === SUPPORT_ACCOUNT_ID ? 'Support Frilya' : 'Inconnu')}</span>
+                              </div>
+                              <div className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {new Date(m.created_at).toLocaleString('fr-FR')}
+                              </div>
+                            </div>
+                            <div className={`text-sm p-4 rounded-2xl border leading-relaxed whitespace-pre-wrap ${m.sender_id === SUPPORT_ACCOUNT_ID ? 'bg-indigo-50/50 border-indigo-100 text-indigo-900' : 'bg-slate-50 border-slate-100 text-slate-700'}`}>
+                              {m.content}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           )}
 
