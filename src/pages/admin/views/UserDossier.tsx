@@ -19,6 +19,8 @@ type Tab = 'info' | 'orders' | 'sales' | 'messages' | 'disputes' | 'tickets' | '
 
 import ImageCropper from '../../../components/ImageCropper';
 
+import googleLogo from '../../../assets/google-logo-icon-gsuite-hd-701751694791470gzbayltphh.png';
+
 export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [loading, setLoading] = useState(true);
@@ -555,6 +557,12 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-slate-400" /> Inscrit en {stats.joinDate}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-3">
+               {profile?.auth_provider === 'google' && (
+                 <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-white text-slate-700 border border-slate-200 flex items-center gap-1.5 shadow-sm">
+                   <img src={googleLogo} alt="Google" className="w-3.5 h-3.5 object-contain" />
+                   Login via google
+                 </span>
+               )}
                {profile?.is_seller && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1"><Store className="w-3 h-3"/> Vendeur</span>}
                {profile?.role === 'admin' && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100 flex items-center gap-1"><ShieldAlert className="w-3 h-3"/> Admin</span>}
                {profile?.is_beta && <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-900 text-white border border-slate-700 flex items-center gap-1">β Bêta</span>}
