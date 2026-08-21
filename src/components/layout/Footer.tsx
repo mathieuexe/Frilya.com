@@ -37,6 +37,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-slate-900 mb-4">Légal</h3>
             <ul className="space-y-2 text-sm text-slate-500">
+              <li><Link to="/mentions-legales" className="hover:text-frilya-600 transition-colors">Mentions légales</Link></li>
               <li><Link to="/cgu" className="hover:text-frilya-600 transition-colors">Conditions Générales d'Utilisation</Link></li>
               <li><Link to="/cgv" className="hover:text-frilya-600 transition-colors">Conditions Générales de Vente</Link></li>
               <li><Link to="/confidentialite" className="hover:text-frilya-600 transition-colors">Politique de confidentialité</Link></li>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Loader2, Save, FileText, CheckCircle, AlertTriangle, Search } from 'lucide-react';
+import { Loader2, Save, FileText, CheckCircle, AlertTriangle, Search, Plus } from 'lucide-react';
 
 interface LegalPage {
   id: string;
@@ -20,6 +20,8 @@ export default function LegalPagesView() {
   // Editor state
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [newSlug, setNewSlug] = useState('');
   
   // Feedback state
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -54,42 +56,81 @@ export default function LegalPagesView() {
     setSelectedPage(page);
     setEditTitle(page.title);
     setEditContent(page.content || '');
+    setIsCreating(false);
+    setFeedback(null);
+  };
+
+  const handleCreateNew = () => {
+    setSelectedPage(null);
+    setEditTitle('');
+    setEditContent('');
+    setNewSlug('');
+    setIsCreating(true);
     setFeedback(null);
   };
 
   const handleSave = async () => {
-    if (!selectedPage) return;
+    if (!isCreating && !selectedPage) return;
+    if (isCreating && (!editTitle || !newSlug)) {
+      setFeedback({ type: 'error', message: 'Le titre et le slug sont requis' });
+      return;
+    }
     
     setSaving(true);
     setFeedback(null);
     
     try {
-      const { error } = await supabase
-        .from('legal_pages')
-        .update({
-          title: editTitle,
-          content: editContent,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedPage.id);
+      if (isCreating) {
+        // Create new page
+        const { data, error } = await supabase
+          .from('legal_pages')
+          .insert({
+            title: editTitle,
+            slug: newSlug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+            content: editContent,
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setFeedback({ type: 'success', message: 'Page mise à jour avec succès' });
-      
-      // Update local state
-      const updatedPages = pages.map(p => 
-        p.id === selectedPage.id 
-          ? { ...p, title: editTitle, content: editContent, updated_at: new Date().toISOString() }
-          : p
-      );
-      setPages(updatedPages);
-      setSelectedPage({ ...selectedPage, title: editTitle, content: editContent });
+        setFeedback({ type: 'success', message: 'Page créée avec succès' });
+        setPages([...pages, data]);
+        selectPage(data);
+      } else {
+        // Update existing page
+        const { error } = await supabase
+          .from('legal_pages')
+          .update({
+            title: editTitle,
+            content: editContent,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedPage!.id);
+
+        if (error) throw error;
+
+        setFeedback({ type: 'success', message: 'Page mise à jour avec succès' });
+        
+        // Update local state
+        const updatedPages = pages.map(p => 
+          p.id === selectedPage!.id 
+            ? { ...p, title: editTitle, content: editContent, updated_at: new Date().toISOString() }
+            : p
+        );
+        setPages(updatedPages);
+        setSelectedPage({ ...selectedPage!, title: editTitle, content: editContent });
+      }
       
       setTimeout(() => setFeedback(null), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erreur lors de la sauvegarde:', err);
-      setFeedback({ type: 'error', message: 'Erreur lors de la sauvegarde' });
+      if (err.code === '23505') {
+        setFeedback({ type: 'error', message: 'Ce slug est déjà utilisé par une autre page' });
+      } else {
+        setFeedback({ type: 'error', message: 'Erreur lors de la sauvegarde' });
+      }
     } finally {
       setSaving(false);
     }
@@ -116,16 +157,26 @@ export default function LegalPagesView() {
           <p className="text-slate-500 text-sm">Gérez le contenu des pages légales (CGV, CGU, etc.)</p>
         </div>
         
-        {selectedPage && (
+        <div className="flex items-center gap-3">
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+            onClick={handleCreateNew}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Enregistrer
+            <Plus className="w-4 h-4" />
+            Nouvelle page
           </button>
-        )}
+          
+          {(selectedPage || isCreating) && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Enregistrer
+            </button>
+          )}
+        </div>
       </div>
 
       {feedback && (
@@ -182,7 +233,7 @@ export default function LegalPagesView() {
 
         {/* Editeur */}
         <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-250px)]">
-          {selectedPage ? (
+          {selectedPage || isCreating ? (
             <>
               <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                 <div className="flex-1">
@@ -191,14 +242,25 @@ export default function LegalPagesView() {
                     type="text"
                     value={editTitle}
                     onChange={e => setEditTitle(e.target.value)}
+                    placeholder="Ex: Mentions Légales"
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-slate-300"
                   />
                 </div>
-                <div className="ml-4 pl-4 border-l border-slate-200 text-right">
+                <div className="ml-4 pl-4 border-l border-slate-200 text-right w-1/3">
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">URL / Slug</div>
-                  <div className="text-sm font-mono bg-slate-100 px-2 py-1 rounded border border-slate-200">
-                    /{selectedPage.slug}
-                  </div>
+                  {isCreating ? (
+                    <input
+                      type="text"
+                      value={newSlug}
+                      onChange={e => setNewSlug(e.target.value)}
+                      placeholder="mentions-legales"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-slate-300"
+                    />
+                  ) : (
+                    <div className="text-sm font-mono bg-slate-100 px-2 py-1 rounded border border-slate-200">
+                      /{selectedPage!.slug}
+                    </div>
+                  )}
                 </div>
               </div>
               

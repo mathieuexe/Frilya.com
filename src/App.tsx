@@ -202,6 +202,7 @@ function AppRoutes() {
         <Route path="/cgu" element={<LegalPage slug="cgu" />} />
         <Route path="/cgv" element={<LegalPage slug="cgv" />} />
         <Route path="/confidentialite" element={<LegalPage slug="confidentialite" />} />
+        <Route path="/mentions-legales" element={<LegalPage slug="mentions-legales" />} />
         
         {/* Dashboard Acheteur */}
         <Route path="/tableau-de-bord" element={<BuyerDashboard />}>
