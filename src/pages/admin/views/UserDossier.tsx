@@ -3,7 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { 
   User, ShoppingBag, Store, MessageSquare, AlertTriangle, LifeBuoy, History, 
   Save, Loader2, CreditCard, ArrowLeft, LogIn, Star, Edit, Trash2, Plus, 
-  ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor, Lock
+  ExternalLink, Download, Mail, CheckCircle, Clock, ShieldAlert, Camera, MapPin, Monitor, Lock, Eye, X
 } from 'lucide-react';
 import catAvatar from '../../../assets/cat.png';
 import { generateInvoiceBase64, downloadInvoice } from '../../../lib/invoice';
@@ -45,6 +45,7 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   const [impersonating, setImpersonating] = useState(false);
 
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
@@ -431,7 +432,8 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <>
+      <div className="space-y-6 animate-in fade-in duration-200">
       
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1103,10 +1105,11 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                       <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Objet</th>
                       <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Destinataire</th>
                       <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Statut</th>
+                      <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {emailLogs.length === 0 ? <tr><td colSpan={4} className="p-12 text-center text-slate-500 font-medium">Aucun e-mail enregistré pour cet utilisateur.</td></tr> : emailLogs.map(l => (
+                    {emailLogs.length === 0 ? <tr><td colSpan={5} className="p-12 text-center text-slate-500 font-medium">Aucun e-mail enregistré pour cet utilisateur.</td></tr> : emailLogs.map(l => (
                       <tr key={l.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 text-xs font-medium text-slate-600">
                           {new Date(l.created_at).toLocaleString('fr-FR')}
@@ -1127,6 +1130,15 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                               Erreur
                             </span>
                           )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => setSelectedEmail(l)}
+                            className="p-2 text-slate-400 hover:text-frilya-600 hover:bg-slate-100 rounded-lg transition-all"
+                            title="Voir l'e-mail"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1150,5 +1162,36 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
           )}
         </div>
       </div>
+      {/* Email Preview Modal */}
+      {selectedEmail && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+              <div>
+                <h3 className="font-bold text-slate-900">{selectedEmail.subject}</h3>
+                <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                  <span>À : {selectedEmail.email_to}</span>
+                  <span>•</span>
+                  <span>{new Date(selectedEmail.created_at).toLocaleString('fr-FR')}</span>
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedEmail(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 bg-slate-100">
+              <div 
+                className="bg-white p-4 rounded-xl shadow-sm border border-slate-200"
+                dangerouslySetInnerHTML={{ __html: selectedEmail.content }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

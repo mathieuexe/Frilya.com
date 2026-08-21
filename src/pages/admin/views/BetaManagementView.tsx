@@ -187,7 +187,7 @@ export default function BetaManagementView() {
       if (updateError) throw updateError;
 
       // 5. Send Email
-      await sendBetaAcceptedEmail(request.email, request.pseudo, tempPassword, betaEndDate);
+      await sendBetaAcceptedEmail(request.email, request.pseudo, tempPassword);
 
       // 6. Envoi webhook Discord de validation si consenti
       const { discord } = getMotivationAndDiscord(request.motivation);

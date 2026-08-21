@@ -31,7 +31,7 @@ export const sendBetaConfirmationEmail = async (email: string, pseudo: string) =
   return sendEmail(email, 'Confirmation de votre demande de Bêta - Frilya', html);
 };
 
-export const sendBetaAcceptedEmail = async (email: string, pseudo: string, password: string, endDate: string) => {
+export const sendBetaAcceptedEmail = async (email: string, pseudo: string, password: string) => {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b;">
       <div style="text-align: center; margin-bottom: 30px;">
@@ -55,9 +55,8 @@ export const sendBetaAcceptedEmail = async (email: string, pseudo: string, passw
 
         <p><strong>⚠️ Informations importantes :</strong></p>
         <ul>
-          <li><strong>Accès temporaire :</strong> Votre compte bêta expirera le <strong>${new Date(endDate).toLocaleDateString('fr-FR')}</strong>.</li>
-          <li><strong>Lecture seule :</strong> Vous pouvez naviguer sur toute la plateforme, mais vous ne pourrez pas effectuer d'actions réelles (pas de commandes, pas de création de services).</li>
-          <li><strong>Publication officielle :</strong> Les comptes bêta ne seront pas conservés lors du lancement officiel. Vous devrez créer un nouveau compte.</li>
+          <li><strong>Accès complet :</strong> Vous conserverez votre compte et votre statut de bêta-testeur même après le lancement officiel.</li>
+          <li><strong>Lecture seule :</strong> Pendant la période de bêta, vous pouvez naviguer sur toute la plateforme, mais vous ne pourrez pas effectuer d'actions réelles (pas de commandes, pas de création de services).</li>
         </ul>
         
         <p>Nous apprécierons particulièrement votre avis, vos retours et vos suggestions d'amélioration via l'onglet <strong>Feedback</strong> de votre tableau de bord.</p>

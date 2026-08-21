@@ -2,12 +2,26 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Store, ShoppingBag, Package, Inbox, AlertTriangle, Beaker, Scale,
-  ArrowRight, Loader2, CheckCircle2, TrendingUp, Clock, Edit3
+  ArrowRight, Loader2, CheckCircle2, TrendingUp, Clock, Edit3, Activity, Circle
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
 import { supabase } from '../../../lib/supabase';
 import { SUPPORT_ACCOUNT_ID } from '../../../lib/constants';
 import { useAdminNotifications } from '../AdminNotificationsContext';
 import NotificationBubble from '../components/NotificationBubble';
+import SortableWidget from '../components/SortableWidget';
 
 type Stats = {
   buyers: number;
@@ -28,18 +42,75 @@ export default function DashboardView() {
   const [recentTickets, setRecentTickets] = useState<any[]>([]);
   const [recentSupport, setRecentSupport] = useState<any[]>([]);
   const [recentBeta, setRecentBeta] = useState<any[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [note, setNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [noteTimeout, setNoteTimeout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Default widget order
+  const defaultWidgets = ['support', 'tickets', 'beta', 'online', 'notepad'];
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(defaultWidgets);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setWidgetOrder((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        
+        // Save to DB
+        supabase
+          .from('settings')
+          .upsert({ key: 'admin_dashboard_order', value: newOrder }, { onConflict: 'key' })
+          .then(({ error }) => {
+            if (error) console.error("Erreur sauvegarde ordre:", error);
+          });
+          
+        return newOrder;
+      });
+    }
+  };
+
   useEffect(() => {
     fetchDashboard();
+    fetchOnlineUsers();
+
+    const interval = setInterval(fetchOnlineUsers, 2 * 60 * 1000); // refresh every 2 mins
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchOnlineUsers = async () => {
+    try {
+      const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, role, is_seller, last_seen, avatar_url')
+        .gte('last_seen', fiveMinsAgo)
+        .order('last_seen', { ascending: false });
+      
+      if (data) {
+        setOnlineUsers(data);
+      }
+    } catch (err) {
+      console.error('Erreur fetch online users:', err);
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
-      const [buyers, sellers, services, orders, betaTesters, tickets, supportMsgs, betaApps, noteData] = await Promise.all([
+      const [buyers, sellers, services, orders, betaTesters, tickets, supportMsgs, betaApps, noteData, orderData] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_seller', false).neq('role', 'admin'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_seller', true),
         supabase.from('services').select('id', { count: 'exact', head: true }),
@@ -48,7 +119,8 @@ export default function DashboardView() {
         supabase.from('report_tickets').select('id, ticket_number, title, status, priority, created_at').order('created_at', { ascending: false }).limit(5),
         supabase.from('messages').select('id, sender_id, content, created_at, is_read').eq('receiver_id', SUPPORT_ACCOUNT_ID).order('created_at', { ascending: false }).limit(5),
         supabase.from('beta_applications').select('id, pseudo, email, status, created_at').order('created_at', { ascending: false }).limit(5),
-        supabase.from('settings').select('value').eq('key', 'admin_notepad').maybeSingle()
+        supabase.from('settings').select('value').eq('key', 'admin_notepad').maybeSingle(),
+        supabase.from('settings').select('value').eq('key', 'admin_dashboard_order').maybeSingle()
       ]);
 
       const revenue = (orders.data || []).reduce((acc: number, o: any) => acc + Number(o.amount || 0), 0);
@@ -67,6 +139,13 @@ export default function DashboardView() {
       
       if (noteData.data) {
         setNote(noteData.data.value?.content || '');
+      }
+
+      if (orderData.data?.value && Array.isArray(orderData.data.value)) {
+        // Ensure all default widgets exist in the loaded order, to prevent missing widgets
+        const loadedOrder = orderData.data.value;
+        const missingWidgets = defaultWidgets.filter(w => !loadedOrder.includes(w));
+        setWidgetOrder([...loadedOrder, ...missingWidgets]);
       }
 
       // Noms des expéditeurs des derniers messages SAV
@@ -126,6 +205,181 @@ export default function DashboardView() {
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `il y a ${hours} h`;
     return `il y a ${Math.floor(hours / 24)} j`;
+  };
+
+  const renderWidget = (id: string) => {
+    switch (id) {
+      case 'support':
+        return (
+          <SortableWidget key="support" id="support">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <Inbox className="w-4 h-4 text-frilya-600" /> Derniers messages SAV
+              </h3>
+              <button onClick={() => navigate('/admin/support')} className="text-xs font-bold text-frilya-600 hover:underline">
+                Tout voir
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100 overflow-y-auto max-h-[300px]">
+              {recentSupport.length === 0 ? (
+                <p className="p-6 text-sm text-slate-400 text-center">Aucun message reçu.</p>
+              ) : recentSupport.map(msg => (
+                <button
+                  key={msg.id}
+                  onClick={() => navigate('/admin/support')}
+                  className="w-full text-left p-4 hover:bg-slate-50 transition-colors flex gap-3"
+                >
+                  <span className="flex-1 min-w-0">
+                    <span className="flex items-center gap-2">
+                      <span className={`text-sm truncate ${msg.is_read ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}>
+                        {msg.sender?.full_name || 'Utilisateur'}
+                      </span>
+                      {!msg.is_read && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
+                    </span>
+                    <span className="block text-xs text-slate-500 truncate mt-0.5">{msg.content}</span>
+                    <span className="block text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {relativeDate(msg.created_at)}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </SortableWidget>
+        );
+      case 'tickets':
+        return (
+          <SortableWidget key="tickets" id="tickets">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500" /> Derniers tickets
+              </h3>
+              <button onClick={() => navigate('/admin/tickets')} className="text-xs font-bold text-frilya-600 hover:underline">
+                Tout voir
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100 overflow-y-auto max-h-[300px]">
+              {recentTickets.length === 0 ? (
+                <p className="p-6 text-sm text-slate-400 text-center">Aucun ticket.</p>
+              ) : recentTickets.map(ticket => (
+                <button
+                  key={ticket.id}
+                  onClick={() => navigate('/admin/tickets')}
+                  className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] font-bold text-slate-400">{ticket.ticket_number}</span>
+                    <span className="text-[11px] text-slate-400">{relativeDate(ticket.created_at)}</span>
+                  </span>
+                  <span className="block text-sm font-bold text-slate-900 truncate mt-1">{ticket.title}</span>
+                  <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase tracking-wide">
+                    {ticket.status?.replace('_', ' ')}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </SortableWidget>
+        );
+      case 'beta':
+        return (
+          <SortableWidget key="beta" id="beta">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <Beaker className="w-4 h-4 text-purple-500" /> Dernières demandes bêta
+              </h3>
+              <button onClick={() => navigate('/admin/beta')} className="text-xs font-bold text-frilya-600 hover:underline">
+                Tout voir
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100 overflow-y-auto max-h-[300px]">
+              {recentBeta.length === 0 ? (
+                <p className="p-6 text-sm text-slate-400 text-center">Aucune demande.</p>
+              ) : recentBeta.map(app => (
+                <button
+                  key={app.id}
+                  onClick={() => navigate('/admin/beta')}
+                  className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-bold text-slate-900 truncate">{app.pseudo}</span>
+                    <span className="text-[11px] text-slate-400 shrink-0">{relativeDate(app.created_at)}</span>
+                  </span>
+                  <span className="block text-xs text-slate-500 truncate mt-0.5">{app.email}</span>
+                  <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                    app.status === 'pending' ? 'bg-amber-100 text-amber-700'
+                    : app.status === 'accepted' ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Acceptée' : 'Refusée'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </SortableWidget>
+        );
+      case 'notepad':
+        return (
+          <SortableWidget key="notepad" id="notepad">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-frilya-600" /> Bloc-notes
+              </h3>
+              {savingNote && (
+                <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Enregistrement...
+                </span>
+              )}
+              {!savingNote && note && (
+                <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Sauvegardé
+                </span>
+              )}
+            </div>
+            <textarea
+              value={note}
+              onChange={handleNoteChange}
+              placeholder="Écrivez vos notes ici... (sauvegarde automatique)"
+              className="flex-1 w-full p-5 min-h-[250px] resize-none outline-none text-sm text-slate-700 bg-transparent placeholder:text-slate-300"
+            />
+          </SortableWidget>
+        );
+      case 'online':
+        return (
+          <SortableWidget key="online" id="online">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-500" /> Utilisateurs en ligne
+              </h3>
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full flex items-center gap-1.5">
+                <Circle className="w-2 h-2 fill-emerald-500 animate-pulse" />
+                {onlineUsers.length} en ligne
+              </span>
+            </div>
+            <div className="divide-y divide-slate-100 overflow-y-auto max-h-[300px]">
+              {onlineUsers.length === 0 ? (
+                <p className="p-6 text-sm text-slate-400 text-center">Aucun utilisateur en ligne.</p>
+              ) : onlineUsers.map(user => (
+                <div key={user.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <img src={user.avatar_url || '/logo.png'} alt="" className="w-8 h-8 rounded-xl object-cover border border-slate-200" />
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{user.full_name || 'Inconnu'}</p>
+                      <p className="text-[10px] text-slate-500 font-mono">{user.email}</p>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                    user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                    user.is_seller ? 'bg-frilya-100 text-frilya-700' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {user.role === 'admin' ? 'Admin' : user.is_seller ? 'Vendeur' : 'Acheteur'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </SortableWidget>
+        );
+      default:
+        return null;
+    }
   };
 
   if (loading) {
@@ -227,134 +481,21 @@ export default function DashboardView() {
         </div>
       </div>
 
-      {/* Activité récente */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <Inbox className="w-4 h-4 text-frilya-600" /> Derniers messages SAV
-            </h3>
-            <button onClick={() => navigate('/admin/support')} className="text-xs font-bold text-frilya-600 hover:underline">
-              Tout voir
-            </button>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {recentSupport.length === 0 ? (
-              <p className="p-6 text-sm text-slate-400 text-center">Aucun message reçu.</p>
-            ) : recentSupport.map(msg => (
-              <button
-                key={msg.id}
-                onClick={() => navigate('/admin/support')}
-                className="w-full text-left p-4 hover:bg-slate-50 transition-colors flex gap-3"
-              >
-                <span className="flex-1 min-w-0">
-                  <span className="flex items-center gap-2">
-                    <span className={`text-sm truncate ${msg.is_read ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}>
-                      {msg.sender?.full_name || 'Utilisateur'}
-                    </span>
-                    {!msg.is_read && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
-                  </span>
-                  <span className="block text-xs text-slate-500 truncate mt-0.5">{msg.content}</span>
-                  <span className="block text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {relativeDate(msg.created_at)}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
+      {/* Activité récente (Draggable Widgets) */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <SortableContext
+            items={widgetOrder}
+            strategy={rectSortingStrategy}
+          >
+            {widgetOrder.map((id) => renderWidget(id))}
+          </SortableContext>
         </div>
-
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" /> Derniers tickets
-            </h3>
-            <button onClick={() => navigate('/admin/tickets')} className="text-xs font-bold text-frilya-600 hover:underline">
-              Tout voir
-            </button>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {recentTickets.length === 0 ? (
-              <p className="p-6 text-sm text-slate-400 text-center">Aucun ticket.</p>
-            ) : recentTickets.map(ticket => (
-              <button
-                key={ticket.id}
-                onClick={() => navigate('/admin/tickets')}
-                className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
-              >
-                <span className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[11px] font-bold text-slate-400">{ticket.ticket_number}</span>
-                  <span className="text-[11px] text-slate-400">{relativeDate(ticket.created_at)}</span>
-                </span>
-                <span className="block text-sm font-bold text-slate-900 truncate mt-1">{ticket.title}</span>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase tracking-wide">
-                  {ticket.status?.replace('_', ' ')}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <Beaker className="w-4 h-4 text-purple-500" /> Dernières demandes bêta
-            </h3>
-            <button onClick={() => navigate('/admin/beta')} className="text-xs font-bold text-frilya-600 hover:underline">
-              Tout voir
-            </button>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {recentBeta.length === 0 ? (
-              <p className="p-6 text-sm text-slate-400 text-center">Aucune demande.</p>
-            ) : recentBeta.map(app => (
-              <button
-                key={app.id}
-                onClick={() => navigate('/admin/beta')}
-                className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
-              >
-                <span className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-bold text-slate-900 truncate">{app.pseudo}</span>
-                  <span className="text-[11px] text-slate-400 shrink-0">{relativeDate(app.created_at)}</span>
-                </span>
-                <span className="block text-xs text-slate-500 truncate mt-0.5">{app.email}</span>
-                <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
-                  app.status === 'pending' ? 'bg-amber-100 text-amber-700'
-                  : app.status === 'accepted' ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Acceptée' : 'Refusée'}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* Bloc Notes */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <Edit3 className="w-4 h-4 text-frilya-600" /> Bloc-notes
-            </h3>
-            {savingNote && (
-              <span className="text-xs text-slate-400 flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" /> Enregistrement...
-              </span>
-            )}
-            {!savingNote && note && (
-              <span className="text-xs text-slate-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Sauvegardé
-              </span>
-            )}
-          </div>
-          <textarea
-            value={note}
-            onChange={handleNoteChange}
-            placeholder="Écrivez vos notes ici... (sauvegarde automatique)"
-            className="flex-1 w-full p-5 min-h-[250px] resize-none outline-none text-sm text-slate-700 bg-transparent placeholder:text-slate-300"
-          />
-        </div>
-      </div>
+      </DndContext>
     </div>
   );
 }
