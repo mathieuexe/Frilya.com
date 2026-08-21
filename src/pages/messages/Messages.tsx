@@ -411,6 +411,30 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
     }
   };
 
+  const handleReopenSupport = async () => {
+    if (!selectedContact || !user) return;
+    const p1 = user.id < selectedContact.id ? user.id : selectedContact.id;
+    const p2 = user.id < selectedContact.id ? selectedContact.id : user.id;
+    
+    try {
+      const { error } = await supabase
+        .from('conversation_status')
+        .upsert({ 
+          participant1_id: p1,
+          participant2_id: p2,
+          is_closed: false,
+          closed_by: null,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'participant1_id, participant2_id' });
+
+      if (error) throw error;
+      setIsChatClosed(false);
+    } catch (err) {
+      console.error("Erreur lors de la réouverture de la demande", err);
+      alert("Une erreur est survenue lors de la réouverture.");
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-frilya-600" /></div>;
   }
@@ -607,7 +631,15 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         <div className="p-4 border-t border-slate-100 bg-white">
           {isChatClosed ? (
             <div className="text-center p-3 bg-slate-50 text-slate-500 text-sm rounded-xl border border-slate-200">
-              L'administration a clôturé cette conversation. Vous ne pouvez plus y répondre.
+              <p>L'administration a clôturé cette conversation. Vous ne pouvez plus y répondre.</p>
+              {selectedContact?.id === ADMIN_ID && profile?.role !== 'admin' && (
+                <button
+                  onClick={handleReopenSupport}
+                  className="mt-3 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold py-2 px-4 rounded-lg transition-colors text-sm shadow-sm"
+                >
+                  Créer une nouvelle demande
+                </button>
+              )}
             </div>
           ) : isSupportBlocked ? (
             <div className="text-center p-4 bg-blue-50 text-blue-800 text-sm rounded-xl border border-blue-200">
