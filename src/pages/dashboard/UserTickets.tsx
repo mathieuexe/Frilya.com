@@ -24,20 +24,30 @@ export default function UserTickets() {
     getCurrentUser();
     fetchAdmins();
     fetchStats();
+    
+    // Rafraîchir les admins toutes les 10 minutes
+    const interval = setInterval(() => {
+      fetchAdmins();
+    }, 10 * 60 * 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchAdmins = async () => {
     try {
+      // 10 minutes en arrière
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, ticket_reply_identity')
-        .eq('role', 'admin');
+        .eq('role', 'admin')
+        .gte('last_seen', tenMinutesAgo);
         
       if (!error && data) {
-        // Ne pas afficher le compte spécifique et les admins qui utilisent l'identité générique "Support Frilya"
+        // Ne pas afficher le compte Support Frilya (ID ou nom)
         const visibleAdmins = data.filter(admin => 
           admin.id !== 'f7763c3f-28a7-4f0a-bdce-8e43ed9d9beb' &&
-          admin.ticket_reply_identity !== 'support' && 
           admin.full_name !== 'Support Frilya'
         );
         setAdmins(visibleAdmins);
@@ -489,24 +499,27 @@ export default function UserTickets() {
               <p className="text-sm font-medium text-slate-700">actuellement de <span className="font-bold text-frilya-600">{waitTime}</span></p>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-6">
-              {admins.length > 0 ? (
-                admins.slice(0, 6).map((admin) => (
-                  <div key={admin.id} className="flex flex-col items-center gap-2">
-                    <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm">
-                      <img 
-                        src={admin.avatar_url || `https://ui-avatars.com/api/?name=${admin.full_name || 'Admin'}&background=random`} 
-                        alt={admin.full_name}
-                        className="w-full h-full object-cover"
-                      />
+            <div className="space-y-4">
+              {admins.map(member => (
+                <div key={member.id} className="flex items-center gap-3">
+                  <img 
+                    src={member.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.full_name || 'Admin')}&background=random`} 
+                    alt={member.full_name || 'Admin'} 
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="font-bold text-slate-900">{member.full_name || 'Admin'}</div>
+                    <div className="text-xs text-green-600 font-medium flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      En ligne
                     </div>
-                    <span className="text-xs font-bold text-slate-700">
-                      {admin.full_name ? admin.full_name.split(' ')[0] : 'Admin'}
-                    </span>
                   </div>
-                ))
-              ) : (
-                <div className="text-sm text-slate-500 italic">Équipe non disponible</div>
+                </div>
+              ))}
+              {admins.length === 0 && (
+                <div className="text-center text-sm text-slate-500 italic py-4">
+                  Aucun membre de l'équipe n'est en ligne actuellement.
+                </div>
               )}
             </div>
           </div>

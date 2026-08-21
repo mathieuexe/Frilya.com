@@ -134,10 +134,15 @@ function AppRoutes() {
         // Check if welcome message was sent
         if (profile && !profile.welcome_message_sent) {
           const isBetaUser = profile.role === 'beta' || profile.is_beta;
+          const isSellerUser = profile.role === 'vendeur' || profile.is_seller;
           
-          const welcomeContent = isBetaUser 
-            ? "👋 Bienvenue sur la Bêta de Frilya !\n\nMerci de nous aider à tester la plateforme avant son lancement officiel. Votre compte a été configuré en mode lecture seule pour vous permettre de naviguer partout en toute sécurité.\n\nN'hésitez pas à nous faire part de vos impressions, bugs ou suggestions via l'onglet \"Feedback Bêta\" dans votre tableau de bord.\n\nBonne découverte !"
-            : "👋 Bienvenue sur Frilya !\n\nNous sommes ravis de vous compter parmi nous. N'hésitez pas à compléter votre profil et à explorer les services disponibles.";
+          let welcomeContent = "👋 Bienvenue sur Frilya !\n\nNous sommes ravis de vous compter parmi nous. N'hésitez pas à compléter votre profil et à explorer les services disponibles.";
+          
+          if (isBetaUser) {
+            welcomeContent = "👋 Bienvenue sur la Bêta de Frilya !\n\nMerci de nous aider à tester la plateforme avant son lancement officiel. Votre compte a été configuré en mode lecture seule pour vous permettre de naviguer partout en toute sécurité.\n\nN'hésitez pas à nous faire part de vos impressions, bugs ou suggestions via l'onglet \"Feedback Bêta\" dans votre tableau de bord.\n\nBonne découverte !";
+          } else if (isSellerUser) {
+            welcomeContent = "👋 Bienvenue sur Frilya !\n\nNous sommes ravis de vous compter parmi nos vendeurs. N'hésitez pas à compléter votre profil et à créer vos premiers services.\n\nNote importante : Frilya ne prend aucune commission sur vos ventes. Vous conservez la totalité du montant de vos commandes !\n\nBonnes ventes !";
+          }
 
           // Send message using RPC to bypass RLS (since we are inserting on behalf of Admin)
           await supabase.rpc('send_support_message', {
