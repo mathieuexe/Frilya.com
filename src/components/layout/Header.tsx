@@ -95,7 +95,15 @@ export default function Header() {
         checkUnread();
 
         // Écouter les nouveaux messages
-        messageChannel = supabase.channel('header_unread_messages')
+        const channelName = `header_unread_messages_${session.user.id}`;
+        
+        // Remove existing channel if it exists
+        const existingChannel = supabase.getChannels().find(c => c.topic === `realtime:${channelName}`);
+        if (existingChannel) {
+          supabase.removeChannel(existingChannel);
+        }
+
+        messageChannel = supabase.channel(channelName)
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` }, () => {
             setHasUnreadMessages(true);
           })
