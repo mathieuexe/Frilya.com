@@ -13,7 +13,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { to, subject, html, attachments, scheduled_at } = req.body;
+    const { to, bcc, subject, html, attachments, scheduled_at } = req.body;
     
     if (!to || !subject || !html) {
       return res.status(400).json({ error: 'Missing required fields (to, subject, html).' });
@@ -30,6 +30,10 @@ export default async function handler(req: any, res: any) {
       subject: subject,
       html: html
     };
+
+    if (bcc) {
+      emailPayload.bcc = Array.isArray(bcc) ? bcc : [bcc];
+    }
 
     if (attachments && attachments.length > 0) {
       emailPayload.attachments = attachments;

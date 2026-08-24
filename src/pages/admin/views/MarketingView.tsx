@@ -53,28 +53,35 @@ export default function MarketingView() {
         throw new Error('Aucun destinataire trouvé.');
       }
 
-      const payload: any = {
-        to: emails,
-        subject,
-        html: htmlContent
-      };
-
-      if (scheduledAt) {
-        payload.scheduled_at = new Date(scheduledAt).toISOString();
-      }
-
       // En production, VITE_API_URL n'est souvent pas défini, on utilise un chemin relatif
       const apiUrl = import.meta.env.PROD ? '/api/send-email' : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/send-email`;
       
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      // Resend limite à 50 destinataires par appel API
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+        const batch = emails.slice(i, i + BATCH_SIZE);
+        
+        const payload: any = {
+          to: 'noreply@frilya.com', // Le destinataire principal est caché
+          bcc: batch,               // Les vrais destinataires sont en copie cachée (BCC)
+          subject,
+          html: htmlContent
+        };
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error?.message || 'Erreur lors de l\'envoi');
+        if (scheduledAt) {
+          payload.scheduled_at = new Date(scheduledAt).toISOString();
+        }
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error?.message || 'Erreur lors de l\'envoi');
+        }
       }
 
       setSuccess(true);
