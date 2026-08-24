@@ -132,7 +132,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         // Récupérer les profils en une seule requête
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, is_verified, slug')
+          .select('id, full_name, avatar_url, is_verified, role, slug')
           .in('id', Array.from(userIds));
           
         const profileMap = new Map();
@@ -191,8 +191,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
           // Si le message nous concerne, on l'ajoute à la liste
           if (payload.new.receiver_id === session.user.id || payload.new.sender_id === session.user.id) {
-            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug').eq('id', payload.new.sender_id).single();
-            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, slug').eq('id', payload.new.receiver_id).single();
+            const { data: sender } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, role, slug').eq('id', payload.new.sender_id).single();
+            const { data: receiver } = await supabase.from('profiles').select('id, full_name, avatar_url, is_verified, role, slug').eq('id', payload.new.receiver_id).single();
             
             const fullMessage = {
               ...payload.new,
