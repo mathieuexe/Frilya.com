@@ -178,9 +178,9 @@ function AppRoutes() {
   }
 
   // Si on est en maintenance et pas admin, on redirige tout vers /maintenance
-  // Sauf si on est déjà sur /maintenance ou /auth (pour pouvoir se connecter en tant qu'admin)
+  // L'accès administrateur se fait directement via le formulaire sur la page de maintenance
   if (maintenanceMode && !isAdmin) {
-    if (location.pathname !== '/maintenance' && location.pathname !== '/connexion' && location.pathname !== '/beta') {
+    if (location.pathname !== '/maintenance') {
       return <Navigate to="/maintenance" replace />;
     }
   } else if (!maintenanceMode && location.pathname === '/maintenance') {
