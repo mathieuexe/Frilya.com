@@ -324,7 +324,7 @@ export default function Home() {
             </div>
             <div className="text-center p-6">
               <div className="bg-frilya-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img src={verifiedIcon} alt="Freelance vérifié" className="w-8 h-8" />
+                <img src={verifiedIcon} alt="Vérifié" className="w-8 h-8" />
               </div>
               <h3 className="font-bold text-lg mb-2">Freelance vérifié</h3>
               <p className="text-slate-600 text-sm">Chaque profil est contrôlé manuellement par notre équipe française.</p>

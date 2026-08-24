@@ -550,12 +550,12 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
             </div>
             {profile?.is_verified && (
               <div className="absolute bottom-0 -right-2 bg-white rounded-full p-0.5 shadow-sm border border-slate-100 flex items-center justify-center">
-                <img src={verifiedIcon} alt="Vérifié" className="w-7 h-7" />
+                <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" />
               </div>
             )}
             {profile?.role === 'admin' && (
               <div className="absolute bottom-0 right-6 bg-white rounded-full p-0.5 shadow-sm border border-slate-100 flex items-center justify-center group cursor-pointer z-10">
-                <img src={secureIcon} alt="Officiel" className="w-7 h-7" />
+                <img src={secureIcon} alt="Officiel" className="w-4 h-4" />
                 <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
                   Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
@@ -755,10 +755,13 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                   </div>
                   <div className="p-6 space-y-5">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Rôle d'accès</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        Rôle d'accès
+                        {editForm.role === 'admin' && <img src={secureIcon} alt="Officiel" className="w-4 h-4" />}
+                      </label>
                       <select value={editForm.role || ''} onChange={e => setEditForm({...editForm, role: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow">
                         <option value="acheteur">Utilisateur Standard</option>
-                        <option value="admin">Administrateur</option>
+                        <option value="admin">Administrateur (Badge Officiel)</option>
                       </select>
                     </div>
                     <div>
@@ -779,10 +782,10 @@ export default function UserDossier({ userId, onClose }: UserDossierProps) {
                         />
                         <div>
                           <div className="font-medium text-slate-800 text-sm flex items-center gap-1.5">
-                            Compte Certifié
-                            <CheckCircle className="w-3.5 h-3.5 text-blue-500" />
+                            Badge Authentique (Vérifié)
+                            <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" />
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">Affiche le badge bleu officiel</div>
+                          <div className="text-xs text-slate-500 mt-0.5">Affiche le badge de certification authentique à côté du pseudo</div>
                         </div>
                       </label>
 

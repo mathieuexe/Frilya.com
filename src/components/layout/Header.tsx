@@ -220,10 +220,10 @@ export default function Header() {
                         </div>
                         <div className="flex items-center gap-1.5 flex-1 min-w-0">
                           <span className="font-bold text-slate-900 text-sm truncate">{user.full_name}</span>
-                          {user.is_verified && <img src={verifiedIcon} alt="Vérifié" className="w-3.5 h-3.5" />}
+                          {user.is_verified && <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4" />}
                           {user.role === 'admin' && (
                             <div className="relative group cursor-pointer flex items-center ml-0.5">
-                              <img src={secureIcon} alt="Officiel" className="w-3.5 h-3.5" />
+                              <img src={secureIcon} alt="Officiel" className="w-4 h-4" />
                               <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal whitespace-normal">
                                 Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
                                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
