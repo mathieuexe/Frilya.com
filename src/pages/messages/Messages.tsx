@@ -177,8 +177,8 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           id: ADMIN_ID, 
           full_name: 'Support Frilya',
           avatar_url: adminProfile?.avatar_url,
-          is_verified: adminProfile?.is_verified,
-          role: adminProfile?.role,
+          is_verified: true,
+          role: 'admin',
           slug: adminProfile?.slug
         });
       }
@@ -350,16 +350,19 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           sender: insertedMessage.sender_id === ADMIN_ID ? {
             full_name: 'Support Frilya',
             avatar_url: null,
-            is_verified: true
+            is_verified: true,
+            role: 'admin'
           } : {
             full_name: profile?.full_name || 'Utilisateur',
             avatar_url: profile?.avatar_url,
-            is_verified: profile?.is_verified
+            is_verified: profile?.is_verified,
+            role: profile?.role
           },
           receiver: {
             full_name: selectedContact.full_name,
             avatar_url: selectedContact.avatar_url,
-            is_verified: selectedContact.is_verified
+            is_verified: selectedContact.is_verified,
+            role: selectedContact.role
           }
         };
 
@@ -532,20 +535,20 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
                   <div className="flex items-center gap-1">
                     <div className="font-bold text-slate-900 text-sm truncate">{contact.full_name}</div>
                     {contact.is_verified && (
-                      <div className="relative group cursor-pointer flex items-center">
+                      <div className="relative group cursor-pointer flex items-center ml-0.5">
                         <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 shrink-0" />
-                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal hidden lg:block">
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal hidden lg:block">
                           Compte vérifié. Frilya certifie que ce compte est authentique.
-                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
                         </div>
                       </div>
                     )}
                     {contact.role === 'admin' && (
-                      <div className="relative group cursor-pointer flex items-center ml-1">
+                      <div className="relative group cursor-pointer flex items-center ml-0.5">
                         <img src={secureIcon} alt="Officiel" className="w-4 h-4 shrink-0" />
-                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal hidden lg:block">
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal hidden lg:block">
                           Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
-                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
                         </div>
                       </div>
                     )}
@@ -580,20 +583,20 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
                   <div className="flex items-center gap-1">
                     <span className="truncate">{selectedContact.full_name}</span>
                     {selectedContact.is_verified && (
-                      <div className="relative group cursor-pointer flex items-center">
+                      <div className="relative group cursor-pointer flex items-center ml-0.5">
                         <img src={verifiedIcon} alt="Vérifié" className="w-4 h-4 shrink-0" />
-                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
                           Compte vérifié. Frilya certifie que ce compte est authentique.
-                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
                         </div>
                       </div>
                     )}
                     {selectedContact.role === 'admin' && (
-                      <div className="relative group cursor-pointer flex items-center ml-1">
+                      <div className="relative group cursor-pointer flex items-center ml-0.5">
                         <img src={secureIcon} alt="Officiel" className="w-4 h-4 shrink-0" />
-                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-48 bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl z-50 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 text-center font-normal">
                           Ce compte est certifié car il s'agit d'un compte officiel de l'équipe Frilya.
-                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
                         </div>
                       </div>
                     )}
