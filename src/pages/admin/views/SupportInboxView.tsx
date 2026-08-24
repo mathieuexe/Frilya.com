@@ -668,14 +668,14 @@ export default function SupportInboxView() {
                     </button>
                   </div>
                 ) : (
-                  <div className="border border-slate-200 rounded-2xl overflow-hidden focus-within:border-frilya-600 focus-within:ring-1 focus-within:ring-frilya-600">
+                  <div className="border border-slate-200 rounded-2xl focus-within:border-frilya-600 focus-within:ring-1 focus-within:ring-frilya-600">
                     <textarea
                       value={reply}
                       onChange={e => setReply(e.target.value)}
                       placeholder="Répondre à l'utilisateur en tant que Support Frilya..."
-                      className="w-full min-h-[90px] p-4 text-sm outline-none resize-none"
+                      className="w-full min-h-[90px] p-4 text-sm outline-none resize-none rounded-t-2xl bg-transparent"
                     />
-                    <div className="bg-slate-50 px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-4">
+                    <div className="bg-slate-50 px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-4 rounded-b-2xl">
                       <div className="flex items-center gap-3">
                         <div className="relative" ref={emojiPickerRef}>
                           <button

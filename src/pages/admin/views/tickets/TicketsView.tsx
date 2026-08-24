@@ -557,14 +557,14 @@ export default function TicketsView() {
 
                 {/* Formulaire de réponse */}
                 {selectedTicket.status !== 'cloture' && (
-                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-frilya-600 focus-within:border-transparent">
+                  <div className="bg-white border border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-frilya-600 focus-within:border-transparent">
                     <textarea
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
                       placeholder="Écrire une réponse à l'utilisateur..."
-                      className="w-full min-h-[100px] p-4 resize-none outline-none text-sm"
+                      className="w-full min-h-[100px] p-4 resize-none outline-none text-sm rounded-t-xl bg-transparent"
                     />
-                    <div className="bg-slate-50 p-3 border-t border-slate-100 flex items-center justify-between gap-4">
+                    <div className="bg-slate-50 p-3 border-t border-slate-100 flex items-center justify-between gap-4 rounded-b-xl">
                       <div className="flex items-center gap-3">
                         <div className="relative" ref={emojiPickerRef}>
                           <button
