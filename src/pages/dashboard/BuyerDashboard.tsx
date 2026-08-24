@@ -139,9 +139,9 @@ export default function BuyerDashboard() {
               </span>
               <div className="text-xs text-slate-500 mt-3 flex items-center justify-center gap-1.5" title="Dernière connexion">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                {profile?.last_seen ? new Date(profile.last_seen).toLocaleString('fr-FR', {
+                {(profile?.last_seen || profile?.created_at) ? new Date(profile.last_seen || profile.created_at).toLocaleString('fr-FR', {
                   day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                }) : 'Jamais'}
+                }) : 'Inconnu'}
               </div>
             </div>
 

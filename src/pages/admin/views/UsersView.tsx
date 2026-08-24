@@ -214,9 +214,9 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' | 'ad
                     {new Date(user.created_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="p-4 text-slate-600 text-sm">
-                    {user.last_seen ? new Date(user.last_seen).toLocaleString('fr-FR', {
+                    {(user.last_seen || user.created_at) ? new Date(user.last_seen || user.created_at).toLocaleString('fr-FR', {
                       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                    }) : 'Jamais'}
+                    }) : 'Inconnu'}
                   </td>
                   <td className="p-4">
                     <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">

@@ -155,9 +155,9 @@ export default function Profile() {
                 </span>
                 <span className="flex items-center gap-1" title="Dernière connexion">
                   <Activity className="w-4 h-4 text-slate-400" />
-                  {profile.last_seen ? new Date(profile.last_seen).toLocaleString('fr-FR', {
+                  {(profile.last_seen || profile.created_at) ? new Date(profile.last_seen || profile.created_at).toLocaleString('fr-FR', {
                     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                  }) : 'Jamais'}
+                  }) : 'Inconnu'}
                 </span>
                 {profile.is_seller && reviews.length > 0 && (
                   <a href="#reviews-section" className="flex items-center gap-1 hover:bg-slate-50 px-2 py-1 -ml-2 rounded-lg transition-colors group/rating">
