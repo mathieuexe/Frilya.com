@@ -81,6 +81,17 @@ function AppRoutes() {
         isBeta = false;
       }
 
+      // Vérifier le mode maintenance manuel depuis la DB (Settings)
+      const { data: maintenanceData } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .single();
+        
+      if (maintenanceData && (maintenanceData.value === true || maintenanceData.value === 'true')) {
+        isMaintenance = true;
+      }
+
       setIsBetaActiveGlobal(isBeta);
 
       // 1b. Vérifier si l'IP est autorisée (whitelist)
