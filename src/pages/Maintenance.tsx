@@ -71,16 +71,16 @@ export default function Maintenance() {
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
           <div className="flex justify-center mb-8 relative">
-            <div className="relative z-10 w-24 h-24 bg-slate-950/50 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl">
-              <img src={logo} alt="Frilya" className="w-12 h-12 object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
+            <div className="relative z-10 w-24 h-24 bg-white rounded-2xl flex items-center justify-center border border-white/20 shadow-[0_0_30px_rgba(255,255,255,0.15)]">
+              <img src={logo} alt="Frilya" className="w-14 h-14 object-contain" />
               
               {/* Floating Settings Icon */}
-              <div className="absolute -bottom-3 -right-3 w-10 h-10 bg-frilya-600 rounded-xl flex items-center justify-center shadow-lg border border-frilya-400/30">
-                <Settings className="w-5 h-5 text-white animate-[spin_5s_linear_infinite]" />
+              <div className="absolute -bottom-3 -right-3 w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10">
+                <Settings className="w-5 h-5 text-frilya-400 animate-[spin_5s_linear_infinite]" />
               </div>
             </div>
             {/* Glow behind logo */}
-            <div className="absolute inset-0 bg-frilya-500/20 blur-2xl rounded-full" />
+            <div className="absolute inset-0 bg-white/10 blur-2xl rounded-full" />
           </div>
           
           {!showLogin ? (
