@@ -86,6 +86,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             full_name: finalName,
             avatar_url: contactProfile.avatar_url,
             is_verified: contactProfile.is_verified,
+            role: contactProfile.role,
             slug: contactProfile.slug,
           });
         }
@@ -163,6 +164,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
             full_name: finalName,
             avatar_url: contactProfile.avatar_url,
             is_verified: contactProfile.is_verified,
+            role: contactProfile.role,
             slug: contactProfile.slug,
           });
         }
@@ -176,6 +178,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
           full_name: 'Support Frilya',
           avatar_url: adminProfile?.avatar_url,
           is_verified: adminProfile?.is_verified,
+          role: adminProfile?.role,
           slug: adminProfile?.slug
         });
       }
