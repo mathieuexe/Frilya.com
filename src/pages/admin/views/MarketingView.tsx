@@ -63,12 +63,12 @@ export default function MarketingView() {
         payload.scheduled_at = new Date(scheduledAt).toISOString();
       }
 
-      const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${VITE_API_URL}/api/send-email`, {
+      // En production, VITE_API_URL n'est souvent pas défini, on utilise un chemin relatif
+      const apiUrl = import.meta.env.PROD ? '/api/send-email' : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/send-email`;
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
