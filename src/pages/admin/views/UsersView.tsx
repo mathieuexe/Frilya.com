@@ -159,10 +159,11 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' | 'ad
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-              <th className="p-4 font-semibold">Utilisateur</th>
-              <th className="p-4 font-semibold">Email</th>
-              <th className="p-4 font-semibold">Inscription</th>
-              <th className="p-4 font-semibold">Statut</th>
+              <th className="p-4 font-semibold text-left">Utilisateur</th>
+              <th className="p-4 font-semibold text-left">Email</th>
+              <th className="p-4 font-semibold text-left">Inscription</th>
+              <th className="p-4 font-semibold text-left">Dernière connexion</th>
+              <th className="p-4 font-semibold text-left">Statut</th>
               <th className="p-4 font-semibold text-right">Actions</th>
             </tr>
           </thead>
@@ -211,6 +212,11 @@ export default function UsersView({ type }: { type: 'acheteur' | 'vendeur' | 'ad
                   <td className="p-4 text-slate-600 text-sm">{user.email}</td>
                   <td className="p-4 text-slate-600 text-sm">
                     {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                  </td>
+                  <td className="p-4 text-slate-600 text-sm">
+                    {user.last_seen ? new Date(user.last_seen).toLocaleString('fr-FR', {
+                      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    }) : 'Jamais'}
                   </td>
                   <td className="p-4">
                     <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
