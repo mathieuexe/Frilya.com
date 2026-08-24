@@ -155,6 +155,7 @@ export default function Profile() {
                 </span>
                 <span className="flex items-center gap-1" title="Dernière connexion">
                   <Activity className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-500">Dernière connexion : </span>
                   {(profile.last_seen || profile.created_at) ? new Date(profile.last_seen || profile.created_at).toLocaleString('fr-FR', {
                     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                   }) : 'Inconnu'}

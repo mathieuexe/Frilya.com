@@ -457,6 +457,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
         full_name: finalName,
         avatar_url: contactProfile?.avatar_url,
         is_verified: contactProfile?.is_verified,
+        role: contactProfile?.role,
         slug: contactProfile?.slug,
         lastMessage: msg.content,
         date: msg.created_at
@@ -478,6 +479,7 @@ export default function Messages({ inDashboard = false }: { inDashboard?: boolea
       full_name: selectedContact.full_name,
       avatar_url: selectedContact.avatar_url,
       is_verified: selectedContact.is_verified,
+      role: selectedContact.role,
       slug: selectedContact.slug,
       lastMessage: 'Nouvelle conversation',
       date: new Date().toISOString()

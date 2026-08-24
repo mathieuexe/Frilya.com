@@ -117,6 +117,8 @@ function AppRoutes() {
           .select('role, is_beta, beta_end_date, welcome_message_sent, is_seller, is_verified, created_at')
           .eq('id', session.user.id)
           .single();
+        // Mettre à jour la date de dernière connexion (last_seen)
+        await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', session.user.id);
           
         if (profile?.role === 'beta' || profile?.is_beta) {
           if ((profile.beta_end_date && new Date(profile.beta_end_date) < new Date()) || new Date() >= BETA_END) {
